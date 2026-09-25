@@ -5,6 +5,8 @@ date: 2026-09-25
 
 # What is still missing before ADR(s)
 
+**Proposed ADRs (not CURRENT):** [ADR-2026-09-25-routine-epoch-and-metrics.md](../DECISIONS/ADR-2026-09-25-routine-epoch-and-metrics.md), [ADR-2026-09-25-routine-cli-and-fsm.md](../DECISIONS/ADR-2026-09-25-routine-cli-and-fsm.md).
+
 Locked enough for a *draft* ADR on: routine vs learning (pointer to existing note), epoch/supersede, CLI families, FSM-owns-transitions, batch-size, multi-complete, agent-computed blast under schema gate, metrics-in-routine.
 
 Still thin / open — grill or specify before calling ADR “accepted”:
