@@ -23,7 +23,7 @@ Positioning: [docs/product/positioning.md](docs/product/positioning.md).
 
 Agents start at [AGENTS.md](AGENTS.md), then [docs/brain/START_HERE.md](docs/brain/START_HERE.md).
 
-**Truth** is `docs/brain/CURRENT.md` plus active ADRs. Experiments and evidence are not truth. See [docs/README.md](docs/README.md).
+**Truth** is `docs/brain/CURRENT.md` plus accepted ADRs. Experiments and evidence are not truth. See [docs/README.md](docs/README.md).
 
 ## Monetization (not implementing billing)
 

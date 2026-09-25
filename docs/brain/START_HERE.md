@@ -15,7 +15,7 @@ Then open only the ADRs, notes, or evidence the task needs.
 
 | Layer | Role |
 |---|---|
-| `CURRENT.md` + active ADRs | **Truth.** Product claims and (later) behavior must match. |
+| `CURRENT.md` + accepted ADRs | **Truth.** Product claims and (later) behavior must match. |
 | `ROADMAP.md` | Intent. May be wrong; not shipped. |
 | `EXPERIMENTS.md` | Named bets. Not true until promoted via ADR + CURRENT. |
 | `docs/evidence/**` | Support. **Evidence ≠ truth.** |

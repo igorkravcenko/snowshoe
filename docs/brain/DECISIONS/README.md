@@ -11,6 +11,8 @@ Architecture / product decision records. **Accepted ADRs are truth** together wi
 | `superseded` | Replaced by a newer ADR; move narrative to `docs/archive/` if CURRENT would bloat |
 | `rejected` | Considered and declined; keep so we do not rediscover it |
 
+The in-force word is **`accepted`**. Lint still allows `active` as an alias; do not use `active` on new ADRs.
+
 ## Rules
 
 - One decision per file.
@@ -25,3 +27,7 @@ Architecture / product decision records. **Accepted ADRs are truth** together wi
 |---|---|---|
 | [ADR-2026-09-25-provisional-name-snowshoe](./ADR-2026-09-25-provisional-name-snowshoe.md) | accepted | Working name Snowshoe; backup Catchmark |
 | [ADR-2026-09-25-monetization-ladder](./ADR-2026-09-25-monetization-ladder.md) | accepted | OSS core free → paid convenience → team seats later |
+| [ADR-2026-09-25-personal-state-gitignore](./ADR-2026-09-25-personal-state-gitignore.md) | accepted | Personal ledger gitignored / local by default |
+| [ADR-2026-09-25-product-form-orchestrator](./ADR-2026-09-25-product-form-orchestrator.md) | accepted | CLI-first orchestrator; agents are pluggable workers |
+| [ADR-2026-09-25-v1-surfaces](./ADR-2026-09-25-v1-surfaces.md) | accepted | Accepted (intent); UX/copy still open |
+| [ADR-2026-09-25-brain-docs-ci](./ADR-2026-09-25-brain-docs-ci.md) | accepted | Docs-only brain-docs lint CI; CoS owns consistency audit |

@@ -26,3 +26,7 @@ Use Snowshoe in docs and agent language until a later ADR replaces it. Do not sp
 - CURRENT, README, and positioning say "provisional"
 - A future rename is an ADR + CURRENT rewrite, not a silent find-replace in chat
 - Catchmark is reserved as backup only; do not ship dual branding
+
+## See also
+
+Rejected naming angles (history, not canon): [../notes/naming-history-rejected.md](../notes/naming-history-rejected.md).

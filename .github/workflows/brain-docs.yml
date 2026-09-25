@@ -1,0 +1,16 @@
+name: brain-docs
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint brain docs
+        run: python3 scripts/ops/lint_brain_docs.py

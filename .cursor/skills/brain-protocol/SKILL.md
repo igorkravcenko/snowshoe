@@ -16,7 +16,7 @@ Then open only the ADRs, notes, or evidence the task needs.
 
 ## Trust
 
-- **Truth** = `CURRENT.md` + ADRs with `status: accepted` (or `active`).
+- **Truth** = `CURRENT.md` + ADRs with `status: accepted` (`active` is a lint alias only; DECISIONS table uses `accepted`).
 - Experiments stay in the registry until promoted.
 - `docs/evidence/**` supports a claim; it does not become true by existing.
 - `docs/brain/notes/**` is working memory.
