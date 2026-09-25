@@ -26,7 +26,7 @@ Without a familiar place where “red” arrives by itself, the platform-agnosti
 
 **Always-on entry:**
 
-- CLI as the automation and agent entrypoint. **Default signal path:** a human, or an agent with a skill, calls `snowshoe …` (e.g. `routine refresh`, `status`, `work …` — command families still proposed elsewhere).
+- CLI as the automation and agent entrypoint. **Default signal path:** skill → CLI — `snowshoe routine refresh` / `snowshoe routine status` / `snowshoe work …` (command families still proposed elsewhere). Informal *snow* is not CLI.
 - Optional TUI for status / queue / quiz in terminal.
 - Thin IDE / MCP wrappers later; not v1 home.
 
@@ -37,7 +37,8 @@ Without a familiar place where “red” arrives by itself, the platform-agnosti
 Locked with Igor (Tech Lead 1:1). Full stack/clarifications ADR: [ADR-2026-09-25-implementation-stack.md](./ADR-2026-09-25-implementation-stack.md).
 
 - `snowshoe init` creates `.snowshoe/` + config (and personal-state ignore rules) — **does not** install git hooks.
-- Separate commands (spelling **provisional**): e.g. `snowshoe hooks install` / `uninstall`, with the user choosing which hooks (post-merge / post-checkout / etc.).
+- **Default signal = skill → CLI:** `snowshoe routine refresh` / `snowshoe routine status` / `snowshoe work …` (families still proposed).
+- Separate commands (spelling **provisional**): `snowshoe hooks install` / `snowshoe hooks uninstall`, with the user choosing which hooks (post-merge / post-checkout / etc.).
 - Hooks remain a *valid primary signal surface* when the user enables them. They are **not** auto-installed and are **not** required for the default skill → CLI path.
 
 Do not read the original “primary signal = hook” list as “init installs hooks.”

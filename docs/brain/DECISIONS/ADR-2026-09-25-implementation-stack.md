@@ -31,7 +31,7 @@ Thin framework. **Default recommendation: citty.** **commander** is an acceptabl
 
 ### Local durable machine state
 
-**`bun:sqlite`**: one ledger DB under `.snowshoe/` (example filename: `ledger.sqlite`). Exact subpath vs the personal-state layout TBD (`.snowshoe/local/` vs repo-root `.snowshoe/`) is **not** re-litigated here; whatever the path, the engine is SQLite and the personal ledger stays gitignored ([personal-state ADR](./ADR-2026-09-25-personal-state-gitignore.md)).
+**`bun:sqlite`**: one ledger DB under `.snowshoe/` (example filename: `ledger.sqlite`). SQLite is the **source of truth** for FSM / queue / leases (claim tokens) / epoch meta / metrics. Exact sqlite *file* subpath vs the personal-state layout TBD (`.snowshoe/local/` vs repo-root `.snowshoe/`) is **not** re-litigated here and **does not move** epoch artifact paths from the proposed routine ADRs. The personal ledger stays gitignored ([personal-state ADR](./ADR-2026-09-25-personal-state-gitignore.md)).
 
 ### Tests
 
@@ -43,7 +43,7 @@ Thin framework. **Default recommendation: citty.** **commander** is an acceptabl
 
 ### Binary name
 
-Still **provisional `snowshoe`**. Informal discussion shorthand *snow* is not the CLI and not a locked short form ([provisional-name ADR](./ADR-2026-09-25-provisional-name-snowshoe.md)).
+CLI spelling is **provisional `snowshoe …`**. Informal discussion shorthand *snow* is **not** a locked CLI name and must not be treated as one ([provisional-name ADR](./ADR-2026-09-25-provisional-name-snowshoe.md)). This ADR does not finalize the binary name.
 
 ### Explicitly out of day-1
 
@@ -59,25 +59,40 @@ These were decided with Igor in the same 1:1 and were **not obvious** from CURRE
 
 ### 1. Hooks are opt-in, not part of default `init`
 
-`snowshoe init` only creates `.snowshoe/` + config (and whatever [personal-state](./ADR-2026-09-25-personal-state-gitignore.md) already requires, e.g. ignore rules for personal paths). **It does not install git hooks.**
+Checklist (locked):
 
-Separate commands (spelling **provisional**): e.g. `snowshoe hooks install` / `snowshoe hooks uninstall`, with the user choosing which hooks (post-merge / post-checkout / etc.).
+- **`init` does not install hooks.** `snowshoe init` only creates `.snowshoe/` + config (and whatever [personal-state](./ADR-2026-09-25-personal-state-gitignore.md) already requires, e.g. ignore rules for personal paths).
+- **Default signal = skill → CLI:** a human, or an agent with a skill, calls `snowshoe routine refresh` / `snowshoe routine status` / `snowshoe work …` (families as in the *proposed* CLI ADR; not promoted here).
+- **Opt-in only:** `snowshoe hooks install` / `snowshoe hooks uninstall` (spelling **provisional**), with the user choosing which hooks (post-merge / post-checkout / etc.).
 
-**Default signal path:** a human, or an agent with a skill, calls the CLI (`routine refresh`, `status`, `work …` — families as in the *proposed* CLI ADR; not promoted here). Hooks are convenience for users who enable them.
+Hooks remain a *valid primary signal surface* **when enabled**. They are convenience, not the default path.
 
-This **refines** [ADR-2026-09-25-v1-surfaces](./ADR-2026-09-25-v1-surfaces.md): hooks remain a *valid primary signal surface* when enabled; they are **not** auto-installed. That ADR carries the amendment so readers do not assume `init` installs hooks.
+This **refines** [ADR-2026-09-25-v1-surfaces](./ADR-2026-09-25-v1-surfaces.md). That ADR carries the amendment so readers do not assume `init` installs hooks.
 
 ### 2. State layering (storage split)
 
-| Layer | Format | Holds |
-|---|---|---|
-| Machine / FSM | SQLite | epoch meta, steps/queue, leases, metrics floats `(nodeId × level)`, `canAdvance`-related truth |
-| Heavy agent payloads | Files under `.snowshoe/epochs/<epochId>/…` (JSON etc.) | blast, structure ops blobs; DB stores refs/paths |
-| Human-readable map / notes | Markdown (optional frontmatter) | explain/notes for the learning UI; **not** source of truth for metrics or step status |
+| Layer | Format | Holds | Source of truth? |
+|---|---|---|---|
+| Machine / FSM | SQLite (`bun:sqlite`) | epoch meta, steps/queue, **claim/lease** tokens, metrics floats **`0.0–1.0`** on `(nodeId × level)`, `canAdvance`-related truth | **Yes** — SoT for FSM / queue / leases / epoch meta / metrics |
+| Heavy agent payloads | Files under `.snowshoe/epochs/<epochId>/…` (JSON etc.) | blast, structure ops blobs; DB stores refs/paths | Payload bytes live on disk; accept/status remain in SQLite |
+| Human-readable map / notes | Markdown (optional frontmatter) | explain/notes for the learning UI | **No** — not SoT for metrics or step statuses |
 
 Do **not** store metrics or step statuses only in markdown (an agent could paint green past the FSM). Markdown is a projection / teaching surface, not the ledger.
 
 This layers *how* state is stored. It does not replace the project vs personal split, and it does not commit personal competence into git.
+
+### Alignment with proposed routine ADRs (do not contradict)
+
+This accepted stack ADR must **not** rewrite or promote:
+
+- [ADR-2026-09-25-routine-epoch-and-metrics](./ADR-2026-09-25-routine-epoch-and-metrics.md) (proposed A)
+- [ADR-2026-09-25-routine-cli-and-fsm](./ADR-2026-09-25-routine-cli-and-fsm.md) (proposed B)
+
+Bun / TS / SQLite / files **align** with those drafts as follows (still proposed for protocol, not CURRENT):
+
+- Epoch artifact paths stay `.snowshoe/epochs/<epochId>/…` (envelope blobs / `artifactRef`).
+- Metric storage domain stays float **`0.0–1.0`** inclusive in SQLite; UI bands remain display-only (not a schema type).
+- `work next` **claim** + `leaseToken` truth lives in SQLite; complete/fail without a matching current lease still reject (as in proposed B).
 
 ### 3. Learning vs routine store
 
