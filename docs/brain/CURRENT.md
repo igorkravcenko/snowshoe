@@ -41,3 +41,8 @@ No Snowshoe ARR or user counts exist to cite. Do not invent them. There is no pr
 ## Now
 
 The brain scaffold *is* the repo. Next: grill the v1 signal / PR-check shape and promote open questions before writing code. Positioning: [docs/product/positioning.md](../product/positioning.md). Working notes on form detail: [notes/product-form-detail.md](./notes/product-form-detail.md).
+
+## Process / quality
+
+- Docs land via PR. Chief of Staff owns **consistency audit** before merge (auditor / `grill-canon`).
+- Docs-only CI tripwire: `brain-docs` lint — [ADR-2026-09-25-brain-docs-ci.md](./DECISIONS/ADR-2026-09-25-brain-docs-ci.md).

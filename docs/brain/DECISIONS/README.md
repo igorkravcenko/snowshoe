@@ -28,3 +28,4 @@ Architecture / product decision records. **Accepted ADRs are truth** together wi
 | [ADR-2026-09-25-personal-state-gitignore](./ADR-2026-09-25-personal-state-gitignore.md) | accepted | Personal ledger gitignored / local by default |
 | [ADR-2026-09-25-product-form-orchestrator](./ADR-2026-09-25-product-form-orchestrator.md) | accepted | CLI-first orchestrator; agents are pluggable workers |
 | [ADR-2026-09-25-v1-surfaces](./ADR-2026-09-25-v1-surfaces.md) | accepted | Signal via hook + PR-check; map secondary; CLI always |
+| [ADR-2026-09-25-brain-docs-ci](./ADR-2026-09-25-brain-docs-ci.md) | accepted | Docs-only brain-docs lint CI; CoS owns consistency audit |

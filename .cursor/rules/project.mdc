@@ -14,7 +14,7 @@ v1 surfaces (intent): signal after pull + PR-check.
 
 Not v1: chat hell, AI code review, multiplayer knowledge graph, agent HITL/control plane.
 
-**Implementation status: pre-code / scaffold only.** Do not add application source, package managers, CI, or fake features unless `docs/brain/CURRENT.md` and an ADR say so.
+**Implementation status: pre-code / scaffold only.** Do not add application source, package managers, or fake features unless `docs/brain/CURRENT.md` and an ADR say so. Docs-only CI (`brain-docs` lint) is allowed per `ADR-2026-09-25-brain-docs-ci`.
 
 ## Brain OS
 
@@ -25,6 +25,7 @@ Not v1: chat hell, AI code review, multiplayer knowledge graph, agent HITL/contr
 - Research docs carry YAML `status:` frontmatter
 - Behavior or product-claim changes require an ADR **and** a CURRENT update in the same change
 - Protocol: `.cursor/skills/brain-protocol/SKILL.md`
+- Docs PR quality: CoS consistency audit before merge; CI is a tripwire only
 
 Do not invent ARR, users, or competitors. Unknown stays `unknown`.
 
