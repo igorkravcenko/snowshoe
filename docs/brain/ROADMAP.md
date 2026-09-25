@@ -13,7 +13,7 @@ Spec-driven scaffold: CURRENT, ADRs, evidence vs truth, agent protocol. **This i
 
 ## 1. Lock v1 surfaces (no code yet)
 
-Grill and ADR (partially drafted — still open on UX detail):
+Grill remaining UX/copy ([ADR-2026-09-25-v1-surfaces](./DECISIONS/ADR-2026-09-25-v1-surfaces.md) is accepted at intent-level; flags and copy still open):
 
 - What “signal after pull” actually shows (copy, urgency, grey ≠ red)
 - What “PR-check” is (and is not — not AI review)

@@ -25,10 +25,12 @@ Snowshoe is a **product orchestrator / overlay**:
 
 **Dual entry (both valid):**
 
-1. User already in a harness → skill teaches calling `snow …` and respecting verify.
-2. No harness / hook / `snow catchup` → Snowshoe invokes a configured worker backend for that step (“call a worker,” not “inherit the harness event loop”).
+1. User already in a harness → skill teaches calling `snowshoe …` (provisional binary-shaped example; binary name TBD) and respecting verify.
+2. No harness / hook / orchestrated catch-up flow → Snowshoe invokes a configured worker backend for that step (“call a worker,” not “inherit the harness event loop”). Subcommand names are not locked.
 
 Do **not** attempt to “inherit” an arbitrary harness runtime via skill invocation as a general API — formats and permissions differ per tool.
+
+Informal chat shorthand *snow* is **not** a naming decision (not CLI, not locked short form).
 
 ## Alternatives considered
 

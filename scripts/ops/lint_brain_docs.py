@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 ALLOWED_STATUSES = {
-    "active",
+    "active",  # alias of accepted; DECISIONS table uses accepted
     "accepted",
     "proposed",
     "in-progress",

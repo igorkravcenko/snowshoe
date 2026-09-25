@@ -22,7 +22,7 @@ Without a familiar place where “red” arrives by itself, the platform-agnosti
 
 **Secondary screen (where humans learn / rank):**
 
-- Local navigable map (form open: graph / tree / vault-like) opened on demand (e.g. `snow map`).
+- Local navigable map (form open: graph / tree / vault-like) opened on demand (e.g. `snowshoe map` — provisional binary-shaped example; binary name TBD).
 
 **Always-on entry:**
 
@@ -41,6 +41,7 @@ Without a familiar place where “red” arrives by itself, the platform-agnosti
 ## Consequences
 
 - CURRENT and ROADMAP point here for surface intent.
+- Informal chat shorthand *snow* is **not** a naming decision (not CLI, not locked short form).
 - Open: exact post-pull UX (5-second view), PR-check wording, grey≠red, degradation heuristics — stay in notes until grilled into ADRs.
 
 ## Evidence

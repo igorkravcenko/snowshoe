@@ -5,6 +5,10 @@ date: 2026-09-25
 
 # ADR: Allow docs-only brain lint CI
 
+## Status
+
+Accepted.
+
 ## Context
 
 Snowshoe scaffold initially forbade CI to keep the repo pre-code and free of fake

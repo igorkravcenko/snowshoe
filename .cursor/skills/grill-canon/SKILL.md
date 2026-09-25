@@ -1,6 +1,6 @@
 ---
 name: grill-canon
-description: Grill CURRENT and active ADRs for staleness, contradiction, and missing decisions. Use when asked to audit the brain, grill the canon, or check whether docs are still truth.
+description: Grill CURRENT and accepted ADRs for staleness, contradiction, and missing decisions. Use when asked to audit the brain, grill the canon, or check whether docs are still truth.
 ---
 
 # Grill the canon
@@ -9,7 +9,7 @@ Subject is the **brain**, not a new feature pitch.
 
 ## Read
 
-`START_HERE` → `CURRENT` → `ROADMAP` → `EXPERIMENTS` → active ADRs. Open evidence/notes only where CURRENT cites them.
+`START_HERE` → `CURRENT` → `ROADMAP` → `EXPERIMENTS` → accepted ADRs. Open evidence/notes only where CURRENT cites them.
 
 ## Frontier (typical first round)
 

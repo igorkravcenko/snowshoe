@@ -19,7 +19,7 @@ Not v1: chat hell, AI code review, multiplayer knowledge graph, agent HITL/contr
 ## Brain OS
 
 - Entrypoint: `AGENTS.md` → `docs/brain/START_HERE.md`
-- Truth: `docs/brain/CURRENT.md` + active ADRs under `docs/brain/DECISIONS/`
+- Truth: `docs/brain/CURRENT.md` + accepted ADRs under `docs/brain/DECISIONS/`
 - `EXPERIMENTS.md` is a registry, not truth
 - `docs/evidence/**` is support, not truth
 - Research docs carry YAML `status:` frontmatter

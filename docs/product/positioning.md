@@ -9,7 +9,7 @@ One page. Matches CURRENT. Brand is provisional.
 
 ## Name and subtitle
 
-- **Working name:** Snowshoe (not final). Short: *snow*. **Backup:** Catchmark.
+- **Working name:** Snowshoe (not final). **Backup:** Catchmark. Informal *snow* in discussion is not a locked short form.
 - **Subtitle:** Catch up after pull.
 
 ## Wedge

@@ -9,10 +9,10 @@ updated: 2026-09-25
 
 ## Product
 
-- **Working name:** Snowshoe (provisional; not final brand). Short form in chat: *snow*. **Backup:** Catchmark.
+- **Working name:** Snowshoe (provisional; not final brand). **Backup:** Catchmark.
 - **Subtitle:** Catch up after pull.
 - **Wedge:** git-native / ideally OSS layer for a *personal* repo comprehension map. After commits or `git pull`, show what went stale; the human chooses what to catch up on (agency). Structure exists so the human can explore and rank misunderstanding — not only consume an agent “red queue.”
-- **Form (intent):** CLI-first **orchestrator** (not a passive ledger, not a full agent harness). Owns git-anchored state, freshness, and verify protocol; pluggable agent backends are workers for map / explain / quiz. Dual entry: harness skills call `snow …`, or snow invokes a configured backend (e.g. catch-up flow). Details: [ADR-2026-09-25-product-form-orchestrator.md](./DECISIONS/ADR-2026-09-25-product-form-orchestrator.md).
+- **Form (intent):** CLI-first **orchestrator** (not a passive ledger, not a full agent harness). Owns git-anchored state, freshness, and verify protocol; pluggable agent backends are workers for map / explain / quiz. Dual entry: harness skills call `snowshoe …` (provisional binary-shaped example; binary name TBD), or the CLI invokes a configured backend (e.g. a catch-up flow). Details: [ADR-2026-09-25-product-form-orchestrator.md](./DECISIONS/ADR-2026-09-25-product-form-orchestrator.md).
 - **State default:** project model may live under something like `.snowshoe/`; **personal ledger gitignored / local by default**. [ADR-2026-09-25-personal-state-gitignore.md](./DECISIONS/ADR-2026-09-25-personal-state-gitignore.md).
 - **v1 surfaces (intent):** primary signal where “red” arrives on delta — local git hook after pull/merge (+ checkout when relevant) and PR-check; navigable map is a secondary screen for learning, not the only home. CLI always; optional TUI for status/queue/quiz; local GUI map on demand. [ADR-2026-09-25-v1-surfaces.md](./DECISIONS/ADR-2026-09-25-v1-surfaces.md).
 
@@ -36,7 +36,7 @@ No Snowshoe ARR or user counts exist to cite. Do not invent them. There is no pr
 
 ## Name
 
-[ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md). Rejected naming angles (history, not canon): [notes/naming-history-rejected.md](./notes/naming-history-rejected.md).
+[ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md). Informal discussion shorthand *snow* is not CLI and not a locked chat short form. Rejected naming angles (history, not canon): [notes/naming-history-rejected.md](./notes/naming-history-rejected.md).
 
 ## Now
 

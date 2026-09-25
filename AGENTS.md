@@ -5,7 +5,7 @@ Entrypoint for agents working in this repo.
 1. Read [docs/brain/START_HERE.md](docs/brain/START_HERE.md).
 2. Follow the read order there: **CURRENT → ROADMAP → EXPERIMENTS**.
 3. Load `.cursor/skills/brain-protocol/SKILL.md` before changing product claims or behavior.
-4. Treat **CURRENT + active ADRs** as truth. Evidence, notes, and experiments are not.
+4. Treat **CURRENT + accepted ADRs** as truth. Evidence, notes, and experiments are not.
 
 ## Product (one line)
 
