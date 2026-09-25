@@ -1,0 +1,25 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*~
+*.swp
+.idea/
+.vscode/
+
+# Secrets / local env
+.env
+.env.*
+!.env.example
+
+# Local scratch
+*.log
+.cache/
+tmp/
+.tmp/
+
+# Accidental toolchain leftovers (no app stack in this repo yet)
+node_modules/
+__pycache__/
+.venv/
+dist/
+build/

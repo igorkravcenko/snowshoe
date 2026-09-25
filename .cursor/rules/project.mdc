@@ -1,0 +1,31 @@
+---
+description: Snowshoe product identity and spec-driven brain OS
+alwaysApply: true
+---
+
+# Snowshoe
+
+Working name (provisional): **Snowshoe**. Backup brand: **Catchmark**.
+Subtitle: **Catch up after pull.**
+
+Git-native / ideally OSS *personal* repo comprehension map. Freshness after commits or pull; the human chooses what to catch up on.
+
+v1 surfaces (intent): signal after pull + PR-check.
+
+Not v1: chat hell, AI code review, multiplayer knowledge graph, agent HITL/control plane.
+
+**Implementation status: pre-code / scaffold only.** Do not add application source, package managers, CI, or fake features unless `docs/brain/CURRENT.md` and an ADR say so.
+
+## Brain OS
+
+- Entrypoint: `AGENTS.md` → `docs/brain/START_HERE.md`
+- Truth: `docs/brain/CURRENT.md` + active ADRs under `docs/brain/DECISIONS/`
+- `EXPERIMENTS.md` is a registry, not truth
+- `docs/evidence/**` is support, not truth
+- Research docs carry YAML `status:` frontmatter
+- Behavior or product-claim changes require an ADR **and** a CURRENT update in the same change
+- Protocol: `.cursor/skills/brain-protocol/SKILL.md`
+
+Do not invent ARR, users, or competitors. Unknown stays `unknown`.
+
+This repo is not a trading stack. Do not copy Nautilus, portfolio, bots, or related domain from other projects.
