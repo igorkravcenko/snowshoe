@@ -44,6 +44,10 @@ Informal chat shorthand *snow* is **not** a naming decision (not CLI, not locked
 - Implementation stays pre-code until surfaces are grilled; when code starts, agent backends are adapters, not the product identity.
 - Skills are entry documentation + command recipes, not the source of truth for state.
 
+## See also
+
+Hooks remain a Snowshoe-owned surface, but they are **opt-in** (`hooks install` / `uninstall`); `init` does not install them. Default signal is skill → CLI. Map UI is later (`snowshoe map` local HTTP), not day-1. [ADR-2026-09-25-implementation-stack.md](./ADR-2026-09-25-implementation-stack.md), [ADR-2026-09-25-v1-surfaces.md](./ADR-2026-09-25-v1-surfaces.md). Informal *snow* is not CLI.
+
 ## Evidence
 
 `cognitive-model-erosion/07-product-form.md` (discussion artifact). Skills overlap brief: teach-back skills exist; none own git-delta personal freshness (see `docs/evidence/`).

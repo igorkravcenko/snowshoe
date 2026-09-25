@@ -12,7 +12,7 @@ This repository is **pre-code**. What lives here is a Spec-Driven Development "b
 
 | v1 intent | Not (v1) |
 |---|---|
-| Signal after pull | Chat hell / "ask the repo" as the product |
+| Signal after pull (CLI default; hooks opt-in, not `init`) | Chat hell / "ask the repo" as the product |
 | PR-check | AI code review |
 | Personal comprehension map | Multiplayer knowledge graph |
 | Human-chosen catch-up | Agent HITL / control plane |

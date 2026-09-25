@@ -16,3 +16,4 @@ Use [../templates/NOTE_TEMPLATE.md](../templates/NOTE_TEMPLATE.md).
 | [routine-cli-and-fsm.md](./routine-cli-and-fsm.md) | note / working lock, 2026-09-25 |
 | [routine-cli-adr-gaps.md](./routine-cli-adr-gaps.md) | note |
 | [routine-adr-proposals-a-g.md](./routine-adr-proposals-a-g.md) | note / support |
+| [implementation-stack-igor-2026-09-25.md](./implementation-stack-igor-2026-09-25.md) | note / 1:1 digest; ADR is truth |

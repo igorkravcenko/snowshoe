@@ -17,20 +17,31 @@ Without a familiar place where “red” arrives by itself, the platform-agnosti
 
 **Primary signal (where red arrives on delta):**
 
-1. Local git-native hook after `pull` / `merge` (and long `checkout` when relevant).
+1. Local git-native hook after `pull` / `merge` (and long `checkout` when relevant) — **valid when enabled**; not installed by default `init` (see amendment below).
 2. PR check / comment on GitHub/GitLab — social delta moment; **not** AI review.
 
 **Secondary screen (where humans learn / rank):**
 
-- Local navigable map (form open: graph / tree / vault-like) opened on demand (e.g. `snowshoe map` — provisional binary-shaped example; binary name TBD).
+- Local navigable map opened on demand (e.g. `snowshoe map` — provisional binary-shaped example). **Later, not day-1 code:** tiny local HTTP + system browser; React + Vite; **tree-first**; bands display-only over float metrics — [implementation-stack ADR](./ADR-2026-09-25-implementation-stack.md). Graph / vault-like are not the first map (not forbidden forever).
 
 **Always-on entry:**
 
-- CLI as the automation and agent entrypoint.
+- CLI as the automation and agent entrypoint. **Default signal path:** skill → CLI — `snowshoe routine refresh` / `snowshoe routine status` / `snowshoe work …` (command families still proposed elsewhere). Informal *snow* is not CLI.
 - Optional TUI for status / queue / quiz in terminal.
 - Thin IDE / MCP wrappers later; not v1 home.
 
 **Explicitly not v1 center:** SaaS dashboard as sole surface; chat-only product; single-IDE plugin as sole home; TUI-only for the full map experience.
+
+### Amendment (2026-09-25): hooks are opt-in
+
+Locked with Igor (Tech Lead 1:1). Full stack/clarifications ADR: [ADR-2026-09-25-implementation-stack.md](./ADR-2026-09-25-implementation-stack.md).
+
+- `snowshoe init` creates `.snowshoe/` + config (and personal-state ignore rules) — **does not** install git hooks.
+- **Default signal = skill → CLI:** `snowshoe routine refresh` / `snowshoe routine status` / `snowshoe work …` (families still proposed).
+- Separate commands (spelling **provisional**): `snowshoe hooks install` / `snowshoe hooks uninstall`, with the user choosing which hooks (post-merge / post-checkout / etc.).
+- Hooks remain a *valid primary signal surface* when the user enables them. They are **not** auto-installed and are **not** required for the default skill → CLI path.
+
+Do not read the original “primary signal = hook” list as “init installs hooks.”
 
 ## Alternatives considered
 
@@ -43,6 +54,7 @@ Without a familiar place where “red” arrives by itself, the platform-agnosti
 - CURRENT and ROADMAP point here for surface intent.
 - Informal chat shorthand *snow* is **not** a naming decision (not CLI, not locked short form).
 - Open: exact post-pull UX (5-second view), PR-check wording, grey≠red, degradation heuristics — stay in notes until grilled into ADRs.
+- Hook *copy* and which hook names ship remain open; hook *install-by-default* is closed (no).
 
 ## Evidence
 

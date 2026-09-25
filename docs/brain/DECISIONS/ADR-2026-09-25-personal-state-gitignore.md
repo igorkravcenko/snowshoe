@@ -33,3 +33,7 @@ Default workflow discussion (Igor × Brainstormer, 2026-09-25): data next to the
 ## Evidence
 
 Working discussion distilled in box artifact `cognitive-model-erosion/07-product-form.md` (pre-repo). Not imported wholesale; this ADR is the decision.
+
+## See also
+
+Ledger *engine* (not a gitignore change): machine / FSM state is `bun:sqlite` under `.snowshoe/` (e.g. `ledger.sqlite`); heavy payloads are files; markdown is not metrics/status truth — [ADR-2026-09-25-implementation-stack.md](./ADR-2026-09-25-implementation-stack.md). Project vs personal split and local-by-default personal ledger remain as above; layout TBD is unchanged.

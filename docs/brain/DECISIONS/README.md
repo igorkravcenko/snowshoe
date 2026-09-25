@@ -29,7 +29,8 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-09-25-monetization-ladder](./ADR-2026-09-25-monetization-ladder.md) | accepted | OSS core free → paid convenience → team seats later |
 | [ADR-2026-09-25-personal-state-gitignore](./ADR-2026-09-25-personal-state-gitignore.md) | accepted | Personal ledger gitignored / local by default |
 | [ADR-2026-09-25-product-form-orchestrator](./ADR-2026-09-25-product-form-orchestrator.md) | accepted | CLI-first orchestrator; agents are pluggable workers |
-| [ADR-2026-09-25-v1-surfaces](./ADR-2026-09-25-v1-surfaces.md) | accepted | Accepted (intent); UX/copy still open |
+| [ADR-2026-09-25-v1-surfaces](./ADR-2026-09-25-v1-surfaces.md) | accepted | Accepted (intent); UX/copy still open; hooks opt-in (not default init) |
 | [ADR-2026-09-25-brain-docs-ci](./ADR-2026-09-25-brain-docs-ci.md) | accepted | Docs-only brain-docs lint CI; CoS owns consistency audit |
+| [ADR-2026-09-25-implementation-stack](./ADR-2026-09-25-implementation-stack.md) | accepted | TS/Bun stack; SQLite ledger; hooks opt-in; state layering |
 | [ADR-2026-09-25-routine-epoch-and-metrics](./ADR-2026-09-25-routine-epoch-and-metrics.md) | proposed | Routine epochs, learning split, mandatory metric decay |
 | [ADR-2026-09-25-routine-cli-and-fsm](./ADR-2026-09-25-routine-cli-and-fsm.md) | proposed | Routine CLI families, FSM ownership, work queue |

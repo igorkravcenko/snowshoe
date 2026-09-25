@@ -9,7 +9,7 @@ Entrypoint for agents working in this repo.
 
 ## Product (one line)
 
-**Snowshoe** (provisional; backup **Catchmark**) — *Catch up after pull.* A git-native / ideally OSS personal repo comprehension map. Implementation status: **pre-code / scaffold only**.
+**Snowshoe** (provisional; backup **Catchmark**) — *Catch up after pull.* A git-native / ideally OSS personal repo comprehension map. Implementation status: **pre-code / scaffold only**. CLI spelling is provisional `snowshoe …`; informal *snow* is not CLI. Default signal is skill/human → CLI (`routine refresh` / `status` / `work`); git hooks are **opt-in** (`hooks install` / `uninstall`) — `init` does not install them. Stack + clarifications: [ADR-2026-09-25-implementation-stack](docs/brain/DECISIONS/ADR-2026-09-25-implementation-stack.md).
 
 ## Hard rules
 
