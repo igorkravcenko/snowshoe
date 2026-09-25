@@ -11,3 +11,4 @@ Use [../templates/NOTE_TEMPLATE.md](../templates/NOTE_TEMPLATE.md).
 | [vision-open-questions.md](./vision-open-questions.md) | note |
 | [naming-history-rejected.md](./naming-history-rejected.md) | note |
 | [discoverability-gtm-sketch.md](./discoverability-gtm-sketch.md) | note |
+| [composite-skill-gaps.md](./composite-skill-gaps.md) | note |
