@@ -25,3 +25,6 @@ Architecture / product decision records. **Accepted ADRs are truth** together wi
 |---|---|---|
 | [ADR-2026-09-25-provisional-name-snowshoe](./ADR-2026-09-25-provisional-name-snowshoe.md) | accepted | Working name Snowshoe; backup Catchmark |
 | [ADR-2026-09-25-monetization-ladder](./ADR-2026-09-25-monetization-ladder.md) | accepted | OSS core free → paid convenience → team seats later |
+| [ADR-2026-09-25-personal-state-gitignore](./ADR-2026-09-25-personal-state-gitignore.md) | accepted | Personal ledger gitignored / local by default |
+| [ADR-2026-09-25-product-form-orchestrator](./ADR-2026-09-25-product-form-orchestrator.md) | accepted | CLI-first orchestrator; agents are pluggable workers |
+| [ADR-2026-09-25-v1-surfaces](./ADR-2026-09-25-v1-surfaces.md) | accepted | Signal via hook + PR-check; map secondary; CLI always |

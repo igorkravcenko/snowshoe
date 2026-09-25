@@ -9,30 +9,42 @@ One page. Matches CURRENT. Brand is provisional.
 
 ## Name and subtitle
 
-- **Working name:** Snowshoe (not final). **Backup:** Catchmark.
+- **Working name:** Snowshoe (not final). Short: *snow*. **Backup:** Catchmark.
 - **Subtitle:** Catch up after pull.
 
 ## Wedge
 
-Git-native / ideally OSS layer for a **personal** repo comprehension map. After commits or `git pull`, the map goes stale in visible ways; the **human chooses** what to catch up on.
+Git-native / ideally OSS layer for a **personal** repo comprehension map. After commits or `git pull`, understanding goes stale in visible ways; the **human chooses** what to catch up on.
 
-v1 surfaces (intent): **signal after pull** and **PR-check**.
+Form: CLI-first **orchestrator** — owns freshness + verify; agents are pluggable workers. Personal ledger local/gitignored by default.
+
+## Surfaces (v1 intent)
+
+- **Signal:** post-pull/merge hook + PR-check (not AI review).  
+- **Learn:** on-demand local map; optional TUI for status/queue/quiz; CLI always.  
+- **Not the home:** SaaS dashboard; chat-only; single-IDE-only.
 
 ## Not (v1)
 
-- Chat hell / "ask the repo" as the product
-- AI code review (wrong buyer, wrong price shelf, wrong expectations)
-- Multiplayer knowledge graph
-- Agent HITL / control plane
+- Chat hell / “ask the repo” as the product  
+- AI code review (wrong buyer, wrong price shelf, wrong expectations)  
+- Multiplayer knowledge graph as the first wedge  
+- Agent HITL / control plane  
+- Nested full agent harness  
+- Generic agent-memory / “mental model KG” shelf  
 
 ## Monetization (summary)
 
 Not implementing billing. Full decision: [ADR-2026-09-25-monetization-ladder](../brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md).
 
-- **Core:** OSS / local map + catch-up signal — free forever
-- **Paid:** sync / hosted freshness / multi-device convenience (and maybe a commercial binary later)
-- **Team seats:** only when shared surfaces exist; not a solo seat tax
-- **Solo WTP test:** $5–20/mo (hypothesis; no public anchor for this exact wedge)
-- **Avoid:** core paywall, CodeRabbit-class AI-review pricing/messaging, enterprise-only day 1, invented ARR/users
+- **Core:** OSS / local map + catch-up signal — free forever  
+- **Paid:** sync / hosted freshness / multi-device convenience (and maybe a commercial binary later)  
+- **Team seats:** only when shared surfaces exist; not a solo seat tax  
+- **Solo WTP test:** $5–20/mo (hypothesis; no public anchor for this exact wedge)  
+- **Avoid:** core paywall, CodeRabbit-class AI-review pricing/messaging, enterprise-only day 1, invented ARR/users  
 
 There is no proven public price for a personal post-pull comprehension map as of 25 Sep 2026. Do not pretend otherwise on a landing page.
+
+## Differentiate vs platform “catch me up”
+
+Personal ledger + freshness after **git delta** + verify — not a one-shot chat that explains the repo.
