@@ -20,8 +20,8 @@ Form: CLI-first **orchestrator** — owns freshness + verify; agents are pluggab
 
 ## Surfaces (v1 intent)
 
-- **Signal:** post-pull/merge hook + PR-check (not AI review).  
-- **Learn:** on-demand local map; optional TUI for status/queue/quiz; CLI always.  
+- **Signal:** CLI by default (human or skill → `snowshoe …`); **opt-in** post-pull/merge hook + PR-check (not AI review). `init` does not install hooks.  
+- **Learn:** on-demand local map (later: tree-first in the system browser); optional TUI for status/queue/quiz; CLI always.  
 - **Not the home:** SaaS dashboard; chat-only; single-IDE-only.
 
 ## Not (v1)

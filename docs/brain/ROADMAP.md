@@ -5,7 +5,7 @@ updated: 2026-09-25
 
 # ROADMAP
 
-Intent only. Not truth. Not a commitment to dates or stack.
+Intent only. Not truth. Not a commitment to dates. Implementation stack is locked (still pre-code): [ADR-2026-09-25-implementation-stack](./DECISIONS/ADR-2026-09-25-implementation-stack.md).
 
 ## 0. Brain (current)
 
@@ -17,12 +17,13 @@ Grill remaining UX/copy ([ADR-2026-09-25-v1-surfaces](./DECISIONS/ADR-2026-09-25
 
 - What “signal after pull” actually shows (copy, urgency, grey ≠ red)
 - What “PR-check” is (and is not — not AI review)
-- Local / git-native shape of personal vs project state
-- Minimal CLI contract (`init` / `refresh` / `status` / `learn` / `verify` — draft only)
+- Local / git-native shape of personal vs project state (gitignore default + SQLite/files/markdown layering are locked; on-disk layout TBD)
+- Minimal CLI contract (`init` / `refresh` / `status` / `learn` / `verify` — draft only; proposed routine families are **not** CURRENT)
+- Hooks: **opt-in**, not default `init` (accepted). Remaining work is copy / which hook names, not auto-install.
 
 ## 2. First local slice (after 1)
 
-Smallest thing that makes catch-up after pull real on one repo. Details TBD; do not pre-build a platform.
+Smallest thing that makes catch-up after pull real on one repo. Use the locked Bun/TS stack; do not pre-build a platform (no Nest/Next/Electron day-1).
 
 ## 3. Harness skills (parallel, after form lock)
 
