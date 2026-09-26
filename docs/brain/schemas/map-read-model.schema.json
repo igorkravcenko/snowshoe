@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://snowshoe.dev/schemas/map-read-model.schema.json",
+  "title": "Map read-model (provisional CLI names; shape per Tech Lead)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["nodes"],
+  "properties": {
+    "generatedAt": { "type": "string" },
+    "rootSlug": { "type": "string" },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "type", "leaf", "children"],
+        "properties": {
+          "slug": { "type": "string" },
+          "title": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["system", "module", "surface", "flow", "symbol", "external"]
+          },
+          "leaf": { "type": "boolean" },
+          "detailStatus": {
+            "type": ["string", "null"],
+            "enum": ["pending", "leased", null]
+          },
+          "metrics": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "overview": { "type": "number", "minimum": 0, "maximum": 1 },
+              "contracts": { "type": "number", "minimum": 0, "maximum": 1 },
+              "internals": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          },
+          "anchors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["path"],
+              "properties": {
+                "path": { "type": "string" },
+                "symbol": { "type": "string" },
+                "startLine": { "type": "integer" },
+                "endLine": { "type": "integer" }
+              }
+            }
+          },
+          "anchorsUnresolved": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "proseRef": { "type": "string" },
+          "children": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

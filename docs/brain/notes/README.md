@@ -17,3 +17,7 @@ Use [../templates/NOTE_TEMPLATE.md](../templates/NOTE_TEMPLATE.md).
 | [routine-cli-adr-gaps.md](./routine-cli-adr-gaps.md) | note |
 | [routine-adr-proposals-a-g.md](./routine-adr-proposals-a-g.md) | note / support |
 | [implementation-stack-igor-2026-09-25.md](./implementation-stack-igor-2026-09-25.md) | note / 1:1 digest; ADR is truth |
+| [skill-worker-contract.md](./skill-worker-contract.md) | note / external skill ↔ CLI loop (routine-first, init seed) |
+| [happy-paths.md](./happy-paths.md) | note / HP1–4 vertical slice, no learning |
+| [ui-ledger-split.md](./ui-ledger-split.md) | note / Tech Lead — UI dumb client of util |
+| [gaps-vs-adr-b-work-bus.md](./gaps-vs-adr-b-work-bus.md) | note / carve-outs vs proposed ADR-B (do not rewrite ADR) |

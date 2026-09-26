@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://snowshoe.dev/schemas/detail-complete.schema.json",
+  "title": "Detail work-complete payload (inner)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "parentSlug",
+    "nodes",
+    "edges",
+    "unchanged"
+  ],
+  "properties": {
+    "parentSlug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "unchanged": {
+      "type": "boolean"
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slug",
+          "type",
+          "op"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "module",
+              "surface",
+              "flow",
+              "symbol",
+              "external"
+            ]
+          },
+          "op": {
+            "type": "string",
+            "enum": [
+              "upsert"
+            ]
+          },
+          "leaf": {
+            "type": "boolean"
+          },
+          "proseRef": {
+            "type": "string"
+          },
+          "anchors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "symbol": {
+                  "type": "string"
+                },
+                "startLine": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "endLine": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "from",
+          "to",
+          "kind"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "parent"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "description": "Inner `completions[].payload` when kind=detail. Outer envelope (id, leaseToken, kind) is the work-complete wrapper from proposed ADR-B \u2014 not this schema. Agent must omit metrics; util sets 0.0 on create. Soft-warn unresolved anchors via response anchorsUnresolved. Reject agent upserts with type=system (root is util-owned)."
+}
