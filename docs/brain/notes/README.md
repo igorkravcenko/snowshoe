@@ -17,3 +17,4 @@ Use [../templates/NOTE_TEMPLATE.md](../templates/NOTE_TEMPLATE.md).
 | [routine-cli-adr-gaps.md](./routine-cli-adr-gaps.md) | note |
 | [routine-adr-proposals-a-g.md](./routine-adr-proposals-a-g.md) | note / support |
 | [implementation-stack-igor-2026-09-25.md](./implementation-stack-igor-2026-09-25.md) | note / 1:1 digest; ADR is truth |
+| [detail-queue-and-map.md](./detail-queue-and-map.md) | detailization queue + mental-map worker protocol (draft note; CoS resolve 2026-09-26) |
