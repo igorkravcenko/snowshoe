@@ -10,6 +10,7 @@ Snowshoe's spec-driven docs. No application code lives here.
 | [brain/EXPERIMENTS.md](brain/EXPERIMENTS.md) | Experiment registry (not truth) |
 | [brain/DECISIONS/](brain/DECISIONS/) | ADRs |
 | [brain/notes/](brain/notes/) | Working memory |
+| [brain/schemas/](brain/schemas/) | JSON Schema sketches (draft, not truth) |
 | [brain/templates/](brain/templates/) | ADR / evidence / note templates |
 | [evidence/](evidence/) | Supporting material; evidence ≠ truth |
 | [archive/](archive/) | Superseded canon |
