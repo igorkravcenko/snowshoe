@@ -1,3 +1,8 @@
+---
+status: note
+date: 2026-09-26
+---
+
 # Detail queue and mental map (worker protocol)
 
 Status: **draft note for plant** (not ADR, not CURRENT).  
