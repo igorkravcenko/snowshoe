@@ -3,6 +3,7 @@ import { allowedChildTypes, childAllowed } from "../domain/matrix.ts";
 import { requiredLevels, severityCap } from "../domain/metrics.ts";
 import {
   type BlastSeverity,
+  DEFAULT_WORK_BATCH_SIZE,
   type EntityType,
   isEntityType,
   isSlug,
@@ -13,9 +14,9 @@ import {
   type StepKind,
 } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
-import { gitCommitInRange, gitDiffNames } from "../git.ts";
+import { gitCommitInRange, gitDiffNames, gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
-import { anchorExists, assertAllowedProseRef } from "../paths.ts";
+import { anchorExists, assertAllowedProseRef, findRepoRoot, isInitialized } from "../paths.ts";
 import {
   blastPayloadSchema,
   completionsEnvelopeSchema,
@@ -27,8 +28,8 @@ import {
   stripDetailMetrics,
   structurePayloadSchema,
 } from "../schemas/zod.ts";
-import { writeArtifact } from "./routine.ts";
-import type { Session } from "./session.ts";
+import { canAdvance, writeArtifact } from "./routine.ts";
+import { type Session, withSession } from "./session.ts";
 
 const KIND_PRIORITY: Record<StepKind, number> = {
   structure_sync: 0,
@@ -81,11 +82,73 @@ function dependenciesMet(session: Session, step: StepRow): boolean {
   return true;
 }
 
+export const WORK_NEXT_TODO = {
+  init: "snowshoe init --json",
+  refresh: "snowshoe routine refresh --json",
+  advance: "snowshoe routine advance --json",
+} as const;
+
+export type WorkNextAction = "init" | "refresh" | "advance" | "work" | "idle";
+
+function gatedNext(
+  action: "init" | "refresh" | "advance",
+  repoRoot: string,
+  head: string | null,
+  batchSize: number,
+): { exitCode: number; body: Record<string, unknown> } {
+  return {
+    exitCode: EXIT_OK,
+    body: envelope("work.next", repoRoot, head, {
+      action,
+      todo: WORK_NEXT_TODO[action],
+      items: [],
+      stop: true,
+      remaining: 0,
+      batchSize,
+    }),
+  };
+}
+
+export function refreshRequired(session: Session): boolean {
+  const head = session.gitHead;
+  if (!head) return false;
+  const open = session.ledger.getOpenEpoch();
+  if (open) return head !== open.target;
+  const base = session.ledger.caughtUpBase();
+  return Boolean(base && base !== head);
+}
+
+function hasOpenWork(session: Session): boolean {
+  return (
+    session.ledger.listSteps({
+      statuses: ["pending", "leased", "failed"],
+    }).length > 0
+  );
+}
+
+/** CLI entry: may run before `init` (returns a followable `todo` instead of failing). */
+export function runWorkNextFromCwd(
+  opts: { batchSize?: number } = {},
+  cwd = process.cwd(),
+): { exitCode: number; body: Record<string, unknown> } {
+  const batchSize = Math.max(1, opts.batchSize ?? DEFAULT_WORK_BATCH_SIZE);
+  const repoRoot = findRepoRoot(cwd);
+  const head = gitHead(repoRoot);
+  if (!isInitialized(repoRoot)) {
+    return gatedNext("init", repoRoot, head, batchSize);
+  }
+  return withSession((session) => runWorkNext(session, { batchSize }), cwd);
+}
+
 export function runWorkNext(
   session: Session,
   opts: { batchSize?: number } = {},
 ): { exitCode: number; body: Record<string, unknown> } {
-  const batchSize = Math.max(1, opts.batchSize ?? 1);
+  const batchSize = Math.max(1, opts.batchSize ?? DEFAULT_WORK_BATCH_SIZE);
+  if (refreshRequired(session)) {
+    return gatedNext("refresh", session.repoRoot, session.gitHead, batchSize);
+  }
+
   const now = Date.now();
   const open = session.ledger.getOpenEpoch();
   const all = session.ledger.listSteps({
@@ -121,12 +184,43 @@ export function runWorkNext(
   });
 
   const remaining = Math.max(0, ranked.length - take.length);
+  if (items.length > 0) {
+    return {
+      exitCode: EXIT_OK,
+      body: envelope("work.next", session.repoRoot, session.gitHead, {
+        action: "work",
+        todo: null,
+        items,
+        stop: remaining === 0,
+        remaining,
+        batchSize,
+      }),
+    };
+  }
+  if (hasOpenWork(session)) {
+    return {
+      exitCode: EXIT_OK,
+      body: envelope("work.next", session.repoRoot, session.gitHead, {
+        action: "work",
+        todo: null,
+        items: [],
+        stop: remaining === 0,
+        remaining,
+        batchSize,
+      }),
+    };
+  }
+  if (canAdvance(session).ok) {
+    return gatedNext("advance", session.repoRoot, session.gitHead, batchSize);
+  }
   return {
     exitCode: EXIT_OK,
     body: envelope("work.next", session.repoRoot, session.gitHead, {
-      items,
-      stop: remaining === 0,
-      remaining,
+      action: "idle",
+      todo: null,
+      items: [],
+      stop: true,
+      remaining: 0,
       batchSize,
     }),
   };
@@ -164,7 +258,6 @@ type CompleteResult = {
   id: string;
   status: "accepted" | "rejected";
   reasons?: string[];
-  anchorsUnresolved?: string[];
 };
 
 export function runWorkComplete(
@@ -243,8 +336,19 @@ function completeOne(
   }
 }
 
+function hasDeprecatedEdges(raw: unknown): boolean {
+  return Boolean(raw && typeof raw === "object" && "edges" in raw);
+}
+
 function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): CompleteResult {
   const stripped = stripDetailMetrics(rawPayload);
+  if (hasDeprecatedEdges(stripped)) {
+    return {
+      id: step.id,
+      status: "rejected",
+      reasons: ["edges_removed: use children (parent→child) and refs (relevance)"],
+    };
+  }
   const parsed = detailPayloadSchema.safeParse(stripped);
   if (!parsed.success) {
     return {
@@ -283,20 +387,10 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
   const known = new Set(session.ledger.listNodes().map((n) => n.slug));
   for (const slug of newSlugs) known.add(slug);
 
-  for (const edge of payload.edges) {
-    if (edge.from !== payload.parentSlug) {
-      reasons.push(`not_one_hop:${edge.from}->${edge.to}`);
-    }
-    if (!known.has(edge.from) || !known.has(edge.to)) {
-      reasons.push(`unknown_edge_endpoint:${edge.from}->${edge.to}`);
-    }
-  }
+  const childSet = new Set(payload.children);
   for (const node of payload.nodes) {
-    const hasParentEdge = payload.edges.some(
-      (e) => e.to === node.slug && e.from === payload.parentSlug,
-    );
-    if (!hasParentEdge) {
-      reasons.push(`missing_parent_edge:${node.slug}`);
+    if (!childSet.has(node.slug)) {
+      reasons.push(`missing_child:${node.slug}`);
     }
     if (!childAllowed(parent.type, node.type)) {
       reasons.push(`matrix_forbid:${parent.type}->${node.type}:${node.slug}`);
@@ -308,12 +402,32 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
         reasons.push(e instanceof Error ? e.message : String(e));
       }
     }
+    for (const anchor of node.anchors ?? []) {
+      if (!anchorExists(session.repoRoot, anchor.path)) {
+        reasons.push(`anchor_missing:${node.slug}:${anchor.path}`);
+      }
+    }
+  }
+  for (const child of payload.children) {
+    if (child === payload.parentSlug || child === ROOT_SLUG) {
+      reasons.push(`invalid_child:${child}`);
+    }
+    if (!known.has(child)) {
+      reasons.push(`unknown_child:${child}`);
+    }
+  }
+  for (const ref of payload.refs) {
+    if ((ref.kind ?? "related") === "parent") {
+      reasons.push(`ref_kind_parent_forbidden:${ref.from}->${ref.to}`);
+    }
+    if (!known.has(ref.from) || !known.has(ref.to)) {
+      reasons.push(`unknown_ref_endpoint:${ref.from}->${ref.to}`);
+    }
   }
   if (reasons.length) {
     return { id: step.id, status: "rejected", reasons };
   }
 
-  const unresolvedAll: string[] = [];
   session.ledger.transaction(() => {
     for (const node of payload.nodes) {
       const existed = session.ledger.getNode(node.slug);
@@ -326,21 +440,20 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
         proseRef: node.proseRef ?? null,
       });
       if (!existed) session.ledger.seedZeroMetrics(node.slug);
-      const anchors = (node.anchors ?? []).map((a) => {
-        const unresolved = !anchorExists(session.repoRoot, a.path);
-        if (unresolved) unresolvedAll.push(`${node.slug}:${a.path}`);
-        return {
-          path: a.path,
-          symbol: a.symbol,
-          startLine: a.startLine,
-          endLine: a.endLine,
-          unresolved,
-        };
-      });
+      const anchors = (node.anchors ?? []).map((a) => ({
+        path: a.path,
+        symbol: a.symbol,
+        startLine: a.startLine,
+        endLine: a.endLine,
+        unresolved: false,
+      }));
       if (node.anchors) session.ledger.replaceAnchors(node.slug, anchors);
     }
-    for (const edge of payload.edges) {
-      session.ledger.setEdge(edge.from, edge.to, edge.kind);
+    for (const child of payload.children) {
+      session.ledger.setEdge(payload.parentSlug, child, "parent");
+    }
+    for (const ref of payload.refs) {
+      session.ledger.setEdge(ref.from, ref.to, ref.kind ?? "related");
     }
     session.ledger.updateStep(step.id, {
       status: "done",
@@ -349,11 +462,7 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
     });
   });
 
-  return {
-    id: step.id,
-    status: "accepted",
-    ...(unresolvedAll.length ? { anchorsUnresolved: unresolvedAll } : {}),
-  };
+  return { id: step.id, status: "accepted" };
 }
 
 function resolveStructureSlug(

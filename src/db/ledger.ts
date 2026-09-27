@@ -258,6 +258,16 @@ export class Ledger {
     return rows.map((r) => r.from_slug);
   }
 
+  /** Outgoing non-parent (relevance) links from a node. */
+  refsFrom(slug: string): Array<{ to: string; kind: string }> {
+    const rows = this.db
+      .query(
+        "SELECT to_slug, kind FROM edges WHERE from_slug = ? AND kind != 'parent' ORDER BY to_slug, kind",
+      )
+      .all(slug) as { to_slug: string; kind: string }[];
+    return rows.map((r) => ({ to: r.to_slug, kind: r.kind }));
+  }
+
   replaceAnchors(
     slug: string,
     anchors: Array<{

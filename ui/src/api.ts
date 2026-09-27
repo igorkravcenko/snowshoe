@@ -22,6 +22,7 @@ export type MapNode = {
   anchorsUnresolved?: string[];
   proseRef?: string;
   children: string[];
+  refs?: Array<{ to: string; kind: string }>;
 };
 
 export type MapReadModel = {

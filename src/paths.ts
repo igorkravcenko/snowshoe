@@ -57,8 +57,12 @@ export function requireRepoRoot(cwd = process.cwd()): string {
   return result.stdout.toString().trim();
 }
 
+export function isInitialized(repoRoot: string): boolean {
+  return existsSync(ledgerPath(repoRoot));
+}
+
 export function requireInitialized(repoRoot: string): void {
-  if (!existsSync(ledgerPath(repoRoot))) {
+  if (!isInitialized(repoRoot)) {
     throw new CliError("Snowshoe is not initialized. Run `snowshoe init` first.", EXIT_USAGE);
   }
 }

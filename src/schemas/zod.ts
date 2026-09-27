@@ -27,11 +27,12 @@ export const detailNodeSchema = z
   })
   .strict();
 
-export const detailEdgeSchema = z
+/** Non-hierarchy relevance link between entities (not parent→child). */
+export const detailRefSchema = z
   .object({
     from: z.string().min(1),
     to: z.string().min(1),
-    kind: z.literal("parent"),
+    kind: z.string().min(1).optional(),
   })
   .strict();
 
@@ -40,7 +41,8 @@ export const detailPayloadSchema = z
   .object({
     parentSlug: z.string().min(1),
     nodes: z.array(detailNodeSchema),
-    edges: z.array(detailEdgeSchema),
+    children: z.array(z.string().min(1)).default([]),
+    refs: z.array(detailRefSchema).default([]),
     unchanged: z.boolean(),
   })
   .strict();

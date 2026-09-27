@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { ensureMapUiBuilt, snowshoePackageRoot, startMapServer } from "../src/map/serve.ts";
-import { completeEnvelope, makeGitRepo, snowshoe } from "./helpers.ts";
+import { completeEnvelope, detailPayload, makeGitRepo, snowshoe } from "./helpers.ts";
 
 let stop: (() => void) | undefined;
 
@@ -19,20 +19,18 @@ async function seedAuth(repo: string): Promise<void> {
         id: String(item.stepId),
         leaseToken: String(item.leaseToken),
         kind: "detail",
-        payload: {
-          parentSlug: "root",
-          unchanged: false,
-          nodes: [
-            {
-              slug: "auth",
-              title: "Auth",
-              type: "module",
-              op: "upsert",
-              anchors: [{ path: "README.md", symbol: "fixture", startLine: 1 }],
-            },
-          ],
-          edges: [{ from: "root", to: "auth", kind: "parent" }],
-        },
+          payload: detailPayload({
+            parentSlug: "root",
+            nodes: [
+              {
+                slug: "auth",
+                title: "Auth",
+                type: "module",
+                op: "upsert",
+                anchors: [{ path: "README.md", symbol: "fixture", startLine: 1 }],
+              },
+            ],
+          }),
       },
     ]),
   });

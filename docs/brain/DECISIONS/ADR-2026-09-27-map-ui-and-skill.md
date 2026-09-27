@@ -23,6 +23,8 @@ Ship, in this slice:
 2. **Map UI** — React + Vite, tree-first, static assets served by that HTTP server. Float→color/bands computed **in the UI** using ADR-A display thresholds. Leaf open is UI/editor (`vscode://file…` from `anchors[]`). Util does not launch an editor.
 3. **Skill package** at `.cursor/skills/snowshoe/` — documentation + drain-loop instructions for an external agent. Util does not spawn, watch, or install hooks.
 
+Skill contract (PATH `snowshoe`, `work next` gating, default `--batch-size` 5, sibling `install.md`): [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md). Detail payload `children` + `refs` and hard-reject unresolved anchors: [ADR-2026-09-27-detail-children-refs](./ADR-2026-09-27-detail-children-refs.md).
+
 `.snowshoe/**` stays gitignored / uncommitted. A/B stay **proposed**; this ADR must not be read as rewriting those bodies.
 
 ## Alternatives considered

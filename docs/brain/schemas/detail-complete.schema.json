@@ -4,7 +4,7 @@
   "title": "Detail work-complete payload (inner)",
   "type": "object",
   "additionalProperties": false,
-  "required": ["parentSlug", "nodes", "edges", "unchanged"],
+  "required": ["parentSlug", "nodes", "unchanged"],
   "properties": {
     "parentSlug": {
       "type": "string",
@@ -68,26 +68,37 @@
         }
       }
     },
-    "edges": {
+    "children": {
       "type": "array",
+      "description": "Parent→child slugs under parentSlug (hierarchy). Every node.slug must appear here.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "refs": {
+      "type": "array",
+      "description": "Non-hierarchy relevance links between entities. kind must not be parent.",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["from", "to", "kind"],
+        "required": ["from", "to"],
         "properties": {
           "from": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "to": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "kind": {
             "type": "string",
-            "enum": ["parent"]
+            "minLength": 1
           }
         }
       }
     }
   },
-  "description": "Inner `completions[].payload` when kind=detail. Outer envelope (id, leaseToken, kind) is the work-complete wrapper from proposed ADR-B \u2014 not this schema. Agent must omit metrics; util sets 0.0 on create. Soft-warn unresolved anchors via response anchorsUnresolved. Reject agent upserts with type=system (root is util-owned)."
+  "description": "Inner completions[].payload when kind=detail. Outer envelope (id, leaseToken, kind) is the work-complete wrapper. Agent omits metrics. Missing/moved anchor paths hard-reject. Do not send edges; use children + refs. Util silently rejects forbidden node types."
 }

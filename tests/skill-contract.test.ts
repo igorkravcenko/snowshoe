@@ -1,20 +1,23 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { completeEnvelope, makeGitRepo, snowshoe } from "./helpers.ts";
+import { completeEnvelope, detailPayload, makeGitRepo, snowshoe } from "./helpers.ts";
 
 const SKILL = join(import.meta.dir, "../.cursor/skills/snowshoe/SKILL.md");
+const INSTALL = join(import.meta.dir, "../.cursor/skills/snowshoe/install.md");
 
 describe("snowshoe skill contract (dry-run of instructions)", () => {
   const text = readFileSync(SKILL, "utf8");
 
   test("is agent-loadable and names the drain commands", () => {
     expect(text).toContain("name: snowshoe");
+    expect(existsSync(INSTALL)).toBe(true);
+    expect(text).toMatch(/install\.md/);
     for (const cmd of [
-      "init --json",
-      "routine status --json",
-      "routine refresh --json",
       "work next --json",
+      "init --json",
+      "routine refresh --json",
+      "routine status --json",
       "work complete --json",
       "routine advance --json",
       "map status --json",
@@ -23,32 +26,25 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     }
   });
 
-  test("encodes stop rules and forbidden actions", () => {
-    expect(text).toMatch(/Stop rules/i);
-    expect(text).toMatch(/Never open or write/);
-    expect(text).toContain("ledger.sqlite");
-    expect(text).toMatch(/Never install git hooks/);
-    expect(text).toMatch(/Never call `work fail` on `kind=detail`/);
-    expect(text).toContain('type: "system"');
-    expect(text).toMatch(/parentSlug=root|parentSlug": "root/);
-    expect(text).toMatch(/Routine-first/);
-    expect(text).toMatch(/queue empty/);
+  test("is repo-agnostic PATH snowshoe (no snowshoe-repo internals)", () => {
+    expect(text).not.toContain("bun src/index.ts");
+    expect(text.toLowerCase()).not.toContain("no learning");
+    expect(text).not.toMatch(/docs\/brain\/schemas\//);
+    expect(text).not.toContain("--batch-size 1");
+    expect(text).not.toContain("anchorsUnresolved");
+    expect(text).not.toContain("HP1");
+    expect(text).not.toContain("Out of scope");
+    expect(text).toContain("snowshoe work next --json");
+    expect(text).toContain("children");
+    expect(text).toContain("refs");
   });
 
-  test("does not tell the util to spawn or watch", () => {
-    expect(text).toMatch(/does \*\*not\*\* spawn/i);
-    expect(text.toLowerCase()).not.toContain("fs.watch");
-    expect(text).toMatch(/Out of scope[\s\S]*hooks install/);
-    expect(text).not.toMatch(/snowshoe hooks install/);
-  });
-
-  test("dry-run: documented init → work next → complete → map status", async () => {
+  test("dry-run: documented work next → complete → map status", async () => {
     const repo = makeGitRepo();
     const init = await snowshoe(repo, ["init", "--json"]);
     expect(init.exitCode).toBe(0);
-    const status = await snowshoe(repo, ["routine", "status", "--json"]);
-    expect(status.json.ok).toBeDefined();
-    const next = await snowshoe(repo, ["work", "next", "--json", "--batch-size", "1"]);
+    const next = await snowshoe(repo, ["work", "next", "--json"]);
+    expect(next.json.action).toBe("work");
     const item = (next.json.items as Array<Record<string, unknown>>)[0]!;
     expect(item.kind).toBe("detail");
     expect(item.parentSlug).toBe("root");
@@ -58,12 +54,10 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
           id: String(item.stepId),
           leaseToken: String(item.leaseToken),
           kind: "detail",
-          payload: {
+          payload: detailPayload({
             parentSlug: "root",
-            unchanged: false,
             nodes: [{ slug: "cli", title: "CLI", type: "module", op: "upsert" }],
-            edges: [{ from: "root", to: "cli", kind: "parent" }],
-          },
+          }),
         },
       ]),
     });

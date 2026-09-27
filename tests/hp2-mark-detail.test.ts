@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { completeEnvelope, makeGitRepo, snowshoe } from "./helpers.ts";
+import { completeEnvelope, detailPayload, makeGitRepo, snowshoe } from "./helpers.ts";
 
 async function seedRoot(repo: string): Promise<void> {
   await snowshoe(repo, ["init", "--json"]);
@@ -11,12 +11,10 @@ async function seedRoot(repo: string): Promise<void> {
         id: String(item.stepId),
         leaseToken: String(item.leaseToken),
         kind: "detail",
-        payload: {
-          parentSlug: "root",
-          unchanged: false,
-          nodes: [{ slug: "auth", title: "Auth", type: "module", op: "upsert" }],
-          edges: [{ from: "root", to: "auth", kind: "parent" }],
-        },
+          payload: detailPayload({
+            parentSlug: "root",
+            nodes: [{ slug: "auth", title: "Auth", type: "module", op: "upsert" }],
+          }),
       },
     ]),
   });
@@ -50,18 +48,13 @@ describe("HP2 user mark → detail one hop", () => {
           id: String(item.stepId),
           leaseToken: String(item.leaseToken),
           kind: "detail",
-          payload: {
+          payload: detailPayload({
             parentSlug: "auth",
-            unchanged: false,
             nodes: [
               { slug: "auth-session", title: "Session", type: "module", op: "upsert" },
               { slug: "login-flow", title: "Login", type: "flow", op: "upsert" },
             ],
-            edges: [
-              { from: "auth", to: "auth-session", kind: "parent" },
-              { from: "auth", to: "login-flow", kind: "parent" },
-            ],
-          },
+          }),
         },
       ]),
     });
@@ -95,5 +88,6 @@ describe("HP2 user mark → detail one hop", () => {
     const nextAfterCancel = await snowshoe(repo, ["work", "next", "--json"]);
     expect(nextAfterCancel.json.items).toEqual([]);
     expect(nextAfterCancel.json.stop).toBe(true);
+    expect(nextAfterCancel.json.action).toBe("idle");
   });
 });

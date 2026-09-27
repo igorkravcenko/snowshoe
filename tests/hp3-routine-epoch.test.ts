@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { commitFile, completeEnvelope, git, makeGitRepo, snowshoe } from "./helpers.ts";
+import {
+  commitFile,
+  completeEnvelope,
+  detailPayload,
+  git,
+  makeGitRepo,
+  snowshoe,
+} from "./helpers.ts";
 
 describe("HP3 post-pull epoch catch-up → then detail", () => {
   test("HEAD move opens structure→blast; empty blast ⇒ zero metrics; advance; detail still works", async () => {
@@ -94,12 +101,10 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
           id: String(detail.stepId),
           leaseToken: String(detail.leaseToken),
           kind: "detail",
-          payload: {
+          payload: detailPayload({
             parentSlug: "root",
-            unchanged: false,
             nodes: [{ slug: "cli", title: "CLI", type: "module", op: "upsert" }],
-            edges: [{ from: "root", to: "cli", kind: "parent" }],
-          },
+          }),
         },
       ]),
     });
@@ -120,7 +125,7 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
           id: String(d0.stepId),
           leaseToken: String(d0.leaseToken),
           kind: "detail",
-          payload: { parentSlug: "root", unchanged: true, nodes: [], edges: [] },
+          payload: detailPayload({ parentSlug: "root", unchanged: true }),
         },
       ]),
     });

@@ -3,7 +3,13 @@ import { runInit } from "./commands/init.ts";
 import { runMapDetailCancel, runMapDetailMark, runMapStatus } from "./commands/map.ts";
 import { runRoutineAdvance, runRoutineRefresh, runRoutineStatus } from "./commands/routine.ts";
 import { withSession } from "./commands/session.ts";
-import { readStdinOrFlag, runWorkComplete, runWorkFail, runWorkNext } from "./commands/work.ts";
+import {
+  readStdinOrFlag,
+  runWorkComplete,
+  runWorkFail,
+  runWorkNextFromCwd,
+} from "./commands/work.ts";
+import { DEFAULT_WORK_BATCH_SIZE } from "./domain/types.ts";
 import { CliError, EXIT_USAGE } from "./errors.ts";
 import { printJson } from "./json.ts";
 import { runMapServe } from "./map/serve.ts";
@@ -28,7 +34,7 @@ function batchSizeFromArgv(): string | undefined {
 
 function parseBatchSize(raw: unknown): number {
   const value = raw === undefined || raw === null || raw === "" ? batchSizeFromArgv() : raw;
-  if (value === undefined || value === null || value === "") return 1;
+  if (value === undefined || value === null || value === "") return DEFAULT_WORK_BATCH_SIZE;
   const n = Number(value);
   if (!Number.isInteger(n) || n < 1) {
     throw new CliError("--batch-size must be a positive integer", EXIT_USAGE);
@@ -92,11 +98,11 @@ const workNextCmd = defineCommand({
     json: { type: "boolean", description: "JSON output", default: false },
     "batch-size": {
       type: "string",
-      description: "Max items to claim",
+      description: `Max items to claim (default ${DEFAULT_WORK_BATCH_SIZE})`,
     },
     batchSize: {
       type: "string",
-      description: "Max items to claim (camel alias)",
+      description: `Max items to claim (camel alias, default ${DEFAULT_WORK_BATCH_SIZE})`,
     },
     budget: {
       type: "string",
@@ -105,7 +111,7 @@ const workNextCmd = defineCommand({
   },
   run({ args }) {
     const batchSize = parseBatchSize(args["batch-size"] ?? args.batchSize ?? args.budget);
-    return withSession((s) => emit(runWorkNext(s, { batchSize }), args.json));
+    return emit(runWorkNextFromCwd({ batchSize }), args.json);
   },
 });
 
