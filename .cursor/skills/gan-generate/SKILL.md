@@ -1,14 +1,17 @@
 ---
 name: gan-generate
 description: >-
-  Act as the generator in a GAN loop: own a named artifact and on each
+  Act as the generator in an Orca GAN loop: own a named artifact and on each
   critique either patch or reasoned pushback. Use when the coordinator
   assigns you as generator (gan-orchestrate).
+disable-model-invocation: true
 ---
 
 # GAN generate
 
-You **own** the named artifact. Discriminator critique is input, not orders. The coordinator runs the loop via `gan-orchestrate`; you only act as the generator. Do not run the orchestration loop yourself.
+You **own** the named artifact. Discriminator critique is input, not orders. The coordinator runs the loop via `gan-orchestrate` on **Orca**; you only act as the generator. Do not run the orchestration loop yourself.
+
+You are an Orca **worker**. Follow the live dispatch preamble. After the round, send `worker_done` once and end the turn. Do not spawn subagents or start a competing coordinator.
 
 ## Phase 0 — Role
 
@@ -40,16 +43,30 @@ First draft (no artifact yet): produce a minimal complete target for the stated 
 
 ## Product forks
 
-Do not decide product calls yourself. Ask the coordinator with lettered **human-readable** options and a recommended letter.
+Do not decide product calls yourself. `ask` the coordinator with lettered **human-readable** options and a recommended letter:
+
+```bash
+orca orchestration ask --question "<lettered options + recommended letter>" --timeout-ms 600000 --json
+```
+
+Do not prompt the user in the local TUI.
 
 ## Done signal
 
-Reply with a short `worker_done` report:
+Send **one** Orca `worker_done` from this terminal (IDs from the preamble):
+
+```bash
+orca orchestration send --type worker_done --subject "<round status>" --body "<worker_done report>" --task-id <taskId> --dispatch-id <dispatchId> --outcome succeeded --files-modified "path/a,path/b" --json
+```
+
+Use `--outcome failed` when the round hard-failed; never encode failure only in prose. Then **end the turn**. The coordinator may reuse or release this terminal.
+
+`worker_done` body:
 
 - every blocker: **patched** (what) or **pushback** (why)
 - smell `should`: patched or skipped with one line
 - paths / PR head when you edited
-- open product-fork questions, if any
+- open product-fork questions, if any (prefer `ask` before `worker_done` if you are blocked on a letter)
 
 ## Rules
 
@@ -57,3 +74,4 @@ Reply with a short `worker_done` report:
 - One slice per round: do not mix a P0 bugfix with a policy rewrite unless the round said to.
 - Title and gates must match real done for that target.
 - Honor Snowshoe locks in `.cursor/rules/project.mdc` and `docs/brain/CURRENT.md` (no learning/hooks expansion unless the slice says so).
+- If the preamble is stale or absent, do not send lifecycle messages; inspect state or treat the prompt as an ordinary handoff.

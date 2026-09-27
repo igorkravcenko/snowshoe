@@ -1,14 +1,17 @@
 ---
 name: gan-critique
 description: >-
-  Act as the discriminator in a GAN loop: bootstrap context then critique a
-  named artifact until merge blockers are gone; do not author the target.
+  Act as the discriminator in an Orca GAN loop: bootstrap context then critique
+  a named artifact until merge blockers are gone; do not author the target.
   Use when the coordinator assigns you as discriminator (gan-orchestrate).
+disable-model-invocation: true
 ---
 
 # GAN critique
 
-You are the **discriminator**. Compose a clear mental model, then grill the artifact. Do **not** author or patch the named target — the generator owns it. The coordinator runs the loop; you only critique.
+You are the **discriminator**. Compose a clear mental model, then grill the artifact. Do **not** author or patch the named target — the generator owns it. The coordinator runs the loop on **Orca**; you only critique.
+
+You are an Orca **worker**. Follow the live dispatch preamble. After the round, send `worker_done` once and end the turn. Do not spawn subagents or start a competing coordinator.
 
 This is **not** `grill-canon` (brain staleness) and **not** `consistency-audit` (CoS merge QC vs CURRENT/locks). You score failure modes on the named artifact.
 
@@ -20,7 +23,7 @@ Name:
 - **Kind** — `plan` | `implementation` | `docs` | other short label
 - **Lens/spec** (optional) — e.g. races, edges, hardening, ops, skill contract
 
-If kind is unclear: infer once from context and state it; otherwise ask the coordinator once.
+If kind is unclear: infer once from context and state it; otherwise `ask` the coordinator once.
 
 Done: artifact + kind named; will not draft a competing target.
 
@@ -50,12 +53,27 @@ Read the current artifact. Output exactly this shape:
    - `note` — mention once; do not re-raise next round.
 4. **Non-blockers** — one line each.
 5. **Spec holes** (no product fork) — tell the generator to patch; do not ask the user.
-6. **Product forks** — lettered human-readable options + recommended letter; wait via coordinator.
+6. **Product forks** — lettered human-readable options + recommended letter; `ask` the coordinator and wait:
+
+```bash
+orca orchestration ask --question "<lettered options + recommended letter>" --timeout-ms 600000 --json
+```
+
 7. **End of round** — either `patch the artifact` or **go** (done criterion for that kind). `go` is not "write the code yourself".
 
 ## Stop
 
 Frontier empty relative to the **named kind**: no blockers, no silent product decisions. Graded leftover smells are leftover, not a new P0. Write **`discriminator stop`**.
+
+## Done signal
+
+Send **one** Orca `worker_done` from this terminal (IDs from the preamble):
+
+```bash
+orca orchestration send --type worker_done --subject "<round status>" --body "<Closed / Blockers / Smells / stop or patch>" --task-id <taskId> --dispatch-id <dispatchId> --outcome succeeded --json
+```
+
+Use `--outcome failed` when the round hard-failed. Then **end the turn**. The coordinator may reuse or release this terminal.
 
 ## Critique rules
 
@@ -65,3 +83,4 @@ Frontier empty relative to the **named kind**: no blockers, no silent product de
 - Generator **pushback**: drop, restate with facts, or escalate as a product fork. Do not ignore it; do not re-litigate taste.
 - Prefer facts from code/canon over the artifact's memory of the code.
 - Snowshoe: do not demand learning, hooks-on-init, or trading-stack patterns. Skill text must stay agent-facing (no util-internal essays) when the artifact is `.cursor/skills/snowshoe`.
+- If the preamble is stale or absent, do not send lifecycle messages; inspect state or treat the prompt as an ordinary handoff.
