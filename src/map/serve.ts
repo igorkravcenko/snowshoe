@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CliError, EXIT_INTERNAL, EXIT_USAGE } from "../errors.ts";
@@ -19,9 +19,33 @@ export function mapUiConfigPath(packageRoot = snowshoePackageRoot()): string {
   return join(packageRoot, "ui", "vite.config.ts");
 }
 
-export async function ensureMapUiBuilt(packageRoot = snowshoePackageRoot()): Promise<void> {
+function maxMtime(path: string): number {
+  const st = statSync(path);
+  if (!st.isDirectory()) return st.mtimeMs;
+  let max = 0;
+  for (const name of readdirSync(path)) {
+    if (name === "dist" || name === "node_modules") continue;
+    max = Math.max(max, maxMtime(join(path, name)));
+  }
+  return max;
+}
+
+/** True when index.html is missing or older than UI sources / Vite config / package.json. */
+export function isMapUiDistStale(packageRoot = snowshoePackageRoot()): boolean {
   const distHtml = join(mapUiDistDir(packageRoot), "index.html");
-  if (existsSync(distHtml)) return;
+  if (!existsSync(distHtml)) return true;
+  const distTime = statSync(distHtml).mtimeMs;
+  const inputs = [
+    join(packageRoot, "ui", "src"),
+    join(packageRoot, "ui", "index.html"),
+    join(packageRoot, "ui", "vite.config.ts"),
+    join(packageRoot, "package.json"),
+  ];
+  return inputs.some((p) => existsSync(p) && maxMtime(p) > distTime);
+}
+
+export async function ensureMapUiBuilt(packageRoot = snowshoePackageRoot()): Promise<void> {
+  if (!isMapUiDistStale(packageRoot)) return;
   const config = mapUiConfigPath(packageRoot);
   if (!existsSync(config)) {
     throw new CliError(`Map UI config missing at ${config}`, EXIT_INTERNAL);

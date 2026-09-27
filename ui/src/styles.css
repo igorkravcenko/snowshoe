@@ -60,8 +60,12 @@ header .meta {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(220px, 28%) minmax(240px, 30%) minmax(0, 1fr);
+  grid-template-columns: minmax(220px, 34%) minmax(0, 1fr);
   min-height: 0;
+}
+
+.layout.has-preview {
+  grid-template-columns: minmax(220px, 24%) minmax(240px, 28%) minmax(0, 1fr);
 }
 
 .tree,
@@ -197,12 +201,19 @@ button.linkish {
   background: none;
   border: none;
   color: var(--accent);
-  padding: 0;
+  padding: 2px 6px;
   font: inherit;
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-size: 12px;
   text-decoration: underline;
   cursor: pointer;
+  border-radius: 4px;
+}
+
+button.linkish.active {
+  color: var(--text);
+  background: #243344;
+  text-decoration: none;
 }
 
 .secondary-action {
@@ -238,6 +249,23 @@ button.linkish {
   font-size: 12px;
   line-height: 1.45;
   border-radius: 8px;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.preview-plain {
+  background: #011627;
+  color: #d6deeb;
+}
+
+.preview-line {
+  display: block;
+  white-space: pre;
+  min-height: 1.45em;
+}
+
+.preview-src {
+  white-space: pre;
 }
 
 .preview-ln {

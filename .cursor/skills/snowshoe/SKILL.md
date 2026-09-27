@@ -37,12 +37,17 @@ Until `todo` is null, **run only that unlock command**, then call `work next` ag
 
 ```
 # outer: re-fetch the batch every cycle
+# nextCmd is `snowshoe work next --json` unless interactive wait (below)
 loop:
-  batch ← snowshoe work next --json
+  batch ← nextCmd
   if batch.todo is set:
     run batch.todo exactly
     continue                         # do not assume the queue is empty
+  if batch.waitTimedOut: STOP and report
   if batch.items is empty:           # action is idle (or work with nothing claimable)
+    if interactive map drain:
+      nextCmd ← snowshoe work next --json --wait
+      continue
     STOP
   # inner: current batch
   for step in batch.items:
@@ -50,10 +55,21 @@ loop:
     snowshoe work complete --json    # envelope on stdin or --input
     if result is hard reject: STOP and report reasons
     if operator interrupt: STOP and report
+  nextCmd ← snowshoe work next --json
   # next outer cycle — refresh the batch; finishing these tickets ≠ queue empty
 ```
 
 `--batch-size` is optional; the CLI default is already a small batch.
+
+### Interactive `--wait`
+
+Use `--wait` **only** when the human asked to keep draining the map as they mark nodes (same session, map UI open). Do not use it for a one-shot catch-up after pull.
+
+```bash
+snowshoe work next --json --wait
+```
+
+`--wait` blocks only while `action` would be `idle` (wakes on `.snowshoe/` file events; 2s fallback). Gates (`init` / `refresh` / `advance`) and claimable `work` return immediately. Optional `--wait-timeout <ms>` (`0` = forever). Timeout JSON is still `action: idle` plus `waitTimedOut: true` — treat as STOP.
 
 `work complete` reads JSON from **stdin** (or `--input '<json>'`).
 
@@ -61,6 +77,7 @@ loop:
 
 ```bash
 snowshoe work next --json
+snowshoe work next --json --wait
 snowshoe init --json --locale ru
 snowshoe routine refresh --json
 snowshoe routine status --json
@@ -126,7 +143,14 @@ One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on t
             "op": "upsert",
             "leaf": false,
             "body": "<markdown in the init locale>",
-            "anchors": [{ "path": "src/cli.ts", "symbol": "main", "startLine": 1 }]
+            "anchors": [
+              {
+                "path": "src/cli.ts",
+                "symbol": "main",
+                "startLine": 45,
+                "endLine": 80
+              }
+            ]
           }
         ],
         "children": ["cli"],
@@ -140,6 +164,8 @@ One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on t
 - `unchanged: true` with empty `nodes` / `children` / `refs` clears the todo without growing the graph.
 - `proseRef`, if used, must stay under `.snowshoe/map/`.
 - Anchor `path`s must exist in the repo (missing or moved paths reject the complete).
+- Each anchor is `{ path, symbol?, startLine?, endLine? }`. `path` is required (repo-relative). `startLine` / `endLine` are **1-based, inclusive**. `endLine` is optional: omit it to mark a single line; set both to mark a contiguous slice (`endLine >= startLine`). `symbol` is an optional label, not a substitute for lines.
+- The map UI loads the **whole file**, scrolls to `startLine` (if set), and highlights `startLine…endLine` or just `startLine`. Prefer a real span (function, section) over always `startLine: 1`.
 - Follow `allowedChildTypes` from `work next`. Leaves (`symbol` or `leaf: true`) are opened by the human from `anchors[]`.
 
 ### Routine kinds
@@ -166,7 +192,7 @@ The diff for these steps is `git diff --name-only <base>..<target>` (commits in 
 
 ## Map UI
 
-The human marks a node, cancels a pending mark, and reloads the map. They read entity bodies in the inspector and preview code from anchors in the UI (`vscode://` is secondary). You complete work through the CLI. After `work complete`, they reload to see the tree.
+The human marks a node, cancels a pending mark, and reloads the map. Reload in the UI lights up when the ledger moved (`work complete`, CLI mark, another tab); they still click Reload. They read entity bodies, follow `refs`, and preview code from anchors (whole file, scroll to `startLine`, highlight the line or `startLine`–`endLine`; `vscode://` is secondary). You complete work through the CLI.
 
 Do not start `map serve` unless the human asked.
 
@@ -176,6 +202,7 @@ snowshoe map status --json
 
 ## Stop
 
-- `work next` returns empty `items` and no `todo` (`action: idle`)
+- `work next` returns empty `items` and no `todo` (`action: idle`) and you are **not** in interactive `--wait` mode
+- `waitTimedOut: true`
 - hard reject on complete (bad lease, invalid payload, missing anchors, …)
 - operator interrupt or budget exhausted

@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { ensureMapUiBuilt, snowshoePackageRoot, startMapServer } from "../src/map/serve.ts";
+import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+  ensureMapUiBuilt,
+  isMapUiDistStale,
+  snowshoePackageRoot,
+  startMapServer,
+} from "../src/map/serve.ts";
 import { completeEnvelope, detailPayload, makeGitRepo, snowshoe } from "./helpers.ts";
 
 let stop: (() => void) | undefined;
@@ -122,7 +130,8 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     const jsRes = await fetch(`${server.url.replace(/\/$/, "")}${asset![1]}`);
     expect(jsRes.ok).toBe(true);
     const js = await jsRes.text();
-    expect(js).toContain("Reload");
+    expect(js).toContain("Reload · updated");
+    expect(js).toContain("Map changed");
     expect(js).toContain("/api/map/status");
     expect(js).toContain("/api/map/detail/mark");
     expect(js).toContain("/api/file");
@@ -130,7 +139,34 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).toContain("Open in editor");
     expect(js).toContain("vscode://file");
     expect(js).toContain("No entity body yet");
+    expect(js).toContain("No refs on this node");
+    expect(js).toContain("Preview in UI");
+    expect(js).not.toContain("prose: ");
     expect(js).not.toContain("ledger.sqlite");
     expect(js).not.toContain("work complete");
+  });
+
+  test("isMapUiDistStale is true when dist is missing or older than ui/src", () => {
+    const root = mkdtempSync(join(tmpdir(), "snowshoe-ui-stale-"));
+    mkdirSync(join(root, "ui", "src"), { recursive: true });
+    mkdirSync(join(root, "ui", "dist"), { recursive: true });
+    writeFileSync(join(root, "ui", "index.html"), "<html></html>\n");
+    writeFileSync(join(root, "ui", "vite.config.ts"), "export default {}\n");
+    writeFileSync(join(root, "package.json"), "{}\n");
+    writeFileSync(join(root, "ui", "src", "App.tsx"), "export {}\n");
+    writeFileSync(join(root, "ui", "dist", "index.html"), "<html></html>\n");
+
+    const old = new Date("2020-01-01T00:00:00Z");
+    const neu = new Date("2026-09-27T00:00:00Z");
+    utimesSync(join(root, "ui", "dist", "index.html"), old, old);
+    utimesSync(join(root, "ui", "src", "App.tsx"), neu, neu);
+    expect(isMapUiDistStale(root)).toBe(true);
+
+    utimesSync(join(root, "ui", "dist", "index.html"), neu, neu);
+    utimesSync(join(root, "ui", "src", "App.tsx"), old, old);
+    utimesSync(join(root, "ui", "index.html"), old, old);
+    utimesSync(join(root, "ui", "vite.config.ts"), old, old);
+    utimesSync(join(root, "package.json"), old, old);
+    expect(isMapUiDistStale(root)).toBe(false);
   });
 });

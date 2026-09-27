@@ -15,6 +15,7 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(text).toMatch(/install\.md/);
     for (const cmd of [
       "work next --json",
+      "work next --json --wait",
       "init --json",
       "init --json --locale ru",
       "routine refresh --json",
@@ -37,13 +38,15 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(text).not.toContain("Out of scope");
     expect(text).not.toContain("work fail");
     expect(text.toLowerCase()).not.toContain("workfail");
-    expect(text).toContain("snowshoe work next --json");
+    expect(text).toContain("--wait");
+    expect(text).toContain("waitTimedOut");
     expect(text).toContain("children");
     expect(text).toContain("refs");
     expect(text).toContain("--locale");
     expect(text).toContain("body");
     expect(text).toContain("missing_body");
-    expect(text).toMatch(/locale/);
+    expect(text).toContain("startLine");
+    expect(text).toContain("endLine");
   });
 
   test("dry-run: documented work next → complete → map status", async () => {

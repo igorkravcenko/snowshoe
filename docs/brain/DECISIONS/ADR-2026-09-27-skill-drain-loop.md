@@ -37,7 +37,7 @@ Igor-locked: the skill must be repo-agnostic and self-contained; entry is `work 
 
 Order: uninitialized → `init`; HEAD/target moved needs refresh → `refresh`; claimable work → `work`; queue idle and FSM allows advance → `advance`; else `idle`. Keep `--json`. Exit 0 on followable gates (not an opaque usage fail).
 
-Agent loop: outer cycle re-runs `work next`; if `todo` is set, run only that command; if `items` empty and no `todo`, stop; inner loop completes the current batch; do not assume the queue is empty after finishing those tickets.
+Agent loop: outer cycle re-runs `work next`; if `todo` is set, run only that command; if `items` empty and no `todo`, stop **unless** the human asked for an interactive map drain, in which case the next poll is `work next --json --wait` (see [ADR-2026-09-27-work-next-wait](./ADR-2026-09-27-work-next-wait.md)). Inner loop completes the current batch; do not assume the queue is empty after finishing those tickets.
 
 ### Default batch size
 
@@ -56,9 +56,10 @@ Install / PATH binary is **`snowshoe`**. Informal *snow* is not PATH. Optional u
 
 ## Consequences
 
-- CURRENT: skill is PATH-`snowshoe`, `work next` gated, default batch 5.
+- CURRENT: skill is PATH-`snowshoe`, `work next` gated, default batch 5. Optional `--wait`: [ADR-2026-09-27-work-next-wait](./ADR-2026-09-27-work-next-wait.md).
 - Proposed ADR-B CLI families stay proposed; this ADR specifies the working `work next` envelope for the slice.
-- ## Evidence
+
+## Evidence
 
 - [../notes/how-to-try-e2e.md](../notes/how-to-try-e2e.md)
 - [../notes/skill-worker-contract.md](../notes/skill-worker-contract.md) (historical loop; this ADR is truth for the skill)

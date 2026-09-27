@@ -7,6 +7,15 @@ export type Anchor = {
   endLine?: number;
 };
 
+export function sameAnchor(a: Anchor, b: Anchor): boolean {
+  return (
+    a.path === b.path &&
+    a.startLine === b.startLine &&
+    a.endLine === b.endLine &&
+    a.symbol === b.symbol
+  );
+}
+
 export type MapNode = {
   slug: string;
   title?: string;
@@ -25,6 +34,19 @@ export type MapNode = {
   children: string[];
   refs?: Array<{ to: string; kind: string }>;
 };
+
+export function incomingRefs(
+  nodes: Iterable<MapNode>,
+  slug: string,
+): Array<{ from: string; kind: string }> {
+  const out: Array<{ from: string; kind: string }> = [];
+  for (const n of nodes) {
+    for (const r of n.refs ?? []) {
+      if (r.to === slug) out.push({ from: n.slug, kind: r.kind });
+    }
+  }
+  return out;
+}
 
 export type MapReadModel = {
   generatedAt?: string;
