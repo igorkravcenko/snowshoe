@@ -48,3 +48,4 @@ HP1–4 CLI plus tryable `snowshoe map serve` and `.cursor/skills/snowshoe/` (no
 - Docs land via PR. Chief of Staff owns **consistency audit** before merge (auditor / `grill-canon`).
 - Docs CI tripwire: `brain-docs` lint — [ADR-2026-09-25-brain-docs-ci.md](./DECISIONS/ADR-2026-09-25-brain-docs-ci.md).
 - App CI tripwire: `typecheck`, `bun test`, Biome (`biome check .`) — [ADR-2026-09-27-app-ci-biome.md](./DECISIONS/ADR-2026-09-27-app-ci-biome.md). CI-only for now (no lefthook / husky / pre-commit). Not product `hooks install`.
+- Day-1 CI supply-chain hygiene: pin Actions by SHA, `bun install --frozen-lockfile` in app CI, `SECURITY.md` — [ADR-2026-09-27-ci-supply-chain-hygiene.md](./DECISIONS/ADR-2026-09-27-ci-supply-chain-hygiene.md).
