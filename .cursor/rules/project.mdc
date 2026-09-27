@@ -14,7 +14,7 @@ v1 surfaces (intent): signal after pull + PR-check. Default signal is skill/huma
 
 Not v1: chat hell, AI code review, multiplayer knowledge graph, agent HITL/control plane.
 
-**Implementation status: pre-code / scaffold only.** Do not add application source, package managers, or fake features unless `docs/brain/CURRENT.md` and an ADR say so. Docs-only CI (`brain-docs` lint) is allowed per `ADR-2026-09-25-brain-docs-ci`.
+**Implementation status:** HP1–4 CLI vertical slice (no learning). Do not add learning/quiz/verify, hook install, or fake features unless `docs/brain/CURRENT.md` and an ADR say so. Docs-only CI (`brain-docs` lint) is allowed per `ADR-2026-09-25-brain-docs-ci`.
 
 ## Brain OS
 

@@ -16,4 +16,4 @@ Registry of named bets. **Not truth.** An experiment does not change CURRENT unt
 
 Status values: `proposed` · `running` · `concluded` · `promoted` · `killed`.
 
-Pre-code: do not run product experiments that imply an app. Process experiments (grilling a wedge, WTP interviews) may be listed when they exist.
+Process experiments (grilling a wedge, WTP interviews) may be listed when they exist. Do not invent product metrics.

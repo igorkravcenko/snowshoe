@@ -6,7 +6,15 @@ A git-native, ideally OSS layer for a *personal* repo comprehension map. After c
 
 Working name is **Snowshoe** (not final). Backup: **Catchmark**.
 
-This repository is **pre-code**. What lives here is a Spec-Driven Development "brain": product truth, decisions, and agent protocol. No application source yet.
+This repository now includes a **CLI vertical slice** (HP1–4, no learning). The spec-driven “brain” (product truth, decisions, agent protocol) remains the source of claims. Routine epoch ADRs are still **proposed**.
+
+```bash
+bun install
+bun src/index.ts init --json
+bun test
+```
+
+`.snowshoe/` is personal/local and gitignored. `init` does not install git hooks.
 
 ## What it is / is not
 
