@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { runCommand } from "citty";
 import { main } from "./cli.ts";
 import { CliError, EXIT_INTERNAL, EXIT_USAGE } from "./errors.ts";

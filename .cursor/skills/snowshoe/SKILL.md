@@ -4,8 +4,6 @@ description: >-
   Drive the Snowshoe CLI drain loop: work next as entry, follow its todo
   (init / routine refresh / routine advance), complete claimed steps, then
   call work next again. Use after pull or when catching up a personal repo map.
-  Assumes `snowshoe` on PATH. If the binary is missing, open install.md in this
-  folder only then.
 ---
 
 # Snowshoe drain skill
@@ -14,7 +12,7 @@ Assume **`snowshoe` is on PATH**. Always pass `--json` and parse the result.
 
 If `snowshoe` is missing (`command -v snowshoe` fails), **stop the drain** and open **`install.md` in this same folder** — only then. Do not load install instructions into a normal drain.
 
-The install binary is **`snowshoe`**. A user-local shell alias such as `snoe` is optional convenience; do not treat informal *snow* as the PATH command.
+The install binary is **`snowshoe`**. A user-local shell alias such as `snoe` is optional convenience.
 
 Drive the CLI. Do not write the ledger yourself.
 
@@ -54,7 +52,7 @@ loop:
   # next outer cycle — refresh the batch; finishing these tickets ≠ queue empty
 ```
 
-`--batch-size` is optional; the CLI default is already a small batch. Do not shrink it to a single item.
+`--batch-size` is optional; the CLI default is already a small batch.
 
 `work complete` reads JSON from **stdin** (or `--input '<json>'`).
 
@@ -135,9 +133,11 @@ One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on t
 
 ### Routine kinds
 
-`work next` orders routine steps before detail. `base` / `target` / `nodeId` / `level` / `blastSeverity` on the item are the values to echo.
+`work next` orders routine steps before detail. Routine items expose `base` and `target`. `base` is the pinned caught-up commit (epoch start). `target` is the commit this epoch syncs toward. Echo `base` / `target` / `nodeId` / `level` / `blastSeverity` from the item.
 
-**structure_sync** — cover the git diff; empty `ops` is OK when every touched path is already anchored or listed in `coverage.unmappedPaths`.
+The diff for these steps is `git diff --name-only <base>..<target>` (commits in that range only). Do not use the working tree, unstaged changes, or only the latest commit.
+
+**structure_sync** — cover that pinned range. Empty `ops` is OK when every path in `base..target` is already anchored or listed in `coverage.unmappedPaths`.
 
 ```json
 {
@@ -149,7 +149,7 @@ One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on t
 }
 ```
 
-**blast_radius** — empty `nodes` is legal when nothing in the diff hits anchors. Non-empty rows need `evidence`.
+**blast_radius** — empty `nodes` is legal when nothing in `base..target` hits anchors. Non-empty rows need `evidence`.
 
 **metric_decay** — exactly one `updates[]` row matching the claimed `(nodeId, level)`. Do not raise the stored value.
 
