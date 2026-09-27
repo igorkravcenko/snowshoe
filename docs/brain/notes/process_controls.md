@@ -16,8 +16,8 @@ Operating constraints for agents and humans. If these conflict with CURRENT, CUR
 
 ## Scope
 
-- HP1–4 CLI exists. Do not add learning/quiz/verify, hook install, or fake
-  features unless CURRENT + an ADR say so.
+- HP1–4 CLI plus tryable map UI/skill exists. Do not add learning/quiz/verify,
+  hook install, agent spawn, or fake features unless CURRENT + an ADR say so.
 - CI: `brain-docs` (frontmatter/links) plus app CI (typecheck, `bun test`,
   Biome). See `ADR-2026-09-25-brain-docs-ci` and
   `ADR-2026-09-27-app-ci-biome`. No lefthook / husky / pre-commit yet.

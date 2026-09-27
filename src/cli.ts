@@ -6,6 +6,7 @@ import { withSession } from "./commands/session.ts";
 import { readStdinOrFlag, runWorkComplete, runWorkFail, runWorkNext } from "./commands/work.ts";
 import { CliError, EXIT_USAGE } from "./errors.ts";
 import { printJson } from "./json.ts";
+import { runMapServe } from "./map/serve.ts";
 
 function emit(result: { exitCode: number; body: Record<string, unknown> }, _json: boolean): number {
   printJson(result.body);
@@ -187,11 +188,42 @@ const mapDetailCmd = defineCommand({
   },
 });
 
+const mapServeCmd = defineCommand({
+  meta: {
+    name: "serve",
+    description: "Local map UI + HTTP twins of map status/mark/cancel (no SQLite from the UI)",
+  },
+  args: {
+    port: { type: "string", description: "Port (default 8787; 0 = ephemeral)", default: "8787" },
+    host: { type: "string", description: "Bind address (default 127.0.0.1)", default: "127.0.0.1" },
+    open: { type: "boolean", description: "Open the system browser", default: false },
+  },
+  async run({ args }) {
+    const port = Number(args.port);
+    const { body, server } = await runMapServe({
+      port: Number.isFinite(port) ? port : undefined,
+      host: String(args.host),
+      open: Boolean(args.open),
+    });
+    printJson(body);
+    await new Promise<void>((resolve) => {
+      const stop = () => {
+        server.stop();
+        resolve();
+      };
+      process.once("SIGINT", stop);
+      process.once("SIGTERM", stop);
+    });
+    return 0;
+  },
+});
+
 const mapCmd = defineCommand({
-  meta: { name: "map", description: "Map read-model and detail ops" },
+  meta: { name: "map", description: "Map read-model, detail ops, and local UI" },
   subCommands: {
     status: mapStatusCmd,
     detail: mapDetailCmd,
+    serve: mapServeCmd,
   },
 });
 
