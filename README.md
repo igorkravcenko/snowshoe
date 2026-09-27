@@ -12,6 +12,8 @@ This repository now includes a **CLI vertical slice** (HP1–4, no learning). Th
 bun install
 bun src/index.ts init --json
 bun test
+bun run typecheck
+bun run check
 ```
 
 `.snowshoe/` is personal/local and gitignored. `init` does not install git hooks.

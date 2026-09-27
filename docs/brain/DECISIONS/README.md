@@ -35,3 +35,4 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-09-25-routine-epoch-and-metrics](./ADR-2026-09-25-routine-epoch-and-metrics.md) | proposed | Routine epochs, learning split, mandatory metric decay |
 | [ADR-2026-09-25-routine-cli-and-fsm](./ADR-2026-09-25-routine-cli-and-fsm.md) | proposed | Routine CLI families, FSM ownership, work queue |
 | [ADR-2026-09-26-vertical-slice-cli](./ADR-2026-09-26-vertical-slice-cli.md) | accepted | First application code: HP1–4 CLI, no learning; A/B stay proposed |
+| [ADR-2026-09-27-app-ci-biome](./ADR-2026-09-27-app-ci-biome.md) | accepted | App CI: typecheck, bun test, Biome; keep brain-docs; no lefthook |

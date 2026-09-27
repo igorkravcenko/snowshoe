@@ -8,10 +8,7 @@ export function git(repoRoot: string, args: string[]): string {
   });
   if (result.exitCode !== 0) {
     const err = result.stderr.toString().trim();
-    throw new CliError(
-      `git ${args.join(" ")} failed: ${err || "unknown error"}`,
-      EXIT_INTERNAL,
-    );
+    throw new CliError(`git ${args.join(" ")} failed: ${err || "unknown error"}`, EXIT_INTERNAL);
   }
   return result.stdout.toString().trim();
 }
@@ -37,7 +34,10 @@ export function gitDiffNames(repoRoot: string, base: string, target: string): st
   if (base === target) return [];
   const stdout = git(repoRoot, ["diff", "--name-only", `${base}..${target}`]);
   if (!stdout) return [];
-  return stdout.split("\n").map((l) => l.trim()).filter(Boolean);
+  return stdout
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
 }
 
 export function gitCommitInRange(

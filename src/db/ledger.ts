@@ -1,7 +1,7 @@
 import { Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { ROOT_SLUG, type EntityType, type MetricLevel, type StepKind } from "../domain/types.ts";
+import { type EntityType, type MetricLevel, ROOT_SLUG, type StepKind } from "../domain/types.ts";
 import { ledgerPath, snowshoeDir } from "../paths.ts";
 
 export type NodeRow = {
@@ -175,9 +175,9 @@ export class Ledger {
   }
 
   getMeta(key: string): string | null {
-    const row = this.db.query("SELECT value FROM meta WHERE key = ?").get(key) as
-      | { value: string }
-      | null;
+    const row = this.db.query("SELECT value FROM meta WHERE key = ?").get(key) as {
+      value: string;
+    } | null;
     return row?.value ?? null;
   }
 
@@ -218,15 +218,7 @@ export class Ledger {
          leaf = excluded.leaf,
          prose_ref = excluded.prose_ref,
          updated_at = excluded.updated_at`,
-      [
-        input.slug,
-        input.title,
-        input.type,
-        input.leaf ? 1 : 0,
-        input.proseRef ?? null,
-        ts,
-        ts,
-      ],
+      [input.slug, input.title, input.type, input.leaf ? 1 : 0, input.proseRef ?? null, ts, ts],
     );
   }
 
@@ -348,12 +340,7 @@ export class Ledger {
     return this.db.query("SELECT * FROM epochs WHERE epoch_id = ?").get(epochId) as EpochRow | null;
   }
 
-  insertEpoch(row: {
-    epochId: string;
-    base: string;
-    target: string;
-    status?: string;
-  }): void {
+  insertEpoch(row: { epochId: string; base: string; target: string; status?: string }): void {
     this.db.run(
       `INSERT INTO epochs (epoch_id, base, target, status, created_at, superseded_by)
        VALUES (?, ?, ?, ?, ?, NULL)`,
@@ -473,9 +460,7 @@ export class Ledger {
         patch.leaseToken === undefined ? current.lease_token : patch.leaseToken,
         patch.leaseExpiresAt === undefined ? current.lease_expires_at : patch.leaseExpiresAt,
         patch.artifactRef === undefined ? current.artifact_ref : patch.artifactRef,
-        patch.priorArtifactRef === undefined
-          ? current.prior_artifact_ref
-          : patch.priorArtifactRef,
+        patch.priorArtifactRef === undefined ? current.prior_artifact_ref : patch.priorArtifactRef,
         patch.blastSeverity === undefined ? current.blast_severity : patch.blastSeverity,
         this.now(),
         id,

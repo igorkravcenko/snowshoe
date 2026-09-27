@@ -15,9 +15,7 @@ function graphSnapshot(repo: string): {
   try {
     const nodeCount = (db.query("SELECT COUNT(*) AS n FROM nodes").get() as { n: number }).n;
     const edges = db
-      .query(
-        "SELECT from_slug, to_slug, kind FROM edges ORDER BY from_slug, to_slug, kind",
-      )
+      .query("SELECT from_slug, to_slug, kind FROM edges ORDER BY from_slug, to_slug, kind")
       .all() as Array<{ from_slug: string; to_slug: string; kind: string }>;
     return { nodeCount, edges };
   } finally {
@@ -37,9 +35,9 @@ function expireLease(repo: string, stepId: string): void {
 function stepStatus(repo: string, stepId: string): string | null {
   const db = openLedger(repo);
   try {
-    const row = db.query("SELECT status FROM steps WHERE id = ?").get(stepId) as
-      | { status: string }
-      | null;
+    const row = db.query("SELECT status FROM steps WHERE id = ?").get(stepId) as {
+      status: string;
+    } | null;
     return row?.status ?? null;
   } finally {
     db.close();

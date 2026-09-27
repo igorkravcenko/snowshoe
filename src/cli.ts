@@ -1,20 +1,13 @@
 import { defineCommand } from "citty";
-import { CliError, EXIT_USAGE } from "./errors.ts";
-import { printJson } from "./json.ts";
 import { runInit } from "./commands/init.ts";
 import { runMapDetailCancel, runMapDetailMark, runMapStatus } from "./commands/map.ts";
-import {
-  runRoutineAdvance,
-  runRoutineRefresh,
-  runRoutineStatus,
-} from "./commands/routine.ts";
+import { runRoutineAdvance, runRoutineRefresh, runRoutineStatus } from "./commands/routine.ts";
 import { withSession } from "./commands/session.ts";
 import { readStdinOrFlag, runWorkComplete, runWorkFail, runWorkNext } from "./commands/work.ts";
+import { CliError, EXIT_USAGE } from "./errors.ts";
+import { printJson } from "./json.ts";
 
-function emit(
-  result: { exitCode: number; body: Record<string, unknown> },
-  _json: boolean,
-): number {
+function emit(result: { exitCode: number; body: Record<string, unknown> }, _json: boolean): number {
   printJson(result.body);
   process.exitCode = result.exitCode;
   return result.exitCode;
@@ -59,9 +52,7 @@ const routineRefreshCmd = defineCommand({
     target: { type: "string", description: "Explicit target SHA or ref" },
   },
   run({ args }) {
-    return withSession((s) =>
-      emit(runRoutineRefresh(s, { target: args.target }), args.json),
-    );
+    return withSession((s) => emit(runRoutineRefresh(s, { target: args.target }), args.json));
   },
 });
 
@@ -112,9 +103,7 @@ const workNextCmd = defineCommand({
     },
   },
   run({ args }) {
-    const batchSize = parseBatchSize(
-      args["batch-size"] ?? args.batchSize ?? args.budget,
-    );
+    const batchSize = parseBatchSize(args["batch-size"] ?? args.batchSize ?? args.budget);
     return withSession((s) => emit(runWorkNext(s, { batchSize }), args.json));
   },
 });

@@ -1,7 +1,7 @@
+import { isSlug, ROOT_SLUG } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { envelope } from "../json.ts";
 import type { Session } from "./session.ts";
-import { ROOT_SLUG, isSlug } from "../domain/types.ts";
 
 export function runMapStatus(session: Session): {
   exitCode: number;

@@ -4,12 +4,7 @@
   "title": "Detail work-complete payload (inner)",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "parentSlug",
-    "nodes",
-    "edges",
-    "unchanged"
-  ],
+  "required": ["parentSlug", "nodes", "edges", "unchanged"],
   "properties": {
     "parentSlug": {
       "type": "string",
@@ -23,11 +18,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "slug",
-          "type",
-          "op"
-        ],
+        "required": ["slug", "type", "op"],
         "properties": {
           "slug": {
             "type": "string",
@@ -38,19 +29,11 @@
           },
           "type": {
             "type": "string",
-            "enum": [
-              "module",
-              "surface",
-              "flow",
-              "symbol",
-              "external"
-            ]
+            "enum": ["module", "surface", "flow", "symbol", "external"]
           },
           "op": {
             "type": "string",
-            "enum": [
-              "upsert"
-            ]
+            "enum": ["upsert"]
           },
           "leaf": {
             "type": "boolean"
@@ -62,9 +45,7 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": [
-                "path"
-              ],
+              "required": ["path"],
               "additionalProperties": false,
               "properties": {
                 "path": {
@@ -92,11 +73,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "from",
-          "to",
-          "kind"
-        ],
+        "required": ["from", "to", "kind"],
         "properties": {
           "from": {
             "type": "string"
@@ -106,9 +83,7 @@
           },
           "kind": {
             "type": "string",
-            "enum": [
-              "parent"
-            ]
+            "enum": ["parent"]
           }
         }
       }

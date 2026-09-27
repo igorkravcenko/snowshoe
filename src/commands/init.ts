@@ -1,17 +1,11 @@
-import { mkdirSync, existsSync, readFileSync, writeFileSync, appendFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Ledger } from "../db/ledger.ts";
 import { ROOT_SLUG } from "../domain/types.ts";
+import { EXIT_OK } from "../errors.ts";
 import { gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
-import {
-  EPOCHS_DIR,
-  MAP_NODES_DIR,
-  findRepoRoot,
-  ledgerPath,
-  snowshoeDir,
-} from "../paths.ts";
-import { EXIT_OK } from "../errors.ts";
+import { EPOCHS_DIR, findRepoRoot, ledgerPath, MAP_NODES_DIR, snowshoeDir } from "../paths.ts";
 
 const GITIGNORE_BLOCK = `# Snowshoe personal ledger (local; do not commit)
 .snowshoe/

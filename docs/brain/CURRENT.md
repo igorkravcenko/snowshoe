@@ -1,6 +1,6 @@
 ---
 status: canonical
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # CURRENT
@@ -46,4 +46,5 @@ The first application code is the HP1–4 CLI (no learning, no hook install). Pr
 ## Process / quality
 
 - Docs land via PR. Chief of Staff owns **consistency audit** before merge (auditor / `grill-canon`).
-- Docs-only CI tripwire: `brain-docs` lint — [ADR-2026-09-25-brain-docs-ci.md](./DECISIONS/ADR-2026-09-25-brain-docs-ci.md).
+- Docs CI tripwire: `brain-docs` lint — [ADR-2026-09-25-brain-docs-ci.md](./DECISIONS/ADR-2026-09-25-brain-docs-ci.md).
+- App CI tripwire: `typecheck`, `bun test`, Biome (`biome check .`) — [ADR-2026-09-27-app-ci-biome.md](./DECISIONS/ADR-2026-09-27-app-ci-biome.md). CI-only for now (no lefthook / husky / pre-commit). Not product `hooks install`.

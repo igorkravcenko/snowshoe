@@ -161,9 +161,7 @@ export const completionsEnvelopeSchema = z.object({
       z.object({
         id: z.string().min(1),
         leaseToken: z.string().min(1),
-        kind: z
-          .enum(["detail", "structure_sync", "blast_radius", "metric_decay"])
-          .optional(),
+        kind: z.enum(["detail", "structure_sync", "blast_radius", "metric_decay"]).optional(),
         payload: z.unknown(),
       }),
     )

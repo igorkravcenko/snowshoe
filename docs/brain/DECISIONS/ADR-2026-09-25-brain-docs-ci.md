@@ -31,4 +31,7 @@ before merge. CI is a tripwire, not a substitute for that audit.
 
 - Update AGENTS.md, `.cursor/rules/project.mdc`, and `process_controls` so the
   blanket “no CI” rule becomes “no app/CI except brain-docs lint”.
-- Do not add test matrices, release pipelines, or app CI until CURRENT + ADR say so.
+- **2026-09-27:** App CI (typecheck, `bun test`, Biome) is authorized by
+  [ADR-2026-09-27-app-ci-biome](./ADR-2026-09-27-app-ci-biome.md). This ADR still
+  governs docs-only `brain-docs` lint. CoS audit is unchanged. No lefthook/husky
+  in that change.
