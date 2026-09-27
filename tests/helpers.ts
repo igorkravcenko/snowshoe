@@ -95,7 +95,11 @@ export function detailPayload(args: {
   refs?: Array<{ from: string; to: string; kind?: string }>;
 }): Record<string, unknown> {
   const unchanged = args.unchanged ?? false;
-  const nodes = args.nodes ?? [];
+  const nodes = (args.nodes ?? []).map((n) => {
+    if (unchanged) return n;
+    if (typeof n.body === "string" || typeof n.bodyMd === "string") return n;
+    return { ...n, body: `Body for ${String(n.slug ?? "node")}` };
+  });
   const children = args.children ?? (unchanged ? [] : nodes.map((n) => String(n.slug ?? "")));
   return {
     parentSlug: args.parentSlug,

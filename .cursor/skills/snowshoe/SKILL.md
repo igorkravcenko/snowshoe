@@ -31,6 +31,7 @@ snowshoe work next --json
 | `action` | `init` · `refresh` · `advance` · `work` · `idle` |
 | `todo` | Exact command to run when gated (`init` / `refresh` / `advance`). `null` otherwise. |
 | `items` | Claimed steps. Empty unless `action` is `work` and there is claimable work. |
+| `locale` | BCP-47 UI language from ledger meta (`ru`, `en`, …), or `null` if unset. |
 
 Until `todo` is null, **run only that unlock command**, then call `work next` again. Do not look for other work, do not complete steps, do not skip the gate.
 
@@ -61,6 +62,7 @@ loop:
 ```bash
 snowshoe work next --json
 snowshoe init --json
+snowshoe init --json --locale ru
 snowshoe routine refresh --json
 snowshoe routine status --json
 snowshoe routine advance --json
@@ -69,6 +71,14 @@ snowshoe map status --json
 ```
 
 Use `init`, `routine refresh`, and `routine advance` when `work next` puts them in `todo` — not as a competing entry path.
+
+When `todo` is `snowshoe init --json`, you may add `--locale <tag>` (alias `--ui-language`) with a BCP-47 tag such as `ru` or `en`. Init is idempotent: the same command on an existing ledger sets or updates locale meta.
+
+## Locale
+
+Bodies are written in the user's language. Read `locale` from `init`, `work next`, or `map status` JSON.
+
+If locale is missing when you start a `kind=detail` step: deduce it from the conversation or ask the user once, then persist with `snowshoe init --json --locale <tag>` **before** writing bodies. Do not default to English unless locale is `en`.
 
 ## Completing a step
 
@@ -96,6 +106,7 @@ One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on t
 
 - `children`: parent→child slugs under `parentSlug`. Every `nodes[].slug` must appear here.
 - `refs`: relevance links between entities (not hierarchy). Optional `kind` (default `related`). Do not use parent/child structure here.
+- `body` (markdown string, alias `bodyMd`): **required** on each upserted node when `unchanged` is false. Write it in the init locale. The CLI writes `.snowshoe/map/nodes/<slug>.md` and sets `proseRef`. You may write that file yourself and send `proseRef` instead; empty or missing prose rejects (`missing_body:<slug>`).
 
 ```json
 {
@@ -115,6 +126,7 @@ One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on t
             "type": "module",
             "op": "upsert",
             "leaf": false,
+            "body": "<markdown in the init locale>",
             "anchors": [{ "path": "src/cli.ts", "symbol": "main", "startLine": 1 }]
           }
         ],
@@ -155,7 +167,7 @@ The diff for these steps is `git diff --name-only <base>..<target>` (commits in 
 
 ## Map UI
 
-The human marks a node, cancels a pending mark, and reloads the map. You complete work through the CLI. After `work complete`, they reload to see the tree.
+The human marks a node, cancels a pending mark, and reloads the map. They read entity bodies in the inspector and preview code from anchors in the UI (`vscode://` is secondary). You complete work through the CLI. After `work complete`, they reload to see the tree.
 
 Do not start `map serve` unless the human asked.
 

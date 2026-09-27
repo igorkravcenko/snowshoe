@@ -23,6 +23,8 @@ export const detailNodeSchema = z
     op: z.literal("upsert"),
     leaf: z.boolean().optional(),
     proseRef: z.string().optional(),
+    body: z.string().optional(),
+    bodyMd: z.string().optional(),
     anchors: z.array(detailAnchorSchema).optional(),
   })
   .strict();

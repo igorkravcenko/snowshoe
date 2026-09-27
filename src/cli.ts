@@ -46,9 +46,27 @@ const initCmd = defineCommand({
   meta: { name: "init", description: "Create .snowshoe/ ledger (no hooks)" },
   args: {
     json: { type: "boolean", description: "JSON output", default: false },
+    locale: {
+      type: "string",
+      description: "BCP-47 UI language (e.g. ru, en). Idempotent amend of ledger meta.",
+    },
+    "ui-language": {
+      type: "string",
+      description: "Alias of --locale",
+    },
+    uiLanguage: {
+      type: "string",
+      description: "Camel alias of --locale",
+    },
   },
   run({ args }) {
-    return emit(runInit(), args.json);
+    return emit(
+      runInit(process.cwd(), {
+        locale: args.locale,
+        uiLanguage: args["ui-language"] ?? args.uiLanguage,
+      }),
+      args.json,
+    );
   },
 });
 

@@ -16,6 +16,7 @@ import {
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { gitCommitInRange, gitDiffNames, gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
+import { defaultProseRef, inlineBody, readProseFile, writeProseFile } from "../map/prose.ts";
 import { anchorExists, assertAllowedProseRef, findRepoRoot, isInitialized } from "../paths.ts";
 import {
   blastPayloadSchema,
@@ -95,6 +96,7 @@ function gatedNext(
   repoRoot: string,
   head: string | null,
   batchSize: number,
+  locale: string | null = null,
 ): { exitCode: number; body: Record<string, unknown> } {
   return {
     exitCode: EXIT_OK,
@@ -105,6 +107,7 @@ function gatedNext(
       stop: true,
       remaining: 0,
       batchSize,
+      locale,
     }),
   };
 }
@@ -135,7 +138,7 @@ export function runWorkNextFromCwd(
   const repoRoot = findRepoRoot(cwd);
   const head = gitHead(repoRoot);
   if (!isInitialized(repoRoot)) {
-    return gatedNext("init", repoRoot, head, batchSize);
+    return gatedNext("init", repoRoot, head, batchSize, null);
   }
   return withSession((session) => runWorkNext(session, { batchSize }), cwd);
 }
@@ -145,8 +148,9 @@ export function runWorkNext(
   opts: { batchSize?: number } = {},
 ): { exitCode: number; body: Record<string, unknown> } {
   const batchSize = Math.max(1, opts.batchSize ?? DEFAULT_WORK_BATCH_SIZE);
+  const locale = session.ledger.getMeta("locale");
   if (refreshRequired(session)) {
-    return gatedNext("refresh", session.repoRoot, session.gitHead, batchSize);
+    return gatedNext("refresh", session.repoRoot, session.gitHead, batchSize, locale);
   }
 
   const now = Date.now();
@@ -194,6 +198,7 @@ export function runWorkNext(
         stop: remaining === 0,
         remaining,
         batchSize,
+        locale,
       }),
     };
   }
@@ -207,11 +212,12 @@ export function runWorkNext(
         stop: remaining === 0,
         remaining,
         batchSize,
+        locale,
       }),
     };
   }
   if (canAdvance(session).ok) {
-    return gatedNext("advance", session.repoRoot, session.gitHead, batchSize);
+    return gatedNext("advance", session.repoRoot, session.gitHead, batchSize, locale);
   }
   return {
     exitCode: EXIT_OK,
@@ -222,6 +228,7 @@ export function runWorkNext(
       stop: true,
       remaining: 0,
       batchSize,
+      locale,
     }),
   };
 }
@@ -388,6 +395,8 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
   for (const slug of newSlugs) known.add(slug);
 
   const childSet = new Set(payload.children);
+  const proseBySlug = new Map<string, string>();
+  const proseWrites: Array<{ ref: string; text: string }> = [];
   for (const node of payload.nodes) {
     if (!childSet.has(node.slug)) {
       reasons.push(`missing_child:${node.slug}`);
@@ -395,12 +404,31 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
     if (!childAllowed(parent.type, node.type)) {
       reasons.push(`matrix_forbid:${parent.type}->${node.type}:${node.slug}`);
     }
-    if (node.proseRef) {
+    const inline = inlineBody(node);
+    const trimmedInline = inline?.trim() ?? "";
+    if (trimmedInline) {
+      const ref = (node.proseRef ?? defaultProseRef(node.slug)).replaceAll("\\", "/");
       try {
-        assertAllowedProseRef(session.repoRoot, node.proseRef);
+        assertAllowedProseRef(session.repoRoot, ref);
+        proseWrites.push({ ref, text: inline! });
+        proseBySlug.set(node.slug, ref);
       } catch (e) {
         reasons.push(e instanceof Error ? e.message : String(e));
       }
+    } else if (node.proseRef) {
+      try {
+        assertAllowedProseRef(session.repoRoot, node.proseRef);
+        const existing = readProseFile(session.repoRoot, node.proseRef);
+        if (!existing?.trim()) {
+          reasons.push(`missing_body:${node.slug}`);
+        } else {
+          proseBySlug.set(node.slug, node.proseRef.replaceAll("\\", "/"));
+        }
+      } catch (e) {
+        reasons.push(e instanceof Error ? e.message : String(e));
+      }
+    } else {
+      reasons.push(`missing_body:${node.slug}`);
     }
     for (const anchor of node.anchors ?? []) {
       if (!anchorExists(session.repoRoot, anchor.path)) {
@@ -429,6 +457,9 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
   }
 
   session.ledger.transaction(() => {
+    for (const w of proseWrites) {
+      writeProseFile(session.repoRoot, w.ref, w.text);
+    }
     for (const node of payload.nodes) {
       const existed = session.ledger.getNode(node.slug);
       const leaf = node.type === "symbol" ? true : Boolean(node.leaf);
@@ -437,7 +468,7 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
         title: node.title ?? node.slug,
         type: node.type,
         leaf,
-        proseRef: node.proseRef ?? null,
+        proseRef: proseBySlug.get(node.slug) ?? node.proseRef ?? null,
       });
       if (!existed) session.ledger.seedZeroMetrics(node.slug);
       const anchors = (node.anchors ?? []).map((a) => ({

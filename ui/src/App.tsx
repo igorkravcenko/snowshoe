@@ -1,5 +1,6 @@
 import { type ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import {
+  type Anchor,
   cancelDetail,
   editorHref,
   fetchMapStatus,
@@ -10,7 +11,9 @@ import {
   type SessionInfo,
 } from "./api.ts";
 import { bandFor, colorFor, nodeFloat } from "./bands.ts";
+import { MarkdownBody } from "./markdown.tsx";
 import { isExpandable } from "./matrix.ts";
+import { PreviewPanel } from "./Preview.tsx";
 
 function bySlug(model: MapReadModel | null): Map<string, MapNode> {
   const map = new Map<string, MapNode>();
@@ -84,6 +87,7 @@ function Inspector(props: {
   busy: boolean;
   onMark: (slug: string) => void;
   onCancel: (slug: string) => void;
+  onPreview: (anchor: Anchor) => void;
 }): ReactElement {
   const { node, session } = props;
   if (!node) {
@@ -150,6 +154,14 @@ function Inspector(props: {
       {node.anchorsUnresolved && node.anchorsUnresolved.length > 0 ? (
         <p className="warn">Unresolved anchors: {node.anchorsUnresolved.join(", ")}</p>
       ) : null}
+      <h3>Body</h3>
+      {node.bodyMd?.trim() ? (
+        <MarkdownBody text={node.bodyMd} />
+      ) : (
+        <p className="hint">
+          No entity body yet. Detail complete must write prose in the init locale.
+        </p>
+      )}
       <h3>Anchors</h3>
       {anchors.length === 0 ? (
         <p className="hint">No anchors on this node.</p>
@@ -163,20 +175,29 @@ function Inspector(props: {
             const key = `${a.path}:${a.symbol ?? ""}:${a.startLine ?? ""}:${a.endLine ?? ""}`;
             return (
               <li key={key}>
-                {href ? (
-                  <a href={href} title="Open in editor (UI owns this; util does not)">
-                    {a.path}
-                  </a>
-                ) : (
-                  <span className="mono">{a.path}</span>
-                )}
+                <button
+                  type="button"
+                  className="linkish"
+                  onClick={() => props.onPreview(a)}
+                  title="Preview in UI"
+                >
+                  {a.path}
+                </button>
                 {loc ? <span className="hint"> {loc}</span> : null}
+                {href ? (
+                  <a
+                    className="secondary-action"
+                    href={href}
+                    title="Open in editor (UI owns this; util does not)"
+                  >
+                    Open in editor
+                  </a>
+                ) : null}
               </li>
             );
           })}
         </ul>
       )}
-      {node.proseRef ? <p className="hint">prose: {node.proseRef}</p> : null}
     </div>
   );
 }
@@ -187,6 +208,7 @@ export function App(): ReactElement {
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<Anchor | null>(null);
 
   const reload = useCallback(async () => {
     setBusy(true);
@@ -212,6 +234,29 @@ export function App(): ReactElement {
 
   const nodes = useMemo(() => bySlug(model), [model]);
   const selectedNode = selected ? (nodes.get(selected) ?? null) : null;
+
+  useEffect(() => {
+    if (!selectedNode) {
+      setPreview(null);
+      return;
+    }
+    const anchors = selectedNode.anchors ?? [];
+    if (anchors.length === 0) {
+      setPreview(null);
+      return;
+    }
+    setPreview((cur) => {
+      if (
+        cur &&
+        anchors.some(
+          (a) => a.path === cur.path && a.startLine === cur.startLine && a.endLine === cur.endLine,
+        )
+      ) {
+        return cur;
+      }
+      return anchors[0] ?? null;
+    });
+  }, [selectedNode]);
 
   async function onMark(slug: string) {
     setBusy(true);
@@ -268,13 +313,16 @@ export function App(): ReactElement {
             busy={busy}
             onMark={onMark}
             onCancel={onCancel}
+            onPreview={setPreview}
           />
         </section>
+        <PreviewPanel anchor={preview} repoRoot={session?.repoRoot ?? null} />
       </div>
       <footer>
         Dumb client of <code>GET /api/map/status</code> (same JSON as{" "}
-        <code>snowshoe map status --json</code>). Mark/cancel via HTTP twins. Reload after the skill
-        completes work. No ledger writes from this page.
+        <code>snowshoe map status --json</code>). Code preview via <code>GET /api/file</code>{" "}
+        (repoRoot sandbox) for any node with anchors. Mark/cancel via HTTP twins. Reload after the
+        skill completes work. No ledger writes from this page.
       </footer>
     </div>
   );
