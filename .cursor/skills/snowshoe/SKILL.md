@@ -56,7 +56,7 @@ loop:
 
 `--batch-size` is optional; the CLI default is already a small batch. Do not shrink it to a single item.
 
-`work complete` / `work fail` read JSON from **stdin** (or `--input '<json>'`).
+`work complete` reads JSON from **stdin** (or `--input '<json>'`).
 
 ## Commands
 
@@ -67,7 +67,6 @@ snowshoe routine refresh --json
 snowshoe routine status --json
 snowshoe routine advance --json
 snowshoe work complete --json
-snowshoe work fail --json
 snowshoe map status --json
 ```
 
@@ -153,8 +152,6 @@ One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on t
 **blast_radius** — empty `nodes` is legal when nothing in the diff hits anchors. Non-empty rows need `evidence`.
 
 **metric_decay** — exactly one `updates[]` row matching the claimed `(nodeId, level)`. Do not raise the stored value.
-
-If a routine payload cannot be produced, `snowshoe work fail --json` with `{ "schemaVersion": 1, "failures": [{ "id", "leaseToken" }] }`.
 
 ## Map UI
 

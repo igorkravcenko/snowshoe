@@ -34,6 +34,8 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(text).not.toContain("anchorsUnresolved");
     expect(text).not.toContain("HP1");
     expect(text).not.toContain("Out of scope");
+    expect(text).not.toContain("work fail");
+    expect(text.toLowerCase()).not.toContain("workfail");
     expect(text).toContain("snowshoe work next --json");
     expect(text).toContain("children");
     expect(text).toContain("refs");
