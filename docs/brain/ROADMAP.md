@@ -1,15 +1,15 @@
 ---
 status: living
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # ROADMAP
 
-Intent only. Not truth. Not a commitment to dates. Implementation stack is locked (still pre-code): [ADR-2026-09-25-implementation-stack](./DECISIONS/ADR-2026-09-25-implementation-stack.md).
+Intent only. Not truth. Not a commitment to dates. Implementation stack is locked: [ADR-2026-09-25-implementation-stack](./DECISIONS/ADR-2026-09-25-implementation-stack.md). First CLI slice: [ADR-2026-09-26-vertical-slice-cli](./DECISIONS/ADR-2026-09-26-vertical-slice-cli.md).
 
-## 0. Brain (current)
+## 0. Brain
 
-Spec-driven scaffold: CURRENT, ADRs, evidence vs truth, agent protocol. **This is the only implemented layer.**
+Spec-driven scaffold: CURRENT, ADRs, evidence vs truth, agent protocol.
 
 ## 1. Lock v1 surfaces (no code yet)
 
@@ -21,9 +21,9 @@ Grill remaining UX/copy ([ADR-2026-09-25-v1-surfaces](./DECISIONS/ADR-2026-09-25
 - Minimal CLI contract (`init` / `refresh` / `status` / `learn` / `verify` — draft only; proposed routine families are **not** CURRENT)
 - Hooks: **opt-in**, not default `init` (accepted). Remaining work is copy / which hook names, not auto-install.
 
-## 2. First local slice (after 1)
+## 2. First local slice (HP1–4 CLI)
 
-Smallest thing that makes catch-up after pull real on one repo. Use the locked Bun/TS stack; do not pre-build a platform (no Nest/Next/Electron day-1).
+Smallest catch-up-after-pull loop on one repo: init, detail map, routine epoch, mixed queue. No learning. Use the locked Bun/TS stack; do not pre-build a platform (no Nest/Next/Electron day-1).
 
 ## 3. Harness skills (parallel, after form lock)
 

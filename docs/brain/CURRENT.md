@@ -1,11 +1,11 @@
 ---
 status: canonical
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 
 # CURRENT
 
-**Implementation status: pre-code / scaffold only.** This repo has no application code.
+**Implementation status:** first vertical-slice CLI (HP1–4, no learning). Routine epoch/CLI ADRs remain **proposed**; the slice follows them as working code. [ADR-2026-09-26-vertical-slice-cli.md](./DECISIONS/ADR-2026-09-26-vertical-slice-cli.md).
 
 ## Product
 
@@ -15,7 +15,7 @@ updated: 2026-09-25
 - **Form (intent):** CLI-first **orchestrator** (not a passive ledger, not a full agent harness). Owns git-anchored state, freshness, and verify protocol; pluggable agent backends are workers for map / explain / quiz. Dual entry: harness skills call `snowshoe …` (provisional binary), or the CLI invokes a configured backend (e.g. a catch-up flow). Details: [ADR-2026-09-25-product-form-orchestrator.md](./DECISIONS/ADR-2026-09-25-product-form-orchestrator.md).
 - **State default:** project model may live under something like `.snowshoe/`; **personal ledger gitignored / local by default**. **SQLite is source of truth** for FSM / queue / leases / epoch meta / metrics (floats `0.0–1.0`); heavy payloads are files under `.snowshoe/epochs/<epochId>/…`; markdown map/notes are human-readable, **not** SoT for metrics or step statuses. [ADR-2026-09-25-personal-state-gitignore.md](./DECISIONS/ADR-2026-09-25-personal-state-gitignore.md), [ADR-2026-09-25-implementation-stack.md](./DECISIONS/ADR-2026-09-25-implementation-stack.md).
 - **v1 surfaces (intent):** primary signal where “red” arrives on delta — **opt-in** local git hook after pull/merge (+ checkout when relevant) and PR-check; navigable map is a secondary screen for learning, not the only home. **Default signal:** skill → CLI (`snowshoe routine refresh` / `status` / `work …` — families still *proposed*). `init` does **not** install hooks; `hooks install` / `uninstall` are opt-in. CLI always; optional TUI for status/queue/quiz; local GUI map on demand (**later**, not day-1). [ADR-2026-09-25-v1-surfaces.md](./DECISIONS/ADR-2026-09-25-v1-surfaces.md).
-- **Implementation (intent, pre-code):** TypeScript on **Bun**; ship CLI with `bun build --compile` (mac/linux first); **citty** (commander acceptable alt); **Zod**; durable machine state **`bun:sqlite`**; tests **Vitest**. Map UI **later, not day-1:** `snowshoe map` → local HTTP + system browser, React + Vite, tree-first. NestJS / Next.js / Electron are out of day-1. Informal *snow* is not CLI. [ADR-2026-09-25-implementation-stack.md](./DECISIONS/ADR-2026-09-25-implementation-stack.md).
+- **Implementation:** TypeScript on **Bun**; CLI with citty + Zod; durable machine state **`bun:sqlite`**. Map UI **later, not day-1:** this slice is **CLI-only** `snowshoe map status --json`. NestJS / Next.js / Electron are out of day-1. Informal *snow* is not CLI. [ADR-2026-09-25-implementation-stack.md](./DECISIONS/ADR-2026-09-25-implementation-stack.md), [ADR-2026-09-26-vertical-slice-cli.md](./DECISIONS/ADR-2026-09-26-vertical-slice-cli.md).
 
 ## Non-goals (v1)
 
@@ -41,7 +41,7 @@ No Snowshoe ARR or user counts exist to cite. Do not invent them. There is no pr
 
 ## Now
 
-The brain scaffold *is* the repo. Stack choices are locked; there is still **no application code**. Next: grill v1 signal / PR-check *copy* (hooks opt-in is already closed) and grill proposed routine ADRs before writing code — those stay **proposed**. Positioning: [docs/product/positioning.md](../product/positioning.md). Working notes on form detail: [notes/product-form-detail.md](./notes/product-form-detail.md).
+The first application code is the HP1–4 CLI (no learning, no hook install). Proposed routine ADRs A/B are **not** promoted. Slice details: [ADR-2026-09-26-vertical-slice-cli.md](./DECISIONS/ADR-2026-09-26-vertical-slice-cli.md). Positioning: [docs/product/positioning.md](../product/positioning.md). Working notes on form detail: [notes/product-form-detail.md](./notes/product-form-detail.md).
 
 ## Process / quality
 

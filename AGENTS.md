@@ -9,13 +9,13 @@ Entrypoint for agents working in this repo.
 
 ## Product (one line)
 
-**Snowshoe** (provisional; backup **Catchmark**) — *Catch up after pull.* A git-native / ideally OSS personal repo comprehension map. Implementation status: **pre-code / scaffold only**. CLI spelling is provisional `snowshoe …`; informal *snow* is not CLI. Default signal is skill/human → CLI (`routine refresh` / `status` / `work`); git hooks are **opt-in** (`hooks install` / `uninstall`) — `init` does not install them. Stack + clarifications: [ADR-2026-09-25-implementation-stack](docs/brain/DECISIONS/ADR-2026-09-25-implementation-stack.md).
+**Snowshoe** (provisional; backup **Catchmark**) — *Catch up after pull.* A git-native / ideally OSS personal repo comprehension map. Implementation status: **HP1–4 CLI vertical slice (no learning)**; routine ADRs A/B remain proposed. CLI spelling is provisional `snowshoe …`; informal *snow* is not CLI. Default signal is skill/human → CLI (`routine refresh` / `status` / `work`); git hooks are **opt-in** (`hooks install` / `uninstall`) — `init` does not install them. Stack + clarifications: [ADR-2026-09-25-implementation-stack](docs/brain/DECISIONS/ADR-2026-09-25-implementation-stack.md). Slice: [ADR-2026-09-26-vertical-slice-cli](docs/brain/DECISIONS/ADR-2026-09-26-vertical-slice-cli.md).
 
 ## Hard rules
 
 - English for `docs/brain/**`, skills, rules, this file, commits, and PRs.
 - User-facing chat: Russian (see `.cursor/rules/agent-comms.mdc`).
-- No application code, package managers, or fake features unless CURRENT + an ADR say so.
+- No learning/quiz/verify, agent spawn, or fake features beyond the HP1–4 CLI unless CURRENT + an ADR say so.
 - **CI exception:** docs-only `brain-docs` lint (see [ADR-2026-09-25-brain-docs-ci](docs/brain/DECISIONS/ADR-2026-09-25-brain-docs-ci.md)). No app/build CI yet.
 - Do not invent ARR, users, or competitors. Unknown stays `unknown`.
 - Do not import trading / Nautilus / portfolio / bots from other repos.

@@ -17,9 +17,12 @@ Thumbs.db
 tmp/
 .tmp/
 
-# Accidental toolchain leftovers (no app stack in this repo yet)
+# Accidental toolchain leftovers
 node_modules/
 __pycache__/
 .venv/
 dist/
 build/
+
+# Snowshoe personal ledger (local; never commit)
+.snowshoe/
