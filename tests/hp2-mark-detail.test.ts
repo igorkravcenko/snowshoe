@@ -11,10 +11,10 @@ async function seedRoot(repo: string): Promise<void> {
         id: String(item.stepId),
         leaseToken: String(item.leaseToken),
         kind: "detail",
-          payload: detailPayload({
-            parentSlug: "root",
-            nodes: [{ slug: "auth", title: "Auth", type: "module", op: "upsert" }],
-          }),
+        payload: detailPayload({
+          parentSlug: "root",
+          nodes: [{ slug: "auth", title: "Auth", type: "module", op: "upsert" }],
+        }),
       },
     ]),
   });

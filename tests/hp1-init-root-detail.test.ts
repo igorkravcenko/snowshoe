@@ -1,7 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { completeEnvelope, detailPayload, makeGitRepo, readGitignore, snowshoe } from "./helpers.ts";
+import {
+  completeEnvelope,
+  detailPayload,
+  makeGitRepo,
+  readGitignore,
+  snowshoe,
+} from "./helpers.ts";
 
 describe("HP1 cold init → root detail seed", () => {
   test("init auto-enqueues root detail; complete one-hop; map shows rough graph", async () => {
@@ -57,7 +63,8 @@ describe("HP1 cold init → root detail seed", () => {
     });
     expect(edgesReject.exitCode).toBe(1);
     const edgeResults = edgesReject.json.results as Array<Record<string, unknown>>;
-    expect(String((edgeResults[0]?.reasons as string[])[0])).toMatch(/^edges_removed:/);
+    const edgeReasons = (edgeResults[0]?.reasons ?? []) as string[];
+    expect(edgeReasons[0]).toMatch(/^edges_removed:/);
 
     const missingAnchor = await snowshoe(repo, ["work", "complete", "--json"], {
       stdin: completeEnvelope([
