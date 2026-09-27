@@ -1,44 +1,48 @@
 ---
 status: note
 date: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Happy paths (vertical slice, no learning)
 
-Status: **draft note for plant**. Multiple paths; shared skill contract + util.
+Status: **note**. Short scraps; **canonical chained E2E** → [e2e-happy-path-no-learning.md](./e2e-happy-path-no-learning.md).  
+Shared: [skill-worker-contract.md](./skill-worker-contract.md), [ui-ledger-split.md](./ui-ledger-split.md).
+
+## Locked (was Still open)
+
+| Item | Lock |
+|------|------|
+| Map CLI | `snowshoe map status --json` |
+| Root slug | `root` |
+| Empty ledger after init | util **auto-enqueues** root `detail`; skill remains actor |
 
 ## HP1 — Cold init → root detail seed
 
 1. Clone repo; agent loads snowshoe skill.
 2. `snowshoe init` (local `.snowshoe/`, not pushed). No hooks, no spawn.
-3. Util auto-enqueues root `detail` on empty ledger; skill `work next` → first **`detail` on root** → one-hop rough map (no `type: system` from agent).
-4. User opens map UI → reload read-model → navigates.
+3. Util auto-enqueues root `detail`; skill `work next` → first **`detail` on root** → one-hop rough map (agent must not emit `type: system`).
+4. User opens map UI → `map status` reload → navigates.
 
 ## HP2 — User mark → detail one hop
 
-1. User mark-detail on expandable node → util enqueues `kind=detail`; pending badge.
-2. Skill `work next` (only after any required routine steps).
+1. User mark-detail → util enqueues `kind=detail`; pending badge.
+2. Skill `work next` only after required routine steps.
 3. Agent upserts children + proseRef + anchors; `complete` (soft warn if anchors unresolved).
-4. User reload; walk to leaves; UI opens code via anchors + highlight (editor/UI owns navigation).
+4. User reload; leaves; UI opens code via anchors (editor owns highlight).
 
 ## HP3 — Post-pull → epoch catch-up → then detail
 
 1. User pulls (HEAD moved).
-2. Skill hits util → refresh/status detects update → epoch steps: structure → blast → metrics (empty blast ⇒ zero metric steps).
-3. Agent completes required steps; `routine advance` when allowed.
-4. Only then remaining detail todos (if any).
-5. User reload map — updated structure/metric colors.
+2. Skill → util refresh/status → structure → blast → metrics (empty blast ⇒ zero metric steps).
+3. Agent completes; `routine advance` when allowed.
+4. Then remaining detail todos (if any).
+5. User reload — updated structure/metric colors.
 
-## HP4 — Mixed queue (optional explicit)
+## HP4 — Mixed queue
 
 Routine + detail pending → **routine first**; detail never gates `base`.
 
 ## Out of scope
 
 Learning, quiz, verify, daemon watch, publishing `.snowshoe` to git.
-
-## Still open (non-blocking)
-
-- Exact CLI verb: `map export` vs `map status` (shape locked; see ui-ledger-split).
-- Root slug: provisional `root` vs repo-derived.
-- Wire `GET /api/map` path names when HTTP lands.
