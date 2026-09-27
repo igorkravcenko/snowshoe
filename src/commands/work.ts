@@ -1,3 +1,4 @@
+import { existsSync, watch } from "node:fs";
 import type { StepRow } from "../db/ledger.ts";
 import { allowedChildTypes, childAllowed } from "../domain/matrix.ts";
 import { requiredLevels, severityCap } from "../domain/metrics.ts";
@@ -12,12 +13,19 @@ import {
   ROOT_SLUG,
   ROUTINE_KINDS,
   type StepKind,
+  WORK_NEXT_WAIT_FALLBACK_MS,
 } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { gitCommitInRange, gitDiffNames, gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
 import { defaultProseRef, inlineBody, readProseFile, writeProseFile } from "../map/prose.ts";
-import { anchorExists, assertAllowedProseRef, findRepoRoot, isInitialized } from "../paths.ts";
+import {
+  anchorExists,
+  assertAllowedProseRef,
+  findRepoRoot,
+  isInitialized,
+  snowshoeDir,
+} from "../paths.ts";
 import {
   blastPayloadSchema,
   completionsEnvelopeSchema,
@@ -129,8 +137,49 @@ function hasOpenWork(session: Session): boolean {
   );
 }
 
+function isIdleNext(result: { body: Record<string, unknown> }): boolean {
+  return result.body.action === "idle";
+}
+
+function withWaitTimedOut(result: { exitCode: number; body: Record<string, unknown> }): {
+  exitCode: number;
+  body: Record<string, unknown>;
+} {
+  return { exitCode: result.exitCode, body: { ...result.body, waitTimedOut: true } };
+}
+
+/** Wake on `.snowshoe` changes (ledger + WAL). Fallback timer if watch is silent. */
+export function waitForSnowshoeNudge(cwd: string, maxMs: number): Promise<void> {
+  const dir = snowshoeDir(findRepoRoot(cwd));
+  return new Promise((resolve) => {
+    let settled = false;
+    let watcher: ReturnType<typeof watch> | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      if (timer !== undefined) clearTimeout(timer);
+      try {
+        watcher?.close();
+      } catch {
+        /* ignore */
+      }
+      resolve();
+    };
+    if (existsSync(dir)) {
+      try {
+        watcher = watch(dir, finish);
+        watcher.on("error", finish);
+      } catch {
+        watcher = undefined;
+      }
+    }
+    timer = setTimeout(finish, Math.max(0, maxMs));
+  });
+}
+
 /** CLI entry: may run before `init` (returns a followable `todo` instead of failing). */
-export function runWorkNextFromCwd(
+export function runWorkNextOnceFromCwd(
   opts: { batchSize?: number } = {},
   cwd = process.cwd(),
 ): { exitCode: number; body: Record<string, unknown> } {
@@ -141,6 +190,34 @@ export function runWorkNextFromCwd(
     return gatedNext("init", repoRoot, head, batchSize, null);
   }
   return withSession((session) => runWorkNext(session, { batchSize }), cwd);
+}
+
+export async function runWorkNextFromCwd(
+  opts: { batchSize?: number; wait?: boolean; waitTimeoutMs?: number } = {},
+  cwd = process.cwd(),
+): Promise<{ exitCode: number; body: Record<string, unknown> }> {
+  const wait = Boolean(opts.wait);
+  const waitTimeoutMs = opts.waitTimeoutMs ?? 0;
+  const started = Date.now();
+  let result = runWorkNextOnceFromCwd({ batchSize: opts.batchSize }, cwd);
+  if (!wait) return result;
+  while (isIdleNext(result)) {
+    if (waitTimeoutMs > 0 && Date.now() - started >= waitTimeoutMs) {
+      return withWaitTimedOut(result);
+    }
+    const remaining =
+      waitTimeoutMs > 0 ? waitTimeoutMs - (Date.now() - started) : WORK_NEXT_WAIT_FALLBACK_MS;
+    if (waitTimeoutMs > 0 && remaining <= 0) {
+      return withWaitTimedOut(result);
+    }
+    const sleepFor =
+      waitTimeoutMs > 0
+        ? Math.min(WORK_NEXT_WAIT_FALLBACK_MS, remaining)
+        : WORK_NEXT_WAIT_FALLBACK_MS;
+    await waitForSnowshoeNudge(cwd, sleepFor);
+    result = runWorkNextOnceFromCwd({ batchSize: opts.batchSize }, cwd);
+  }
+  return result;
 }
 
 export function runWorkNext(

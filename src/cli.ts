@@ -42,6 +42,15 @@ function parseBatchSize(raw: unknown): number {
   return n;
 }
 
+function parseWaitTimeout(raw: unknown): number {
+  if (raw === undefined || raw === null || raw === "") return 0;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0) {
+    throw new CliError("--wait-timeout must be an integer >= 0 (ms; 0 = forever)", EXIT_USAGE);
+  }
+  return n;
+}
+
 const initCmd = defineCommand({
   meta: { name: "init", description: "Create .snowshoe/ ledger (no hooks)" },
   args: {
@@ -126,10 +135,25 @@ const workNextCmd = defineCommand({
       type: "string",
       description: "Deprecated alias of --batch-size",
     },
+    wait: {
+      type: "boolean",
+      description: "Block while action would be idle (interactive map drain)",
+      default: false,
+    },
+    "wait-timeout": {
+      type: "string",
+      description: "Max ms to wait when --wait (0 = forever)",
+    },
+    waitTimeout: {
+      type: "string",
+      description: "Camel alias of --wait-timeout",
+    },
   },
-  run({ args }) {
+  async run({ args }) {
     const batchSize = parseBatchSize(args["batch-size"] ?? args.batchSize ?? args.budget);
-    return emit(runWorkNextFromCwd({ batchSize }), args.json);
+    const waitTimeoutMs = parseWaitTimeout(args["wait-timeout"] ?? args.waitTimeout);
+    const wait = Boolean(args.wait) || waitTimeoutMs > 0;
+    return emit(await runWorkNextFromCwd({ batchSize, wait, waitTimeoutMs }), args.json);
   },
 });
 

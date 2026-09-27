@@ -2,15 +2,17 @@ import { type ReactElement, useCallback, useEffect, useMemo, useState } from "re
 import {
   type Anchor,
   cancelDetail,
-  editorHref,
   fetchMapStatus,
   fetchSession,
+  incomingRefs,
   type MapNode,
   type MapReadModel,
   markDetail,
   type SessionInfo,
+  sameAnchor,
 } from "./api.ts";
 import { bandFor, colorFor, nodeFloat } from "./bands.ts";
+import { mapFingerprint } from "./map-fingerprint.ts";
 import { MarkdownBody } from "./markdown.tsx";
 import { isExpandable } from "./matrix.ts";
 import { PreviewPanel } from "./Preview.tsx";
@@ -42,6 +44,7 @@ function TreeNode(props: {
     <div>
       <div
         className={`node${props.selected === node.slug ? " selected" : ""}`}
+        data-slug={node.slug}
         onClick={() => props.onSelect(node.slug)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -83,13 +86,15 @@ function TreeNode(props: {
 
 function Inspector(props: {
   node: MapNode | null;
-  session: SessionInfo | null;
+  nodes: Map<string, MapNode>;
+  preview: Anchor | null;
   busy: boolean;
   onMark: (slug: string) => void;
   onCancel: (slug: string) => void;
   onPreview: (anchor: Anchor) => void;
+  onGoTo: (slug: string) => void;
 }): ReactElement {
-  const { node, session } = props;
+  const { node } = props;
   if (!node) {
     return (
       <p className="hint">
@@ -107,6 +112,8 @@ function Inspector(props: {
     ["internals", metrics.internals],
   ] as const;
   const anchors = node.anchors ?? [];
+  const outgoing = node.refs ?? [];
+  const incoming = incomingRefs(props.nodes.values(), node.slug);
 
   return (
     <div>
@@ -168,31 +175,74 @@ function Inspector(props: {
       ) : (
         <ul className="anchors">
           {anchors.map((a) => {
-            const href = session ? editorHref(session.repoRoot, a) : undefined;
             const loc = [a.startLine && `L${a.startLine}`, a.endLine && `L${a.endLine}`, a.symbol]
               .filter(Boolean)
               .join(" · ");
             const key = `${a.path}:${a.symbol ?? ""}:${a.startLine ?? ""}:${a.endLine ?? ""}`;
+            const selected = props.preview ? sameAnchor(props.preview, a) : false;
             return (
               <li key={key}>
                 <button
                   type="button"
-                  className="linkish"
+                  className={selected ? "linkish active" : "linkish"}
                   onClick={() => props.onPreview(a)}
                   title="Preview in UI"
+                  aria-pressed={selected}
                 >
                   {a.path}
                 </button>
                 {loc ? <span className="hint"> {loc}</span> : null}
-                {href ? (
-                  <a
-                    className="secondary-action"
-                    href={href}
-                    title="Open in editor (UI owns this; util does not)"
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <h3>Refs</h3>
+      {outgoing.length === 0 && incoming.length === 0 ? (
+        <p className="hint">No refs on this node. Relevance links are not parent→child.</p>
+      ) : (
+        <ul className="anchors">
+          {outgoing.map((r) => {
+            const target = props.nodes.get(r.to);
+            const label = target?.title ?? r.to;
+            return (
+              <li key={`out:${r.kind}:${r.to}`}>
+                <span className="hint">{r.kind} → </span>
+                {target ? (
+                  <button
+                    type="button"
+                    className="linkish"
+                    onClick={() => props.onGoTo(r.to)}
+                    title={`Go to ${r.to}`}
                   >
-                    Open in editor
-                  </a>
-                ) : null}
+                    {label}
+                  </button>
+                ) : (
+                  <span className="warn">{r.to}</span>
+                )}
+                {target && label !== r.to ? <span className="hint"> {r.to}</span> : null}
+              </li>
+            );
+          })}
+          {incoming.map((r) => {
+            const source = props.nodes.get(r.from);
+            const label = source?.title ?? r.from;
+            return (
+              <li key={`in:${r.kind}:${r.from}`}>
+                <span className="hint">{r.kind} ← </span>
+                {source ? (
+                  <button
+                    type="button"
+                    className="linkish"
+                    onClick={() => props.onGoTo(r.from)}
+                    title={`Go to ${r.from}`}
+                  >
+                    {label}
+                  </button>
+                ) : (
+                  <span className="warn">{r.from}</span>
+                )}
+                {source && label !== r.from ? <span className="hint"> {r.from}</span> : null}
               </li>
             );
           })}
@@ -209,6 +259,7 @@ export function App(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Anchor | null>(null);
+  const [stale, setStale] = useState(false);
 
   const reload = useCallback(async () => {
     setBusy(true);
@@ -217,6 +268,7 @@ export function App(): ReactElement {
       const [map, sess] = await Promise.all([fetchMapStatus(), fetchSession()]);
       setModel(map);
       setSession(sess);
+      setStale(false);
       setSelected((cur) => {
         if (cur && map.nodes.some((n) => n.slug === cur)) return cur;
         return map.rootSlug ?? map.nodes[0]?.slug ?? null;
@@ -232,6 +284,28 @@ export function App(): ReactElement {
     void reload();
   }, [reload]);
 
+  const shownFingerprint = model && session ? mapFingerprint(model, session.gitHead) : null;
+
+  useEffect(() => {
+    if (!shownFingerprint || busy) return;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const [map, sess] = await Promise.all([fetchMapStatus(), fetchSession()]);
+        if (cancelled) return;
+        setStale(mapFingerprint(map, sess.gitHead) !== shownFingerprint);
+      } catch {
+        /* poll is best-effort; Reload stays manual */
+      }
+    };
+    const id = setInterval(() => void tick(), 2000);
+    void tick();
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [shownFingerprint, busy]);
+
   const nodes = useMemo(() => bySlug(model), [model]);
   const selectedNode = selected ? (nodes.get(selected) ?? null) : null;
 
@@ -241,22 +315,20 @@ export function App(): ReactElement {
       return;
     }
     const anchors = selectedNode.anchors ?? [];
-    if (anchors.length === 0) {
-      setPreview(null);
-      return;
-    }
     setPreview((cur) => {
-      if (
-        cur &&
-        anchors.some(
-          (a) => a.path === cur.path && a.startLine === cur.startLine && a.endLine === cur.endLine,
-        )
-      ) {
-        return cur;
-      }
-      return anchors[0] ?? null;
+      if (!cur) return null;
+      return anchors.some((a) => sameAnchor(a, cur)) ? cur : null;
     });
   }, [selectedNode]);
+
+  function selectNode(slug: string) {
+    if (slug !== selected) setPreview(null);
+    setSelected(slug);
+    queueMicrotask(() => {
+      const el = document.querySelector(`[data-slug="${CSS.escape(slug)}"]`);
+      el?.scrollIntoView({ block: "nearest" });
+    });
+  }
 
   async function onMark(slug: string) {
     setBusy(true);
@@ -287,19 +359,26 @@ export function App(): ReactElement {
       <header>
         <h1>Snowshoe map</h1>
         <span className="meta">{session?.gitHead ? session.gitHead.slice(0, 12) : "no HEAD"}</span>
-        <button type="button" onClick={() => void reload()} disabled={busy}>
-          {busy ? "Loading…" : "Reload"}
+        <button
+          type="button"
+          className={stale ? "primary" : undefined}
+          onClick={() => void reload()}
+          disabled={busy}
+          title={stale ? "Map changed since this view (skill, CLI, or another tab)" : "Reload map"}
+        >
+          {busy ? "Loading…" : stale ? "Reload · updated" : "Reload"}
         </button>
+        {stale ? <span className="warn">Map changed</span> : null}
         {error ? <span className="error">{error}</span> : null}
       </header>
-      <div className="layout">
+      <div className={preview ? "layout has-preview" : "layout"}>
         <div className="tree" role="tree" aria-label="Map tree">
           {model ? (
             <TreeNode
               slug={model.rootSlug}
               nodes={nodes}
               selected={selected}
-              onSelect={setSelected}
+              onSelect={selectNode}
               seen={new Set()}
             />
           ) : (
@@ -309,11 +388,13 @@ export function App(): ReactElement {
         <section className="detail">
           <Inspector
             node={selectedNode}
-            session={session}
+            nodes={nodes}
+            preview={preview}
             busy={busy}
             onMark={onMark}
             onCancel={onCancel}
             onPreview={setPreview}
+            onGoTo={selectNode}
           />
         </section>
         <PreviewPanel anchor={preview} repoRoot={session?.repoRoot ?? null} />
@@ -321,8 +402,9 @@ export function App(): ReactElement {
       <footer>
         Dumb client of <code>GET /api/map/status</code> (same JSON as{" "}
         <code>snowshoe map status --json</code>). Code preview via <code>GET /api/file</code>{" "}
-        (repoRoot sandbox) for any node with anchors. Mark/cancel via HTTP twins. Reload after the
-        skill completes work. No ledger writes from this page.
+        (repoRoot sandbox) for any node with anchors. Mark/cancel via HTTP twins. Reload lights up
+        when a poll of the same JSON differs from this snapshot (does not auto-apply). No ledger
+        writes from this page.
       </footer>
     </div>
   );
