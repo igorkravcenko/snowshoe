@@ -10,7 +10,7 @@ Manual try of [e2e-happy-path-no-learning.md](./e2e-happy-path-no-learning.md). 
 1. `snowshoe init --json --locale ru` (or `en`; or start with `snowshoe work next --json` and follow `todo`, adding `--locale` on init)
 2. Load skill `.cursor/skills/snowshoe/`. Ask it to drain Snowshoe work.
 3. Agent starts at `snowshoe work next --json` → follows `todo` / `items` → `work complete` (detail upserts include a `body` in that locale).
-4. `snowshoe map serve --open` → walk the tree (gray = unexpanded / low float). Inspector shows entity body markdown.
+4. `snowshoe map serve --open` → walk the tree (default `--expand-depth 1`: root open, deeper collapsed; arrows ↑/↓ and ←/→ expand/collapse; gray = unexpanded / low float). Inspector shows entity body markdown. UI assets come from the `snowshoe` on PATH (`bun link` clone), not from cwd if those differ.
 5. Mark detail on a child → pending badge → agent drains again → **Reload**.
 6. Click an anchor (any node, including non-leaf modules) → in-UI Code preview. `vscode://` is secondary “Open in editor”. Optional: pull/commit; agent `work next` will ask for `routine refresh`, then drain, then `routine advance` when idle → Reload.
 

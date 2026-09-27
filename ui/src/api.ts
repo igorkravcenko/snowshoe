@@ -59,6 +59,8 @@ export type SessionInfo = {
   repoRoot: string;
   gitHead: string | null;
   locale?: string | null;
+  expandDepth?: number;
+  packageRoot?: string | null;
 };
 
 async function readJson<T>(res: Response): Promise<T> {

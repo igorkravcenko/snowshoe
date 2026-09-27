@@ -1,6 +1,7 @@
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { DEFAULT_MAP_EXPAND_DEPTH } from "../domain/types.ts";
 import { CliError, EXIT_INTERNAL, EXIT_USAGE } from "../errors.ts";
 import { gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
@@ -34,6 +35,7 @@ function maxMtime(path: string): number {
 export function isMapUiDistStale(packageRoot = snowshoePackageRoot()): boolean {
   const distHtml = join(mapUiDistDir(packageRoot), "index.html");
   if (!existsSync(distHtml)) return true;
+  if (readFileSync(distHtml, "utf8").includes("/src/main.tsx")) return true;
   const distTime = statSync(distHtml).mtimeMs;
   const inputs = [
     join(packageRoot, "ui", "src"),
@@ -80,8 +82,19 @@ export type MapServer = {
   url: string;
   port: number;
   hostname: string;
+  packageRoot: string;
+  uiDist: string;
   stop: () => void;
 };
+
+export function parseMapExpandDepth(raw: unknown): number {
+  if (raw === undefined || raw === null || raw === "") return DEFAULT_MAP_EXPAND_DEPTH;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0) {
+    throw new CliError("--expand-depth must be an integer >= 0", EXIT_USAGE);
+  }
+  return n;
+}
 
 export async function startMapServer(opts: {
   cwd?: string;
@@ -90,6 +103,7 @@ export async function startMapServer(opts: {
   open?: boolean;
   buildUi?: boolean;
   packageRoot?: string;
+  expandDepth?: number;
 }): Promise<MapServer> {
   const cwd = opts.cwd ?? process.cwd();
   const repoRoot = findRepoRoot(cwd);
@@ -101,6 +115,7 @@ export async function startMapServer(opts: {
   const uiDist = mapUiDistDir(packageRoot);
   const hostname = opts.hostname ?? "127.0.0.1";
   const requestedPort = opts.port ?? 8787;
+  const expandDepth = opts.expandDepth ?? DEFAULT_MAP_EXPAND_DEPTH;
 
   let queue: Promise<unknown> = Promise.resolve();
   const runSerialized = (fn: () => Promise<Response>): Promise<Response> => {
@@ -116,7 +131,9 @@ export async function startMapServer(opts: {
     hostname,
     port: requestedPort,
     fetch(req) {
-      return runSerialized(() => handleMapHttp(req, { cwd: repoRoot, uiDist }));
+      return runSerialized(() =>
+        handleMapHttp(req, { cwd: repoRoot, uiDist, expandDepth, packageRoot }),
+      );
     },
   });
 
@@ -133,6 +150,8 @@ export async function startMapServer(opts: {
     url,
     port: boundPort,
     hostname,
+    packageRoot,
+    uiDist,
     stop: () => server.stop(true),
   };
 }
@@ -141,11 +160,13 @@ export async function runMapServe(opts: {
   port?: number;
   host?: string;
   open?: boolean;
+  expandDepth?: number;
 }): Promise<{ exitCode: number; body: Record<string, unknown>; server: MapServer }> {
   const portRaw = opts.port;
   if (portRaw !== undefined && (!Number.isInteger(portRaw) || portRaw < 0 || portRaw > 65535)) {
     throw new CliError("--port must be an integer 0–65535 (0 = ephemeral)", EXIT_USAGE);
   }
+  const expandDepth = opts.expandDepth ?? DEFAULT_MAP_EXPAND_DEPTH;
   const cwd = process.cwd();
   const repoRoot = findRepoRoot(cwd);
   const server = await startMapServer({
@@ -153,13 +174,17 @@ export async function runMapServe(opts: {
     port: portRaw,
     hostname: opts.host ?? "127.0.0.1",
     open: Boolean(opts.open),
+    expandDepth,
   });
   const body = envelope("map.serve", repoRoot, gitHead(repoRoot), {
     ok: true,
     url: server.url,
     port: server.port,
     hostname: server.hostname,
-    hint: "Dumb map UI. Mutations: POST /api/map/detail/mark|cancel. Reload in the UI after skill work.",
+    expandDepth,
+    packageRoot: server.packageRoot,
+    uiDist: server.uiDist,
+    hint: "Mapped repo is cwd/repoRoot. UI files are uiDist from the running snowshoe package (bun link target), not cwd.",
   });
   return { exitCode: 0, body, server };
 }

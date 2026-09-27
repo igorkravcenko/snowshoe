@@ -73,9 +73,14 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect((authHttp.anchors as Array<Record<string, unknown>>)[0]?.path).toBe("README.md");
 
     const sess = await fetch(`${server.url}api/session`);
-    const sessJson = (await sess.json()) as { repoRoot: string; locale: string | null };
+    const sessJson = (await sess.json()) as {
+      repoRoot: string;
+      locale: string | null;
+      expandDepth: number;
+    };
     expect(sessJson.repoRoot).toBe(repo);
     expect(sessJson.locale).toBeNull();
+    expect(sessJson.expandDepth).toBe(1);
 
     const mark = await fetch(`${server.url}api/map/detail/mark`, {
       method: "POST",
@@ -141,6 +146,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).toContain("No entity body yet");
     expect(js).toContain("No refs on this node");
     expect(js).toContain("Preview in UI");
+    expect(js).not.toContain("Dumb client");
     expect(js).not.toContain("prose: ");
     expect(js).not.toContain("ledger.sqlite");
     expect(js).not.toContain("work complete");
@@ -168,5 +174,36 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     utimesSync(join(root, "ui", "vite.config.ts"), old, old);
     utimesSync(join(root, "package.json"), old, old);
     expect(isMapUiDistStale(root)).toBe(false);
+
+    writeFileSync(
+      join(root, "ui", "dist", "index.html"),
+      `<script type="module" src="/src/main.tsx"></script>\n`,
+    );
+    expect(isMapUiDistStale(root)).toBe(true);
+  });
+
+  test("GET /api/session expandDepth follows map serve option (default 1)", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+      expandDepth: 2,
+    });
+    stop = server.stop;
+    const sess = await fetch(`${server.url}api/session`);
+    const body = (await sess.json()) as { expandDepth: number; packageRoot: string };
+    expect(body.expandDepth).toBe(2);
+    expect(body.packageRoot).toBe(snowshoePackageRoot());
+
+    const missingJs = await fetch(`${server.url}assets/missing-hash.js`);
+    expect(missingJs.status).toBe(404);
+    expect(missingJs.headers.get("content-type") ?? "").not.toContain("text/html");
+
+    const viteDev = await fetch(`${server.url}src/main.tsx`);
+    expect(viteDev.status).toBe(404);
   });
 });

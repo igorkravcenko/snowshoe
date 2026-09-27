@@ -24,6 +24,8 @@ bun link
 
 Ensure Bun’s global bin directory is on PATH (often `~/.bun/bin`). Then re-check `command -v snowshoe`.
 
+After `bun link`, `command -v snowshoe` is a **single global** symlink. It does not follow git worktrees. If you `bun link` from clone A, then `cd` to clone B and run `snowshoe map serve`, the **ledger** is B but the **map UI** is still A’s `ui/dist`. To serve B’s UI: `bun link` from B, or from B run `bun src/index.ts map serve`.
+
 Equivalent with npm, from the same package root:
 
 ```bash
