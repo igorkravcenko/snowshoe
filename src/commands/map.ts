@@ -1,6 +1,7 @@
 import { isSlug, ROOT_SLUG } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { envelope } from "../json.ts";
+import { readProseFile } from "../map/prose.ts";
 import type { Session } from "./session.ts";
 
 export function runMapStatus(session: Session): {
@@ -36,6 +37,7 @@ export function runMapStatus(session: Session): {
       anchors,
       ...(unresolved.length ? { anchorsUnresolved: unresolved } : {}),
       ...(n.prose_ref ? { proseRef: n.prose_ref } : {}),
+      bodyMd: n.prose_ref ? (readProseFile(session.repoRoot, n.prose_ref) ?? null) : null,
       children: session.ledger.childrenOf(n.slug),
       refs: session.ledger.refsFrom(n.slug),
     };
@@ -46,6 +48,7 @@ export function runMapStatus(session: Session): {
     body: {
       generatedAt: new Date().toISOString(),
       rootSlug: ROOT_SLUG,
+      locale: session.ledger.getMeta("locale"),
       nodes,
     },
   };

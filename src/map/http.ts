@@ -3,6 +3,8 @@ import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { runMapDetailCancel, runMapDetailMark, runMapStatus } from "../commands/map.ts";
 import { withSession } from "../commands/session.ts";
 import { CliError, EXIT_ATTENTION, EXIT_INTERNAL, EXIT_OK, EXIT_USAGE } from "../errors.ts";
+import { findRepoRoot, requireInitialized } from "../paths.ts";
+import { FileReadError, readRepoFile } from "./file-read.ts";
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -31,9 +33,9 @@ function httpStatusForExit(code: number): number {
   return 500;
 }
 
-function jsonResponse(body: unknown, exitCode: number): Response {
+function jsonHttp(body: unknown, status: number): Response {
   return new Response(`${JSON.stringify(body, null, 2)}\n`, {
-    status: httpStatusForExit(exitCode),
+    status,
     headers: {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
@@ -41,7 +43,14 @@ function jsonResponse(body: unknown, exitCode: number): Response {
   });
 }
 
+function jsonResponse(body: unknown, exitCode: number): Response {
+  return jsonHttp(body, httpStatusForExit(exitCode));
+}
+
 function errorResponse(err: unknown): Response {
+  if (err instanceof FileReadError) {
+    return jsonHttp({ schemaVersion: 1, ok: false, error: err.message }, err.status);
+  }
   if (err instanceof CliError) {
     return jsonResponse(
       {
@@ -55,6 +64,16 @@ function errorResponse(err: unknown): Response {
   }
   const message = err instanceof Error ? err.message : String(err);
   return jsonResponse({ schemaVersion: 1, ok: false, error: message }, EXIT_INTERNAL);
+}
+
+function queryInt(url: URL, name: string): number | undefined {
+  const raw = url.searchParams.get(name);
+  if (raw === null || raw === "") return undefined;
+  const n = Number(raw);
+  if (!Number.isInteger(n)) {
+    throw new FileReadError(`${name} must be a positive integer`, 400);
+  }
+  return n;
 }
 
 async function readSlug(req: Request, url: URL): Promise<string> {
@@ -73,13 +92,24 @@ async function readSlug(req: Request, url: URL): Promise<string> {
 /**
  * HTTP twins of `snowshoe map status|detail mark|cancel`.
  * GET /api/map/status returns the same JSON as `snowshoe map status --json`.
- * GET /api/session is UI-only (repoRoot for editor links); not part of the map read-model.
+ * GET /api/session is UI-only (repoRoot / gitHead / locale); not part of the map read-model.
+ * GET /api/file is a read-only repo-root sandbox (no ledger writes).
  */
 export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise<Response> {
   const url = new URL(req.url);
   const path = url.pathname;
 
   try {
+    if (path === "/api/file" && req.method === "GET") {
+      const repoRoot = findRepoRoot(opts.cwd);
+      requireInitialized(repoRoot);
+      const result = readRepoFile(repoRoot, url.searchParams.get("path") ?? "", {
+        start: queryInt(url, "start"),
+        end: queryInt(url, "end"),
+      });
+      return jsonHttp({ schemaVersion: 1, ...result }, 200);
+    }
+
     if (path === "/api/map/status" && req.method === "GET") {
       return withSession((s) => {
         const result = runMapStatus(s);
@@ -94,6 +124,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
             {
               repoRoot: s.repoRoot,
               gitHead: s.gitHead,
+              locale: s.ledger.getMeta("locale"),
             },
             EXIT_OK,
           ),

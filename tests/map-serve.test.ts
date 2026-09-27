@@ -65,8 +65,9 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect((authHttp.anchors as Array<Record<string, unknown>>)[0]?.path).toBe("README.md");
 
     const sess = await fetch(`${server.url}api/session`);
-    const sessJson = (await sess.json()) as { repoRoot: string };
+    const sessJson = (await sess.json()) as { repoRoot: string; locale: string | null };
     expect(sessJson.repoRoot).toBe(repo);
+    expect(sessJson.locale).toBeNull();
 
     const mark = await fetch(`${server.url}api/map/detail/mark`, {
       method: "POST",
@@ -124,7 +125,11 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).toContain("Reload");
     expect(js).toContain("/api/map/status");
     expect(js).toContain("/api/map/detail/mark");
+    expect(js).toContain("/api/file");
+    expect(js).toContain("Code preview");
+    expect(js).toContain("Open in editor");
     expect(js).toContain("vscode://file");
+    expect(js).toContain("No entity body yet");
     expect(js).not.toContain("ledger.sqlite");
     expect(js).not.toContain("work complete");
   });

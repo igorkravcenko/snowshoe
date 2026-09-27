@@ -11,7 +11,7 @@ This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable loc
 ```bash
 bun install --frozen-lockfile
 bun link                  # puts `snowshoe` on PATH (see .cursor/skills/snowshoe/install.md)
-snowshoe init --json
+snowshoe init --json --locale ru
 bun test
 bun run typecheck
 bun run check
@@ -22,12 +22,12 @@ bun run check
 ## How to try (E2E)
 
 1. `bun install --frozen-lockfile` then put `snowshoe` on PATH (`bun link`).
-2. `snowshoe init --json` (or `snowshoe work next --json` and follow `todo`).
+2. `snowshoe init --json --locale ru` (or `en`; or `snowshoe work next --json` and follow `todo`).
 3. Load `.cursor/skills/snowshoe/` and ask the agent to drain Snowshoe work.
-4. Agent: `snowshoe work next --json` then `work complete` (detail payload uses `children` + `refs`).
-5. `snowshoe map serve --open` — walk the tree.
+4. Agent: `snowshoe work next --json` then `work complete` (detail payload uses `children` + `refs` + `body` in that locale).
+5. `snowshoe map serve --open` — walk the tree; inspector shows entity body.
 6. Mark a child → pending badge → agent drains → click **Reload**.
-7. Open a leaf via `anchors[]`. Optional: commit/pull; `work next` gates refresh then advance.
+7. Click an anchor for in-UI Code preview (`vscode://` is secondary). Optional: commit/pull; `work next` gates refresh then advance.
 
 Longer pointer: [docs/brain/notes/how-to-try-e2e.md](docs/brain/notes/how-to-try-e2e.md).
 

@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Ledger } from "../db/ledger.ts";
+import { parseLocaleInput } from "../domain/locale.ts";
 import { ROOT_SLUG } from "../domain/types.ts";
 import { EXIT_OK } from "../errors.ts";
 import { gitHead } from "../git.ts";
@@ -24,12 +25,17 @@ export function ensureGitignore(repoRoot: string): boolean {
   return true;
 }
 
-export function runInit(cwd = process.cwd()): { exitCode: number; body: Record<string, unknown> } {
+export function runInit(
+  cwd = process.cwd(),
+  opts: { locale?: string | null; uiLanguage?: string | null } = {},
+): { exitCode: number; body: Record<string, unknown> } {
   const repoRoot = findRepoRoot(cwd);
   mkdirSync(snowshoeDir(repoRoot), { recursive: true });
   mkdirSync(join(repoRoot, MAP_NODES_DIR), { recursive: true });
   mkdirSync(join(repoRoot, EPOCHS_DIR), { recursive: true });
   ensureGitignore(repoRoot);
+
+  const locale = parseLocaleInput({ locale: opts.locale, uiLanguage: opts.uiLanguage });
 
   const ledger = new Ledger(repoRoot, ledgerPath(repoRoot));
   try {
@@ -47,6 +53,7 @@ export function runInit(cwd = process.cwd()): { exitCode: number; body: Record<s
         seededDetail = true;
       }
     }
+    if (locale) ledger.setMeta("locale", locale);
     const head = gitHead(repoRoot);
     if (head && !ledger.caughtUpBase()) {
       ledger.setMeta("caught_up_base", head);
@@ -57,6 +64,7 @@ export function runInit(cwd = process.cwd()): { exitCode: number; body: Record<s
       rootSlug: ROOT_SLUG,
       seededDetail: empty && seededDetail,
       emptyLedger: empty,
+      locale: ledger.getMeta("locale"),
     });
     return { exitCode: EXIT_OK, body };
   } finally {

@@ -16,6 +16,7 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     for (const cmd of [
       "work next --json",
       "init --json",
+      "init --json --locale ru",
       "routine refresh --json",
       "routine status --json",
       "work complete --json",
@@ -39,6 +40,10 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(text).toContain("snowshoe work next --json");
     expect(text).toContain("children");
     expect(text).toContain("refs");
+    expect(text).toContain("--locale");
+    expect(text).toContain("body");
+    expect(text).toContain("missing_body");
+    expect(text).toMatch(/locale/);
   });
 
   test("dry-run: documented work next → complete → map status", async () => {

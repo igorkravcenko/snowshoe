@@ -21,6 +21,7 @@ export type MapNode = {
   anchors?: Anchor[];
   anchorsUnresolved?: string[];
   proseRef?: string;
+  bodyMd?: string | null;
   children: string[];
   refs?: Array<{ to: string; kind: string }>;
 };
@@ -28,12 +29,14 @@ export type MapNode = {
 export type MapReadModel = {
   generatedAt?: string;
   rootSlug: string;
+  locale?: string | null;
   nodes: MapNode[];
 };
 
 export type SessionInfo = {
   repoRoot: string;
   gitHead: string | null;
+  locale?: string | null;
 };
 
 async function readJson<T>(res: Response): Promise<T> {
@@ -69,6 +72,26 @@ export async function markDetail(slug: string): Promise<void> {
   if (!res.ok || body.ok === false) {
     throw new Error(body.error ?? body.reasons?.join(", ") ?? `mark HTTP ${res.status}`);
   }
+}
+
+export type FilePreview = {
+  path: string;
+  text: string;
+  startLine?: number;
+  endLine?: number;
+  lineCount: number;
+};
+
+export async function fetchFile(path: string, start?: number, end?: number): Promise<FilePreview> {
+  const q = new URLSearchParams({ path });
+  if (start !== undefined) q.set("start", String(start));
+  if (end !== undefined) q.set("end", String(end));
+  const res = await fetch(`/api/file?${q.toString()}`);
+  const body = await readJson<FilePreview & { error?: string; ok?: boolean }>(res);
+  if (!res.ok || body.ok === false) {
+    throw new Error(body.error ?? `file HTTP ${res.status}`);
+  }
+  return body;
 }
 
 export async function cancelDetail(slug: string): Promise<void> {
