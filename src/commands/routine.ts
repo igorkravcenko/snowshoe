@@ -1,12 +1,12 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { StepRow } from "../db/ledger.ts";
+import { ROUTINE_KINDS } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { gitDiffNames, gitHead, resolveGitRef } from "../git.ts";
 import { envelope } from "../json.ts";
-import { epochDir, epochArtifactRel } from "../paths.ts";
+import { epochArtifactRel, epochDir } from "../paths.ts";
 import type { Session } from "./session.ts";
-import type { StepRow } from "../db/ledger.ts";
-import { ROUTINE_KINDS } from "../domain/types.ts";
 
 export function newEpochId(): string {
   return `ep-${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}`;
@@ -166,9 +166,7 @@ export function runRoutineStatus(session: Session): {
   const open = session.ledger.getOpenEpoch();
   const base = open?.base ?? session.ledger.caughtUpBase();
   const target = open?.target ?? head;
-  const steps = open
-    ? session.ledger.listSteps({ epochId: open.epoch_id })
-    : [];
+  const steps = open ? session.ledger.listSteps({ epochId: open.epoch_id }) : [];
   const advance = canAdvance(session);
   const detailPending = session.ledger.listSteps({
     kinds: ["detail"],

@@ -1,6 +1,6 @@
 ---
 status: note
-updated: 2026-09-25
+updated: 2026-09-27
 ---
 
 # Process controls
@@ -16,9 +16,11 @@ Operating constraints for agents and humans. If these conflict with CURRENT, CUR
 
 ## Scope
 
-- Pre-code: no app source, package managers, or fake features.
-- Exception: docs-only CI `brain-docs` (lint frontmatter/links) — see
-  `ADR-2026-09-25-brain-docs-ci`.
+- HP1–4 CLI exists. Do not add learning/quiz/verify, hook install, or fake
+  features unless CURRENT + an ADR say so.
+- CI: `brain-docs` (frontmatter/links) plus app CI (typecheck, `bun test`,
+  Biome). See `ADR-2026-09-25-brain-docs-ci` and
+  `ADR-2026-09-27-app-ci-biome`. No lefthook / husky / pre-commit yet.
 - No invented ARR, users, or competitors.
 - No trading / Nautilus / portfolio / bots imports.
 
@@ -27,7 +29,7 @@ Operating constraints for agents and humans. If these conflict with CURRENT, CUR
 - Docs PRs land via Chief of Staff + cloud agent (agents draft on box; no shared
   local clone races).
 - **CoS owns consistency audit** before merge (auditor agent / grill-canon).
-- CI `brain-docs` is a mechanical tripwire only.
+- CI (`brain-docs` + app typecheck/test/Biome) is a mechanical tripwire only.
 
 ## Grilling
 

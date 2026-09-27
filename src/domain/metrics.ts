@@ -9,10 +9,7 @@ export const SEVERITY_LEVELS: Record<BlastSeverity, MetricLevel[]> = {
 };
 
 /** ADR-B: accept upper bound per (severity × level). null = level not required / no cap. */
-export const SEVERITY_CAPS: Record<
-  BlastSeverity,
-  Record<MetricLevel, number | null>
-> = {
+export const SEVERITY_CAPS: Record<BlastSeverity, Record<MetricLevel, number | null>> = {
   nit: { internals: 0.85, contracts: null, overview: null },
   behavior: { internals: 0.6, contracts: 0.75, overview: null },
   contract: { internals: 0.45, contracts: 0.45, overview: 0.45 },
@@ -23,9 +20,6 @@ export function requiredLevels(severity: BlastSeverity): MetricLevel[] {
   return [...SEVERITY_LEVELS[severity]];
 }
 
-export function severityCap(
-  severity: BlastSeverity,
-  level: MetricLevel,
-): number | null {
+export function severityCap(severity: BlastSeverity, level: MetricLevel): number | null {
   return SEVERITY_CAPS[severity][level];
 }

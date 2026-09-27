@@ -1,5 +1,5 @@
-import { join, normalize, relative, resolve, sep } from "node:path";
 import { existsSync } from "node:fs";
+import { join, normalize, relative, resolve, sep } from "node:path";
 import { CliError, EXIT_USAGE } from "./errors.ts";
 
 export const SNOWSHOE_DIR = ".snowshoe";
@@ -59,10 +59,7 @@ export function requireRepoRoot(cwd = process.cwd()): string {
 
 export function requireInitialized(repoRoot: string): void {
   if (!existsSync(ledgerPath(repoRoot))) {
-    throw new CliError(
-      "Snowshoe is not initialized. Run `snowshoe init` first.",
-      EXIT_USAGE,
-    );
+    throw new CliError("Snowshoe is not initialized. Run `snowshoe init` first.", EXIT_USAGE);
   }
 }
 

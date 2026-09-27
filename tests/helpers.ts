@@ -24,7 +24,12 @@ export function git(cwd: string, args: string[]): string {
   return r.stdout.toString().trim();
 }
 
-export function commitFile(cwd: string, relPath: string, contents: string, message: string): string {
+export function commitFile(
+  cwd: string,
+  relPath: string,
+  contents: string,
+  message: string,
+): string {
   const abs = join(cwd, relPath);
   mkdirSync(dirname(abs), { recursive: true });
   writeFileSync(abs, contents);

@@ -21,71 +21,61 @@ describe("HP1 cold init → root detail seed", () => {
     expect(items[0]?.parentSlug).toBe("root");
     expect(items[0]?.allowedChildTypes).toEqual(["module", "external"]);
 
-    const systemReject = await snowshoe(
-      repo,
-      ["work", "complete", "--json"],
-      {
-        stdin: completeEnvelope([
-          {
-            id: String(items[0]?.stepId),
-            leaseToken: String(items[0]?.leaseToken),
-            kind: "detail",
-            payload: {
-              parentSlug: "root",
-              unchanged: false,
-              nodes: [
-                { slug: "not-root", title: "Nope", type: "system", op: "upsert" },
-              ],
-              edges: [{ from: "root", to: "not-root", kind: "parent" }],
-            },
+    const systemReject = await snowshoe(repo, ["work", "complete", "--json"], {
+      stdin: completeEnvelope([
+        {
+          id: String(items[0]?.stepId),
+          leaseToken: String(items[0]?.leaseToken),
+          kind: "detail",
+          payload: {
+            parentSlug: "root",
+            unchanged: false,
+            nodes: [{ slug: "not-root", title: "Nope", type: "system", op: "upsert" }],
+            edges: [{ from: "root", to: "not-root", kind: "parent" }],
           },
-        ]),
-      },
-    );
+        },
+      ]),
+    });
     expect(systemReject.exitCode).toBe(1);
     const rejectResults = systemReject.json.results as Array<Record<string, unknown>>;
     expect(rejectResults[0]?.status).toBe("rejected");
 
     // Reject does not drop a still-valid lease; retry with the same token.
-    const complete = await snowshoe(
-      repo,
-      ["work", "complete", "--json"],
-      {
-        stdin: completeEnvelope([
-          {
-            id: String(items[0]?.stepId),
-            leaseToken: String(items[0]?.leaseToken),
-            kind: "detail",
-            payload: {
-              parentSlug: "root",
-              unchanged: false,
-              nodes: [
-                {
-                  slug: "auth",
-                  title: "Auth",
-                  type: "module",
-                  op: "upsert",
-                  leaf: false,
-                  proseRef: ".snowshoe/map/nodes/auth.md",
-                  anchors: [{ path: "src/missing.ts", symbol: "ghost" }],
-                  metrics: { overview: 0.9 },
-                },
-                {
-                  slug: "github",
-                  title: "GitHub",
-                  type: "external",
-                  op: "upsert",
-                },
-              ],
-              edges: [
-                { from: "root", to: "auth", kind: "parent" },
-                { from: "root", to: "github", kind: "parent" },
-              ],
-            },
+    const complete = await snowshoe(repo, ["work", "complete", "--json"], {
+      stdin: completeEnvelope([
+        {
+          id: String(items[0]?.stepId),
+          leaseToken: String(items[0]?.leaseToken),
+          kind: "detail",
+          payload: {
+            parentSlug: "root",
+            unchanged: false,
+            nodes: [
+              {
+                slug: "auth",
+                title: "Auth",
+                type: "module",
+                op: "upsert",
+                leaf: false,
+                proseRef: ".snowshoe/map/nodes/auth.md",
+                anchors: [{ path: "src/missing.ts", symbol: "ghost" }],
+                metrics: { overview: 0.9 },
+              },
+              {
+                slug: "github",
+                title: "GitHub",
+                type: "external",
+                op: "upsert",
+              },
+            ],
+            edges: [
+              { from: "root", to: "auth", kind: "parent" },
+              { from: "root", to: "github", kind: "parent" },
+            ],
           },
-        ]),
-      },
-    );
+        },
+      ]),
+    });
     expect(complete.exitCode).toBe(0);
     const accepted = complete.json.results as Array<Record<string, unknown>>;
     expect(accepted[0]?.status).toBe("accepted");

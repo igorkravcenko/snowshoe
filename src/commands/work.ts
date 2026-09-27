@@ -1,17 +1,18 @@
-import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
-import { childAllowed, allowedChildTypes } from "../domain/matrix.ts";
+import type { StepRow } from "../db/ledger.ts";
+import { allowedChildTypes, childAllowed } from "../domain/matrix.ts";
 import { requiredLevels, severityCap } from "../domain/metrics.ts";
 import {
-  LEASE_TTL_MS,
-  ROOT_SLUG,
-  ROUTINE_KINDS,
   type BlastSeverity,
   type EntityType,
-  type MetricLevel,
-  type StepKind,
   isEntityType,
   isSlug,
+  LEASE_TTL_MS,
+  type MetricLevel,
+  ROOT_SLUG,
+  ROUTINE_KINDS,
+  type StepKind,
 } from "../domain/types.ts";
+import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { gitCommitInRange, gitDiffNames } from "../git.ts";
 import { envelope } from "../json.ts";
 import { anchorExists, assertAllowedProseRef } from "../paths.ts";
@@ -20,15 +21,14 @@ import {
   completionsEnvelopeSchema,
   detailPayloadSchema,
   failuresEnvelopeSchema,
+  type MetricPayload,
   metricPayloadSchema,
+  type StructurePayload,
   stripDetailMetrics,
   structurePayloadSchema,
-  type MetricPayload,
-  type StructurePayload,
 } from "../schemas/zod.ts";
-import type { Session } from "./session.ts";
-import type { StepRow } from "../db/ledger.ts";
 import { writeArtifact } from "./routine.ts";
+import type { Session } from "./session.ts";
 
 const KIND_PRIORITY: Record<StepKind, number> = {
   structure_sync: 0,
@@ -373,7 +373,11 @@ function resolveStructureType(
 function acceptStructure(session: Session, step: StepRow, raw: unknown): CompleteResult {
   const parsed = structurePayloadSchema.safeParse(raw);
   if (!parsed.success) {
-    return { id: step.id, status: "rejected", reasons: [`invalid_payload: ${parsed.error.message}`] };
+    return {
+      id: step.id,
+      status: "rejected",
+      reasons: [`invalid_payload: ${parsed.error.message}`],
+    };
   }
   const payload = parsed.data;
   const epoch = step.epoch_id ? session.ledger.getEpoch(step.epoch_id) : null;
@@ -437,7 +441,10 @@ function acceptStructure(session: Session, step: StepRow, raw: unknown): Complet
       leaseExpiresAt: null,
       artifactRef,
     });
-    session.ledger.setMeta(`structure_noop:${epoch.epoch_id}`, payload.ops.length === 0 ? "1" : "0");
+    session.ledger.setMeta(
+      `structure_noop:${epoch.epoch_id}`,
+      payload.ops.length === 0 ? "1" : "0",
+    );
     session.ledger.setMeta(
       `structure_unmapped:${epoch.epoch_id}`,
       JSON.stringify(payload.coverage?.unmappedPaths ?? []),
@@ -523,9 +530,7 @@ function pathMatchesAnchor(path: string, anchor: string): boolean {
     return p.startsWith(prefix) && !p.slice(prefix.length).includes("/");
   }
   if (a.includes("*")) {
-    const re = new RegExp(
-      `^${a.replace(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`,
-    );
+    const re = new RegExp(`^${a.replace(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`);
     return re.test(p);
   }
   return p === a || p.startsWith(`${a}/`);
@@ -534,7 +539,11 @@ function pathMatchesAnchor(path: string, anchor: string): boolean {
 function acceptBlast(session: Session, step: StepRow, raw: unknown): CompleteResult {
   const parsed = blastPayloadSchema.safeParse(raw);
   if (!parsed.success) {
-    return { id: step.id, status: "rejected", reasons: [`invalid_payload: ${parsed.error.message}`] };
+    return {
+      id: step.id,
+      status: "rejected",
+      reasons: [`invalid_payload: ${parsed.error.message}`],
+    };
   }
   const payload = parsed.data;
   const epoch = step.epoch_id ? session.ledger.getEpoch(step.epoch_id) : null;
@@ -600,7 +609,11 @@ function acceptBlast(session: Session, step: StepRow, raw: unknown): CompleteRes
 function acceptMetric(session: Session, step: StepRow, raw: unknown): CompleteResult {
   const parsed = metricPayloadSchema.safeParse(raw);
   if (!parsed.success) {
-    return { id: step.id, status: "rejected", reasons: [`invalid_payload: ${parsed.error.message}`] };
+    return {
+      id: step.id,
+      status: "rejected",
+      reasons: [`invalid_payload: ${parsed.error.message}`],
+    };
   }
   const payload: MetricPayload = parsed.data;
   const epochId = step.epoch_id;

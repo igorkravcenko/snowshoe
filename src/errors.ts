@@ -2,11 +2,7 @@ export class CliError extends Error {
   readonly exitCode: number;
   readonly body: Record<string, unknown>;
 
-  constructor(
-    message: string,
-    exitCode: number,
-    body: Record<string, unknown> = {},
-  ) {
+  constructor(message: string, exitCode: number, body: Record<string, unknown> = {}) {
     super(message);
     this.name = "CliError";
     this.exitCode = exitCode;

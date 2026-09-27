@@ -16,7 +16,7 @@ Entrypoint for agents working in this repo.
 - English for `docs/brain/**`, skills, rules, this file, commits, and PRs.
 - User-facing chat: Russian (see `.cursor/rules/agent-comms.mdc`).
 - No learning/quiz/verify, agent spawn, or fake features beyond the HP1–4 CLI unless CURRENT + an ADR say so.
-- **CI exception:** docs-only `brain-docs` lint (see [ADR-2026-09-25-brain-docs-ci](docs/brain/DECISIONS/ADR-2026-09-25-brain-docs-ci.md)). No app/build CI yet.
+- **CI:** docs `brain-docs` lint ([ADR-2026-09-25-brain-docs-ci](docs/brain/DECISIONS/ADR-2026-09-25-brain-docs-ci.md)) plus app CI (`typecheck`, `bun test`, Biome) ([ADR-2026-09-27-app-ci-biome](docs/brain/DECISIONS/ADR-2026-09-27-app-ci-biome.md)). No lefthook / husky / pre-commit yet. Not product `hooks install`.
 - Do not invent ARR, users, or competitors. Unknown stays `unknown`.
 - Do not import trading / Nautilus / portfolio / bots from other repos.
 - **Quality:** Chief of Staff owns consistency audit on docs PRs before merge (`.github/agents/auditor.agent.md` / `grill-canon`). Agents draft packages on the shared box; do not race a shared local clone.
