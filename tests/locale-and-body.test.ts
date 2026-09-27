@@ -22,9 +22,14 @@ describe("locale at init (idempotent amend)", () => {
       uiDist: join(repo, "no-ui"),
     });
     expect(sess.ok).toBe(true);
-    const sessJson = (await sess.json()) as { locale: string | null; repoRoot: string };
+    const sessJson = (await sess.json()) as {
+      locale: string | null;
+      repoRoot: string;
+      expandDepth: number;
+    };
     expect(sessJson.locale).toBe("ru");
     expect(sessJson.repoRoot).toBe(repo);
+    expect(sessJson.expandDepth).toBe(1);
 
     const alias = await snowshoe(repo, ["init", "--json", "--ui-language", "en"]);
     expect(alias.exitCode).toBe(0);

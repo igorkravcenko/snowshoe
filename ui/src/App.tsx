@@ -1,4 +1,13 @@
-import { type ReactElement, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type KeyboardEvent,
+  type ReactElement,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   type Anchor,
   cancelDetail,
@@ -16,6 +25,13 @@ import { mapFingerprint } from "./map-fingerprint.ts";
 import { MarkdownBody } from "./markdown.tsx";
 import { isExpandable } from "./matrix.ts";
 import { PreviewPanel } from "./Preview.tsx";
+import {
+  ancestorSlugs,
+  applyTreeKey,
+  initialExpandedSlugs,
+  parentBySlug,
+  visibleSlugs,
+} from "./tree.ts";
 
 function bySlug(model: MapReadModel | null): Map<string, MapNode> {
   const map = new Map<string, MapNode>();
@@ -24,11 +40,30 @@ function bySlug(model: MapReadModel | null): Map<string, MapNode> {
   return map;
 }
 
+function focusTreeRow(slug: string): boolean {
+  const el = document.querySelector(`[data-slug="${CSS.escape(slug)}"]`);
+  if (!(el instanceof HTMLElement)) return false;
+  el.focus();
+  el.scrollIntoView({ block: "nearest" });
+  return document.activeElement === el;
+}
+
+function treeKeysBlocked(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return true;
+  return Boolean(target.closest(".preview-panel"));
+}
+
+const TREE_NAV_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"]);
+
 function TreeNode(props: {
   slug: string;
   nodes: Map<string, MapNode>;
   selected: string | null;
+  expanded: Set<string>;
   onSelect: (slug: string) => void;
+  onToggle: (slug: string) => void;
+  onKeyDown: (e: KeyboardEvent, slug: string) => void;
   seen: Set<string>;
 }): ReactElement | null {
   const node = props.nodes.get(props.slug);
@@ -40,22 +75,37 @@ function TreeNode(props: {
   seen.add(props.slug);
   const float = nodeFloat(node.metrics);
   const pending = node.detailStatus;
+  const hasKids = node.children.length > 0;
+  const open = hasKids && props.expanded.has(node.slug);
   return (
     <div>
       <div
         className={`node${props.selected === node.slug ? " selected" : ""}`}
         data-slug={node.slug}
         onClick={() => props.onSelect(node.slug)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            props.onSelect(node.slug);
-          }
-        }}
+        onKeyDown={(e) => props.onKeyDown(e, node.slug)}
         role="treeitem"
-        tabIndex={0}
+        tabIndex={props.selected === node.slug ? 0 : -1}
         aria-selected={props.selected === node.slug}
+        aria-expanded={hasKids ? open : undefined}
       >
+        {hasKids ? (
+          <button
+            type="button"
+            className="twirl"
+            tabIndex={-1}
+            aria-label={open ? "Collapse" : "Expand"}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.stopPropagation();
+              props.onToggle(node.slug);
+            }}
+          >
+            {open ? "▼" : "▶"}
+          </button>
+        ) : (
+          <span className="twirl" aria-hidden />
+        )}
         <span className="swatch" style={{ background: colorFor(float) }} title={bandFor(float)} />
         <span>{node.title ?? node.slug}</span>
         <span className="hint">{node.type}</span>
@@ -66,7 +116,7 @@ function TreeNode(props: {
           <span className="hint">unexpanded</span>
         ) : null}
       </div>
-      {node.children.length > 0 ? (
+      {open ? (
         <div className="children">
           {node.children.map((child) => (
             <TreeNode
@@ -74,7 +124,10 @@ function TreeNode(props: {
               slug={child}
               nodes={props.nodes}
               selected={props.selected}
+              expanded={props.expanded}
               onSelect={props.onSelect}
+              onToggle={props.onToggle}
+              onKeyDown={props.onKeyDown}
               seen={seen}
             />
           ))}
@@ -260,6 +313,8 @@ export function App(): ReactElement {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Anchor | null>(null);
   const [stale, setStale] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const expandSeeded = useRef(false);
 
   const reload = useCallback(async () => {
     setBusy(true);
@@ -269,6 +324,12 @@ export function App(): ReactElement {
       setModel(map);
       setSession(sess);
       setStale(false);
+      if (!expandSeeded.current) {
+        expandSeeded.current = true;
+        const nodeMap = new Map<string, MapNode>();
+        for (const n of map.nodes) nodeMap.set(n.slug, n);
+        setExpanded(initialExpandedSlugs(map.rootSlug, nodeMap, sess.expandDepth ?? 1));
+      }
       setSelected((cur) => {
         if (cur && map.nodes.some((n) => n.slug === cur)) return cur;
         return map.rootSlug ?? map.nodes[0]?.slug ?? null;
@@ -307,6 +368,10 @@ export function App(): ReactElement {
   }, [shownFingerprint, busy]);
 
   const nodes = useMemo(() => bySlug(model), [model]);
+  const parents = useMemo(
+    () => (model ? parentBySlug(model.rootSlug, nodes) : new Map<string, string>()),
+    [model, nodes],
+  );
   const selectedNode = selected ? (nodes.get(selected) ?? null) : null;
 
   useEffect(() => {
@@ -321,12 +386,77 @@ export function App(): ReactElement {
     });
   }, [selectedNode]);
 
+  useLayoutEffect(() => {
+    if (!selected || !model) return;
+    let frames = 0;
+    let raf = 0;
+    const attempt = () => {
+      const ae = document.activeElement;
+      if (ae instanceof HTMLElement && ae.closest(".preview-panel, .detail")) return;
+      if (focusTreeRow(selected)) return;
+      frames += 1;
+      if (frames < 12) raf = requestAnimationFrame(attempt);
+    };
+    attempt();
+    return () => cancelAnimationFrame(raf);
+  }, [model, selected]);
+
   function selectNode(slug: string) {
     if (slug !== selected) setPreview(null);
     setSelected(slug);
-    queueMicrotask(() => {
-      const el = document.querySelector(`[data-slug="${CSS.escape(slug)}"]`);
-      el?.scrollIntoView({ block: "nearest" });
+    setExpanded((cur) => {
+      const next = new Set(cur);
+      for (const a of ancestorSlugs(slug, parents)) next.add(a);
+      return next;
+    });
+    queueMicrotask(() => focusTreeRow(slug));
+  }
+
+  function setExpandedOpen(slug: string, open: boolean) {
+    setExpanded((cur) => {
+      const next = new Set(cur);
+      if (open) next.add(slug);
+      else next.delete(slug);
+      return next;
+    });
+  }
+
+  function onTreeKeyDown(e: KeyboardEvent, slug: string) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      selectNode(slug);
+    }
+  }
+
+  function applyTreeNavKey(key: string, slug: string, e: { preventDefault: () => void }): void {
+    const visible = model ? visibleSlugs(model.rootSlug, nodes, expanded) : [];
+    const result = applyTreeKey(key, slug, visible, nodes, expanded, parents);
+    if (result.kind === "noop") return;
+    e.preventDefault();
+    if (result.kind === "select") selectNode(result.slug);
+    if (result.kind === "expand") setExpandedOpen(result.slug, true);
+    if (result.kind === "collapse") setExpandedOpen(result.slug, false);
+  }
+
+  useEffect(() => {
+    if (!selected || !model) return;
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      if (!TREE_NAV_KEYS.has(e.key)) return;
+      if (treeKeysBlocked(e.target)) return;
+      applyTreeNavKey(e.key, selected, e);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  function toggleExpand(slug: string) {
+    setExpanded((cur) => {
+      const next = new Set(cur);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
     });
   }
 
@@ -363,7 +493,7 @@ export function App(): ReactElement {
           type="button"
           className={stale ? "primary" : undefined}
           onClick={() => void reload()}
-          disabled={busy}
+          disabled={Boolean(busy && model)}
           title={stale ? "Map changed since this view (skill, CLI, or another tab)" : "Reload map"}
         >
           {busy ? "Loading…" : stale ? "Reload · updated" : "Reload"}
@@ -378,7 +508,10 @@ export function App(): ReactElement {
               slug={model.rootSlug}
               nodes={nodes}
               selected={selected}
+              expanded={expanded}
               onSelect={selectNode}
+              onToggle={toggleExpand}
+              onKeyDown={onTreeKeyDown}
               seen={new Set()}
             />
           ) : (
@@ -399,13 +532,6 @@ export function App(): ReactElement {
         </section>
         <PreviewPanel anchor={preview} repoRoot={session?.repoRoot ?? null} />
       </div>
-      <footer>
-        Dumb client of <code>GET /api/map/status</code> (same JSON as{" "}
-        <code>snowshoe map status --json</code>). Code preview via <code>GET /api/file</code>{" "}
-        (repoRoot sandbox) for any node with anchors. Mark/cancel via HTTP twins. Reload lights up
-        when a poll of the same JSON differs from this snapshot (does not auto-apply). No ledger
-        writes from this page.
-      </footer>
     </div>
   );
 }

@@ -3,6 +3,8 @@ export const ROOT_SLUG = "root";
 export const LEASE_TTL_MS = 30 * 60 * 1000;
 /** Default `--batch-size` for `work next` (must stay ≥ 3). */
 export const DEFAULT_WORK_BATCH_SIZE = 5;
+/** `map serve --expand-depth`: expand root only (first child level visible). */
+export const DEFAULT_MAP_EXPAND_DEPTH = 1;
 /** Fallback tick while `work next --wait` if fs.watch is quiet (WAL/NFS). */
 export const WORK_NEXT_WAIT_FALLBACK_MS = 2000;
 

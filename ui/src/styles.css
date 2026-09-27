@@ -24,25 +24,17 @@ body,
 
 .app {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   height: 100%;
 }
 
-header,
-footer {
+header {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--line);
   background: var(--panel);
-}
-
-footer {
-  border-bottom: none;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 12px;
 }
 
 header h1 {
@@ -112,11 +104,33 @@ button.danger {
   cursor: pointer;
 }
 
+.twirl {
+  width: 1.1em;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+span.twirl {
+  cursor: default;
+}
+
 .node:hover {
   background: #1e2731;
 }
 .node.selected {
   background: #243344;
+}
+.node:focus,
+.tree:focus-within .node.selected {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
 }
 
 .swatch {

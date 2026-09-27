@@ -12,7 +12,7 @@ import {
 import { DEFAULT_WORK_BATCH_SIZE } from "./domain/types.ts";
 import { CliError, EXIT_USAGE } from "./errors.ts";
 import { printJson } from "./json.ts";
-import { runMapServe } from "./map/serve.ts";
+import { parseMapExpandDepth, runMapServe } from "./map/serve.ts";
 
 function emit(result: { exitCode: number; body: Record<string, unknown> }, _json: boolean): number {
   printJson(result.body);
@@ -245,6 +245,11 @@ const mapServeCmd = defineCommand({
     port: { type: "string", description: "Port (default 8787; 0 = ephemeral)", default: "8787" },
     host: { type: "string", description: "Bind address (default 127.0.0.1)", default: "127.0.0.1" },
     open: { type: "boolean", description: "Open the system browser", default: false },
+    "expand-depth": {
+      type: "string",
+      description: "Tree levels expanded at start (0 = root collapsed; default 1 = root open)",
+      default: "1",
+    },
   },
   async run({ args }) {
     const port = Number(args.port);
@@ -252,6 +257,7 @@ const mapServeCmd = defineCommand({
       port: Number.isFinite(port) ? port : undefined,
       host: String(args.host),
       open: Boolean(args.open),
+      expandDepth: parseMapExpandDepth(args["expand-depth"]),
     });
     printJson(body);
     await new Promise<void>((resolve) => {

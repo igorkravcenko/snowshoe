@@ -2,6 +2,7 @@ import { existsSync, statSync } from "node:fs";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { runMapDetailCancel, runMapDetailMark, runMapStatus } from "../commands/map.ts";
 import { withSession } from "../commands/session.ts";
+import { DEFAULT_MAP_EXPAND_DEPTH } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_INTERNAL, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { findRepoRoot, requireInitialized } from "../paths.ts";
 import { FileReadError, readRepoFile } from "./file-read.ts";
@@ -23,6 +24,8 @@ const MIME: Record<string, string> = {
 export type MapHttpOptions = {
   cwd: string;
   uiDist: string;
+  expandDepth?: number;
+  packageRoot?: string;
 };
 
 function httpStatusForExit(code: number): number {
@@ -125,6 +128,8 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
               repoRoot: s.repoRoot,
               gitHead: s.gitHead,
               locale: s.ledger.getMeta("locale"),
+              expandDepth: opts.expandDepth ?? DEFAULT_MAP_EXPAND_DEPTH,
+              packageRoot: opts.packageRoot ?? null,
             },
             EXIT_OK,
           ),
@@ -183,6 +188,12 @@ function safeDistFile(uiDist: string, urlPath: string): string | null {
   return abs;
 }
 
+function isSpaIndexFallback(urlPath: string): boolean {
+  if (urlPath.startsWith("/assets/") || urlPath.startsWith("/src/")) return false;
+  if (/\.(js|mjs|cjs|ts|tsx|css|map|json)$/i.test(urlPath)) return false;
+  return true;
+}
+
 function serveUiAsset(urlPath: string, uiDist: string): Response {
   if (!existsSync(uiDist)) {
     return jsonResponse(
@@ -202,7 +213,7 @@ function serveUiAsset(urlPath: string, uiDist: string): Response {
 
   if (!existsSync(file) || statSync(file).isDirectory()) {
     const index = join(uiDist, "index.html");
-    if (existsSync(index) && !urlPath.startsWith("/assets/")) {
+    if (existsSync(index) && isSpaIndexFallback(urlPath)) {
       file = index;
     } else {
       return new Response("Not found", { status: 404 });
@@ -214,8 +225,7 @@ function serveUiAsset(urlPath: string, uiDist: string): Response {
   return new Response(bytes, {
     headers: {
       "content-type": type,
-      "cache-control":
-        urlPath === "/" || file.endsWith("index.html") ? "no-store" : "public, max-age=60",
+      "cache-control": "no-store",
     },
   });
 }
