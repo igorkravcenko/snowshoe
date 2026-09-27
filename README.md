@@ -6,7 +6,7 @@ A git-native, ideally OSS layer for a *personal* repo comprehension map. After c
 
 Working name is **Snowshoe** (not final). Backup: **Catchmark**.
 
-This repository now includes a **CLI vertical slice** (HP1–4, no learning). The spec-driven “brain” (product truth, decisions, agent protocol) remains the source of claims. Routine epoch ADRs are still **proposed**.
+This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable local map UI** and drain skill (no learning). The spec-driven “brain” remains the source of claims. Routine epoch ADRs are still **proposed**.
 
 ```bash
 bun install
@@ -17,6 +17,18 @@ bun run check
 ```
 
 `.snowshoe/` is personal/local and gitignored. `init` does not install git hooks.
+
+## How to try (E2E, no learning)
+
+1. `bun install`
+2. `bun src/index.ts init --json`
+3. Load `.cursor/skills/snowshoe/` and ask the agent to drain Snowshoe work.
+4. Agent: `bun src/index.ts work next --json` then `work complete` (root detail; no `type: system`).
+5. `bun src/index.ts map serve --open` — walk the tree.
+6. Mark a child → pending badge → agent drains → click **Reload**.
+7. Open a leaf via `anchors[]`. Optional: commit/pull, agent `routine status` → `refresh` → drain → `advance` → Reload.
+
+Longer pointer: [docs/brain/notes/how-to-try-e2e.md](docs/brain/notes/how-to-try-e2e.md).
 
 ## What it is / is not
 

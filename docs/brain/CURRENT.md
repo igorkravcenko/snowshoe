@@ -5,7 +5,7 @@ updated: 2026-09-27
 
 # CURRENT
 
-**Implementation status:** first vertical-slice CLI (HP1–4, no learning). Routine epoch/CLI ADRs remain **proposed**; the slice follows them as working code. [ADR-2026-09-26-vertical-slice-cli.md](./DECISIONS/ADR-2026-09-26-vertical-slice-cli.md).
+**Implementation status:** HP1–4 CLI plus a tryable local map UI and drain skill (no learning). Routine epoch/CLI ADRs remain **proposed**. [ADR-2026-09-26-vertical-slice-cli.md](./DECISIONS/ADR-2026-09-26-vertical-slice-cli.md), [ADR-2026-09-27-map-ui-and-skill.md](./DECISIONS/ADR-2026-09-27-map-ui-and-skill.md).
 
 ## Product
 
@@ -14,8 +14,8 @@ updated: 2026-09-27
 - **Wedge:** git-native / ideally OSS layer for a *personal* repo comprehension map. After commits or `git pull`, show what went stale; the human chooses what to catch up on (agency). Structure exists so the human can explore and rank misunderstanding — not only consume an agent “red queue.”
 - **Form (intent):** CLI-first **orchestrator** (not a passive ledger, not a full agent harness). Owns git-anchored state, freshness, and verify protocol; pluggable agent backends are workers for map / explain / quiz. Dual entry: harness skills call `snowshoe …` (provisional binary), or the CLI invokes a configured backend (e.g. a catch-up flow). Details: [ADR-2026-09-25-product-form-orchestrator.md](./DECISIONS/ADR-2026-09-25-product-form-orchestrator.md).
 - **State default:** project model may live under something like `.snowshoe/`; **personal ledger gitignored / local by default**. **SQLite is source of truth** for FSM / queue / leases / epoch meta / metrics (floats `0.0–1.0`); heavy payloads are files under `.snowshoe/epochs/<epochId>/…`; markdown map/notes are human-readable, **not** SoT for metrics or step statuses. [ADR-2026-09-25-personal-state-gitignore.md](./DECISIONS/ADR-2026-09-25-personal-state-gitignore.md), [ADR-2026-09-25-implementation-stack.md](./DECISIONS/ADR-2026-09-25-implementation-stack.md).
-- **v1 surfaces (intent):** primary signal where “red” arrives on delta — **opt-in** local git hook after pull/merge (+ checkout when relevant) and PR-check; navigable map is a secondary screen for learning, not the only home. **Default signal:** skill → CLI (`snowshoe routine refresh` / `status` / `work …` — families still *proposed*). `init` does **not** install hooks; `hooks install` / `uninstall` are opt-in. CLI always; optional TUI for status/queue/quiz; local GUI map on demand (**later**, not day-1). [ADR-2026-09-25-v1-surfaces.md](./DECISIONS/ADR-2026-09-25-v1-surfaces.md).
-- **Implementation:** TypeScript on **Bun**; CLI with citty + Zod; durable machine state **`bun:sqlite`**. Map UI **later, not day-1:** this slice is **CLI-only** `snowshoe map status --json`. NestJS / Next.js / Electron are out of day-1. Informal *snow* is not CLI. [ADR-2026-09-25-implementation-stack.md](./DECISIONS/ADR-2026-09-25-implementation-stack.md), [ADR-2026-09-26-vertical-slice-cli.md](./DECISIONS/ADR-2026-09-26-vertical-slice-cli.md).
+- **v1 surfaces (intent):** primary signal where “red” arrives on delta — **opt-in** local git hook after pull/merge (+ checkout when relevant) and PR-check; navigable map is a **secondary** screen, not the product home. **Default signal:** skill → CLI (`snowshoe routine refresh` / `status` / `work …` — families still *proposed*). `init` does **not** install hooks; `hooks install` / `uninstall` are opt-in. CLI always. Local GUI map is on-demand via `snowshoe map serve` (dumb client of `map status` JSON). [ADR-2026-09-25-v1-surfaces.md](./DECISIONS/ADR-2026-09-25-v1-surfaces.md), [ADR-2026-09-27-map-ui-and-skill.md](./DECISIONS/ADR-2026-09-27-map-ui-and-skill.md).
+- **Implementation:** TypeScript on **Bun**; CLI with citty + Zod; durable machine state **`bun:sqlite`**. Map UI: React + Vite, served by `snowshoe map serve` (HTTP twins share the CLI read/mutation layer). NestJS / Next.js / Electron are out of day-1. Informal *snow* is not CLI. [ADR-2026-09-25-implementation-stack.md](./DECISIONS/ADR-2026-09-25-implementation-stack.md), [ADR-2026-09-26-vertical-slice-cli.md](./DECISIONS/ADR-2026-09-26-vertical-slice-cli.md), [ADR-2026-09-27-map-ui-and-skill.md](./DECISIONS/ADR-2026-09-27-map-ui-and-skill.md).
 
 ## Non-goals (v1)
 
@@ -41,7 +41,7 @@ No Snowshoe ARR or user counts exist to cite. Do not invent them. There is no pr
 
 ## Now
 
-The first application code is the HP1–4 CLI (no learning, no hook install). Proposed routine ADRs A/B are **not** promoted. Slice details: [ADR-2026-09-26-vertical-slice-cli.md](./DECISIONS/ADR-2026-09-26-vertical-slice-cli.md). Positioning: [docs/product/positioning.md](../product/positioning.md). Working notes on form detail: [notes/product-form-detail.md](./notes/product-form-detail.md).
+HP1–4 CLI plus tryable `snowshoe map serve` and `.cursor/skills/snowshoe/` (no learning, no hook install, util does not spawn). Proposed routine ADRs A/B are **not** promoted. Slice details: [ADR-2026-09-26-vertical-slice-cli.md](./DECISIONS/ADR-2026-09-26-vertical-slice-cli.md), [ADR-2026-09-27-map-ui-and-skill.md](./DECISIONS/ADR-2026-09-27-map-ui-and-skill.md). Manual try: [notes/how-to-try-e2e.md](./notes/how-to-try-e2e.md). Positioning: [docs/product/positioning.md](../product/positioning.md). Working notes on form detail: [notes/product-form-detail.md](./notes/product-form-detail.md).
 
 ## Process / quality
 
