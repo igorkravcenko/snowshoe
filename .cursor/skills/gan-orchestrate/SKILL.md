@@ -46,7 +46,7 @@ Name and state:
 - **Discriminator** — who only critiques (`gan-critique` worker)
 - **Cap** — default 6 rounds
 
-Domain for both workers: `.cursor/skills/brain-protocol/SKILL.md`, `.cursor/rules/project.mdc`, `docs/brain/CURRENT.md`. Do not import a trading stack or any other product's protocol.
+Honor always-on locks in `.cursor/rules/project.mdc` and `docs/brain/CURRENT.md` (accepted ADRs). Do not restate them here. Protocol: `.cursor/skills/brain-protocol/SKILL.md`.
 
 ## Start (Orca)
 

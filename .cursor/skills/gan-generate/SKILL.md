@@ -73,5 +73,5 @@ Use `--outcome failed` when the round hard-failed; never encode failure only in 
 - Hit the failure mode, not the critic's prose.
 - One slice per round: do not mix a P0 bugfix with a policy rewrite unless the round said to.
 - Title and gates must match real done for that target.
-- Honor Snowshoe locks in `.cursor/rules/project.mdc` and `docs/brain/CURRENT.md` (no learning/hooks expansion unless the slice says so).
+- Honor always-on locks in `.cursor/rules/project.mdc` and `docs/brain/CURRENT.md` (accepted ADRs). Do not restate them here.
 - If the preamble is stale or absent, do not send lifecycle messages; inspect state or treat the prompt as an ordinary handoff.

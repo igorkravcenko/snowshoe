@@ -41,14 +41,11 @@ Do not treat `EXPERIMENTS.md` or `docs/evidence/**` as truth.
 Report against each item with evidence (path / SHA / quote):
 
 1. **CURRENT ↔ ADR** — if behavior or product claim changed, is there an ADR **and** CURRENT update in the same change (or already true on main)?
-2. **Locks** — no learning/quiz/verify, no hooks-on-init, no agent spawn, no trading/Nautilus bleed, unless CURRENT+ADR authorize it
-3. **Skill contract** (if `.cursor/skills/**` touched) — agent-facing; PATH `snowshoe`; no HP labels / fail essays / util-internal noise unless intentionally documented
-4. **Naming** — PATH binary `snowshoe`; informal *snow* ≠ CLI
-5. **State layering** — SQLite SoT for FSM/metrics; epoch heavy payloads under `.snowshoe/epochs/`; map markdown not SoT for statuses
-6. **Children vs refs** — if detail/map touched: hierarchy ≠ relevance mashed into one `edges` list
-7. **Scope** — diff matches stated slice; no silent drive-by
-8. **CI** — brain-docs / app checks green or explained
-9. **Draft hygiene** — undraft only when ready; auditor does not undraft/merge unless asked
+2. **Locks** — honor always-on `.cursor/rules/project.mdc` + CURRENT + accepted ADRs. Do not restate those locks here.
+3. **Skill bodies** (if `.cursor/skills/**` touched) — role-generic; locks live in project.mdc / CURRENT, not enumerated in the skill
+4. **Scope** — diff matches stated slice; no silent drive-by
+5. **CI** — brain-docs / app checks green or explained
+6. **Draft hygiene** — undraft only when ready; auditor does not undraft/merge unless asked
 
 ## Verdict shape
 
@@ -72,7 +69,7 @@ Output exactly:
 ## Rules
 
 - Prefer facts from CURRENT/accepted ADRs/code over the PR body's claims
-- Do not invent ARR, users, competitors, or new product direction
+- Do not invent product direction
 - Do not open a smell-only rewrite epic
 - If GAN already ran: do not re-litigate Closed items; only raise new consistency misses
 - User-facing chat is Russian (see `.cursor/rules/agent-comms.mdc`). File patches and proposed docs stay English unless the artifact itself is Russian user-facing prose.

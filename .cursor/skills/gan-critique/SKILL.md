@@ -82,5 +82,5 @@ Use `--outcome failed` when the round hard-failed. Then **end the turn**. The co
 - Next round does not re-litigate closed items.
 - Generator **pushback**: drop, restate with facts, or escalate as a product fork. Do not ignore it; do not re-litigate taste.
 - Prefer facts from code/canon over the artifact's memory of the code.
-- Snowshoe: do not demand learning, hooks-on-init, or trading-stack patterns. Skill text must stay agent-facing (no util-internal essays) when the artifact is `.cursor/skills/snowshoe`.
+- Honor always-on locks in `.cursor/rules/project.mdc` and `docs/brain/CURRENT.md` (accepted ADRs). Do not restate them here.
 - If the preamble is stale or absent, do not send lifecycle messages; inspect state or treat the prompt as an ordinary handoff.
