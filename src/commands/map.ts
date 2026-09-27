@@ -37,6 +37,7 @@ export function runMapStatus(session: Session): {
       ...(unresolved.length ? { anchorsUnresolved: unresolved } : {}),
       ...(n.prose_ref ? { proseRef: n.prose_ref } : {}),
       children: session.ledger.childrenOf(n.slug),
+      refs: session.ledger.refsFrom(n.slug),
     };
   });
 

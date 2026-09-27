@@ -1,7 +1,14 @@
 import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { commitFile, completeEnvelope, git, makeGitRepo, snowshoe } from "./helpers.ts";
+import {
+  commitFile,
+  completeEnvelope,
+  detailPayload,
+  git,
+  makeGitRepo,
+  snowshoe,
+} from "./helpers.ts";
 
 function openLedger(repo: string): Database {
   return new Database(join(repo, ".snowshoe", "ledger.sqlite"));
@@ -53,7 +60,7 @@ async function completeRootUnchanged(repo: string): Promise<void> {
         id: String(item.stepId),
         leaseToken: String(item.leaseToken),
         kind: "detail",
-        payload: { parentSlug: "root", unchanged: true, nodes: [], edges: [] },
+        payload: detailPayload({ parentSlug: "root", unchanged: true }),
       },
     ]),
   });

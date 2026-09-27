@@ -56,6 +56,18 @@
           "children": {
             "type": "array",
             "items": { "type": "string" }
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["to", "kind"],
+              "properties": {
+                "to": { "type": "string" },
+                "kind": { "type": "string" }
+              }
+            }
           }
         }
       }

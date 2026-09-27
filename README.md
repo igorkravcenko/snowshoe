@@ -6,27 +6,28 @@ A git-native, ideally OSS layer for a *personal* repo comprehension map. After c
 
 Working name is **Snowshoe** (not final). Backup: **Catchmark**.
 
-This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable local map UI** and drain skill (no learning). The spec-driven “brain” remains the source of claims. Routine epoch ADRs are still **proposed**.
+This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable local map UI** and drain skill. The spec-driven “brain” remains the source of claims. Routine epoch ADRs are still **proposed**.
 
 ```bash
-bun install
-bun src/index.ts init --json
+bun install --frozen-lockfile
+bun link                  # puts `snowshoe` on PATH (see .cursor/skills/snowshoe/install.md)
+snowshoe init --json
 bun test
 bun run typecheck
 bun run check
 ```
 
-`.snowshoe/` is personal/local and gitignored. `init` does not install git hooks.
+`.snowshoe/` is personal/local and gitignored. `init` does not install git hooks. Install binary is **`snowshoe`** (not `snow`).
 
-## How to try (E2E, no learning)
+## How to try (E2E)
 
-1. `bun install`
-2. `bun src/index.ts init --json`
+1. `bun install --frozen-lockfile` then put `snowshoe` on PATH (`bun link`).
+2. `snowshoe init --json` (or `snowshoe work next --json` and follow `todo`).
 3. Load `.cursor/skills/snowshoe/` and ask the agent to drain Snowshoe work.
-4. Agent: `bun src/index.ts work next --json` then `work complete` (root detail; no `type: system`).
-5. `bun src/index.ts map serve --open` — walk the tree.
+4. Agent: `snowshoe work next --json` then `work complete` (detail payload uses `children` + `refs`).
+5. `snowshoe map serve --open` — walk the tree.
 6. Mark a child → pending badge → agent drains → click **Reload**.
-7. Open a leaf via `anchors[]`. Optional: commit/pull, agent `routine status` → `refresh` → drain → `advance` → Reload.
+7. Open a leaf via `anchors[]`. Optional: commit/pull; `work next` gates refresh then advance.
 
 Longer pointer: [docs/brain/notes/how-to-try-e2e.md](docs/brain/notes/how-to-try-e2e.md).
 

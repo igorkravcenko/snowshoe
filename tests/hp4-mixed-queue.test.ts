@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { commitFile, completeEnvelope, git, makeGitRepo, snowshoe } from "./helpers.ts";
+import {
+  commitFile,
+  completeEnvelope,
+  detailPayload,
+  git,
+  makeGitRepo,
+  snowshoe,
+} from "./helpers.ts";
 
 describe("HP4 mixed queue: routine-first; detail never gates advance", () => {
   test("work next drains structure before detail; advance succeeds with pending detail", async () => {
@@ -89,12 +96,7 @@ describe("HP4 mixed queue: routine-first; detail never gates advance", () => {
           id: String(detail.stepId),
           leaseToken: String(detail.leaseToken),
           kind: "detail",
-          payload: {
-            parentSlug: "root",
-            unchanged: true,
-            nodes: [],
-            edges: [],
-          },
+          payload: detailPayload({ parentSlug: "root", unchanged: true }),
         },
       ]),
     });

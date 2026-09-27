@@ -1,75 +1,103 @@
 ---
 name: snowshoe
 description: >-
-  Drive the Snowshoe CLI drain loop (no learning): init, routine status/refresh,
-  work next/complete, routine advance, map status. Use after pull, when catching
-  up a personal repo map, or when the human is trying the E2E map UI. Never write
-  SQLite, never spawn agents, never install hooks, never fail detail steps.
+  Drive the Snowshoe CLI drain loop: work next as entry, follow its todo
+  (init / routine refresh / routine advance), complete claimed steps, then
+  call work next again. Use after pull or when catching up a personal repo map.
+  Assumes `snowshoe` on PATH. If the binary is missing, open install.md in this
+  folder only then.
 ---
 
-# Snowshoe skill (v1 drain, no learning)
+# Snowshoe drain skill
 
-You are an **external worker**. Snowshoe does **not** spawn you. Drive the CLI; the util owns the ledger.
+Assume **`snowshoe` is on PATH**. Always pass `--json` and parse the result.
 
-In this repo the binary is `bun src/index.ts` (or `bun run snowshoe`). If `snowshoe` is on PATH, use that. Always pass `--json` so you can parse results.
+If `snowshoe` is missing (`command -v snowshoe` fails), **stop the drain** and open **`install.md` in this same folder** — only then. Do not load install instructions into a normal drain.
 
-## Hard rules
+The install binary is **`snowshoe`**. A user-local shell alias such as `snoe` is optional convenience; do not treat informal *snow* as the PATH command.
 
-- Never open or write `.snowshoe/ledger.sqlite`.
-- Never install git hooks. Never spawn agents or watch the filesystem.
-- Never call `work fail` on `kind=detail` (detail has no fail in v1).
-- Never submit `type: "system"` in a detail payload. Root slug `root` is util-owned.
-- Do not start `map serve` unless the human asked; the UI is their face, not yours.
-- Do not call `work complete` from a map UI. You complete work; they reload.
+Drive the CLI. Do not write the ledger yourself.
 
-## Commands you run
+## Entry: `work next`
+
+Every drain starts with:
 
 ```bash
-bun src/index.ts init --json
-bun src/index.ts routine status --json
-bun src/index.ts routine refresh --json
-bun src/index.ts work next --json --batch-size 1
-bun src/index.ts work complete --json          # JSON envelope on stdin
-bun src/index.ts work fail --json              # routine kinds only — never detail
-bun src/index.ts routine advance --json
-bun src/index.ts map status --json
+snowshoe work next --json
 ```
 
-`work complete` / `work fail` read JSON from **stdin** (or `--input '<json>'`).
+`work next` is the gate. Follow **one** field shape:
 
-## Default drain loop
+| Field | Meaning |
+|---|---|
+| `action` | `init` · `refresh` · `advance` · `work` · `idle` |
+| `todo` | Exact command to run when gated (`init` / `refresh` / `advance`). `null` otherwise. |
+| `items` | Claimed steps. Empty unless `action` is `work` and there is claimable work. |
+
+Until `todo` is null, **run only that unlock command**, then call `work next` again. Do not look for other work, do not complete steps, do not skip the gate.
 
 ```
+# outer: re-fetch the batch every cycle
 loop:
-  status ← routine status --json
-  if status says HEAD/target moved or needs refresh:
-    routine refresh --json
-  batch ← work next --json --batch-size 1
-  if batch.items is empty:
-    if status.canAdvance (or advance is allowed): routine advance --json
-    STOP  (queue empty / idle until next invocation)
+  batch ← snowshoe work next --json
+  if batch.todo is set:
+    run batch.todo exactly
+    continue                         # do not assume the queue is empty
+  if batch.items is empty:           # action is idle (or work with nothing claimable)
+    STOP
+  # inner: current batch
   for step in batch.items:
-    do the work for step.kind (below)
-    write allowed artifacts only under .snowshoe/…
-    work complete with { schemaVersion: 1, completions: [{ id, leaseToken, kind, payload }] }
+    do the work for step.kind
+    snowshoe work complete --json    # envelope on stdin or --input
     if result is hard reject: STOP and report reasons
-  if operator interrupt or budget exhausted: STOP and report
+    if operator interrupt: STOP and report
+  # next outer cycle — refresh the batch; finishing these tickets ≠ queue empty
 ```
 
-**Stop rules:** queue empty; batch/budget done; unrecoverable hard reject (bad lease, matrix forbid, proseRef outside `.snowshoe/map/`); operator interrupt.
+`--batch-size` is optional; the CLI default is already a small batch. Do not shrink it to a single item.
 
-**Routine-first:** the util orders `structure_sync` → `blast_radius` → `metric_decay` before `detail`. Do not try to drain detail while required epoch steps are pending.
+`work complete` reads JSON from **stdin** (or `--input '<json>'`).
 
-## Init → seed (HP1)
+## Commands
 
-1. `init --json` — creates local `.snowshoe/` (gitignored). No hooks. Util auto-enqueues root `detail` (`parentSlug=root`).
-2. `work next` → expect `kind=detail`, `parentSlug=root`, `allowedChildTypes` includes `module` / `external`.
-3. One-hop upsert **under** root. Children `type` ∈ `module|external` (not `system`).
-4. `work complete` then the human reloads the map UI.
+```bash
+snowshoe work next --json
+snowshoe init --json
+snowshoe routine refresh --json
+snowshoe routine status --json
+snowshoe routine advance --json
+snowshoe work complete --json
+snowshoe map status --json
+```
 
-### Detail complete payload
+Use `init`, `routine refresh`, and `routine advance` when `work next` puts them in `todo` — not as a competing entry path.
 
-Inner payload must match `docs/brain/schemas/detail-complete.schema.json`. Outer envelope is ADR-B-style `completions[]`.
+## Completing a step
+
+Envelope:
+
+```json
+{
+  "schemaVersion": 1,
+  "completions": [
+    {
+      "id": "<stepId from work next>",
+      "leaseToken": "<leaseToken from work next>",
+      "kind": "<step.kind>",
+      "payload": {}
+    }
+  ]
+}
+```
+
+`kind` must match the claimed step. Payload shape depends on `kind`. `snowshoe work complete --help` and the examples below are the contract; omit metric fields (the CLI sets them).
+
+### `kind=detail`
+
+One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on that item.
+
+- `children`: parent→child slugs under `parentSlug`. Every `nodes[].slug` must appear here.
+- `refs`: relevance links between entities (not hierarchy). Optional `kind` (default `related`). Do not use parent/child structure here.
 
 ```json
 {
@@ -92,32 +120,24 @@ Inner payload must match `docs/brain/schemas/detail-complete.schema.json`. Outer
             "anchors": [{ "path": "src/cli.ts", "symbol": "main", "startLine": 1 }]
           }
         ],
-        "edges": [{ "from": "root", "to": "cli", "kind": "parent" }]
+        "children": ["cli"],
+        "refs": []
       }
     }
   ]
 }
 ```
 
-- Omit metrics (util sets `0.0` on create; extra metric fields are ignored).
-- `unchanged: true` with empty nodes/edges is valid (clears pending, no graph growth).
-- `proseRef` if used must stay under `.snowshoe/map/`.
-- Missing/moved anchor files: util **accepts** and returns `anchorsUnresolved` (warn, keep going).
-- Child types must be allowed for the parent (`system`→`module|external`; `module`→`module|surface|flow`; `surface`→`flow|symbol`; `flow`→`symbol|module`; `symbol` none; `external`→`surface|flow`). `symbol` is always a leaf.
+- `unchanged: true` with empty `nodes` / `children` / `refs` clears the todo without growing the graph.
+- `proseRef`, if used, must stay under `.snowshoe/map/`.
+- Anchor `path`s must exist in the repo (missing or moved paths reject the complete).
+- Follow `allowedChildTypes` from `work next`. Leaves (`symbol` or `leaf: true`) are opened by the human from `anchors[]`.
 
-## User mark-detail (HP2)
+### Routine kinds
 
-The human marks a node in the map UI (or `map detail mark --slug <slug>`). You then `work next` → `kind=detail` on that slug → one-hop children + anchors → `complete`. They **Reload** the UI. Leaves (`symbol` / `leaf: true`) are opened by the UI from `anchors[]`; you do not open an editor.
+`work next` orders routine steps before detail. `base` / `target` / `nodeId` / `level` / `blastSeverity` on the item are the values to echo.
 
-## Pull / HEAD move (HP3)
-
-1. `routine status --json` — if behind HEAD / needs refresh → `routine refresh`.
-2. Drain **required routine steps** before remaining detail.
-3. `routine advance` when status allows. Detail never gates `base`.
-
-### Routine complete sketches
-
-**structure_sync** — cover git diff; empty `ops` is OK if the graph already exists **and** every touched path is either anchored or listed in `coverage.unmappedPaths`.
+**structure_sync** — cover the git diff; empty `ops` is OK when every touched path is already anchored or listed in `coverage.unmappedPaths`.
 
 ```json
 {
@@ -129,16 +149,22 @@ The human marks a node in the map UI (or `map detail mark --slug <slug>`). You t
 }
 ```
 
-**blast_radius** — empty `nodes` is legal when no anchors intersect the diff (⇒ **zero** `metric_decay` steps). Non-empty rows need `evidence`.
+**blast_radius** — empty `nodes` is legal when nothing in the diff hits anchors. Non-empty rows need `evidence`.
 
-**metric_decay** — exactly one `updates[]` row matching the claimed `(nodeId, level)`. `value` must be `≤ min(storedPrevious, severityCap)`. Do not raise trust.
+**metric_decay** — exactly one `updates[]` row matching the claimed `(nodeId, level)`. Do not raise the stored value.
 
-Use `work fail` only for routine kinds (`structure_sync` / `blast_radius` / `metric_decay`) when you cannot produce a valid payload.
+## Map UI
 
-## Mixed queue (HP4)
+The human marks a node, cancels a pending mark, and reloads the map. You complete work through the CLI. After `work complete`, they reload to see the tree.
 
-If both epoch steps and detail todos exist: finish required routine first; `routine advance` does not wait on detail.
+Do not start `map serve` unless the human asked.
 
-## Out of scope
+```bash
+snowshoe map status --json
+```
 
-Learning, quiz, verify, hooks install, agent spawn, util filesystem watch, committing `.snowshoe` to the project remote.
+## Stop
+
+- `work next` returns empty `items` and no `todo` (`action: idle`)
+- hard reject on complete (bad lease, invalid payload, missing anchors, …)
+- operator interrupt or budget exhausted

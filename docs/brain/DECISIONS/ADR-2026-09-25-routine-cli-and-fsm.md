@@ -31,7 +31,7 @@ Provisional binary / UX spelling: **`snowshoe …`**. Do not treat informal *sno
 | `snowshoe work complete` | Submit one or more payloads for accept/reject |
 | `snowshoe work fail` | Request failure transition(s) |
 
-Flags: `--json`; **`--batch-size N`** on `work next` (max items). `--budget` may appear as deprecated alias only — same meaning, not a second concept. **No token-budget flags.**
+Flags: `--json`; **`--batch-size N`** on `work next` (max items; **working-slice default is 5**, see [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md)). `--budget` may appear as deprecated alias only — same meaning, not a second concept. **No token-budget flags.** `work next` is also the drain **entry gate** (`action` / `todo` / `items`): uninitialized → `init`; refresh required → `routine refresh`; queue idle and `canAdvance` → `routine advance`.
 
 Envelope (intent): `schemaVersion`, `command`, `ok`, `repoRoot`, `gitHead`; heavy blobs via paths under `.snowshoe/epochs/<epochId>/…`. GC of superseded epoch dirs is best-effort later (not an intent blocker).
 

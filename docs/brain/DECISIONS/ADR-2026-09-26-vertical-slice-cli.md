@@ -20,7 +20,7 @@ Ship a **CLI-only** Snowshoe util that implements HP1–4:
 - Binary spelling: provisional `snowshoe`.
 - Stack as locked: TypeScript, Bun, citty, Zod, `bun:sqlite`, tests via `bun test` (see Consequences for Vitest).
 - Follow proposed [ADR-2026-09-25-routine-epoch-and-metrics](./ADR-2026-09-25-routine-epoch-and-metrics.md) and [ADR-2026-09-25-routine-cli-and-fsm](./ADR-2026-09-25-routine-cli-and-fsm.md) **as-is** for routine epochs/work; they remain **proposed**.
-- Detail lives on the same work bus (`kind=detail`); it never gates `base` / `routine advance`.
+- Detail lives on the same work bus (`kind=detail`); it never gates `base` / `routine advance`. Agent-facing detail complete uses **`children`** (parent→child) and **`refs`** (relevance), not a single `edges` list; missing/moved anchors **reject** ([ADR-2026-09-27-detail-children-refs](./ADR-2026-09-27-detail-children-refs.md)).
 - `init` does not install hooks and does not spawn agents.
 - `.snowshoe/**` is local / gitignored. SQLite is SoT.
 

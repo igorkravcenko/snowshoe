@@ -1,6 +1,8 @@
 export const SCHEMA_VERSION = 1;
 export const ROOT_SLUG = "root";
 export const LEASE_TTL_MS = 30 * 60 * 1000;
+/** Default `--batch-size` for `work next` (must stay ≥ 3). */
+export const DEFAULT_WORK_BATCH_SIZE = 5;
 
 export const METRIC_LEVELS = ["overview", "contracts", "internals"] as const;
 export type MetricLevel = (typeof METRIC_LEVELS)[number];

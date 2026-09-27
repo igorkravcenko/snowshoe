@@ -25,7 +25,7 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 
 | ADR | Status | One line |
 |---|---|---|
-| [ADR-2026-09-25-provisional-name-snowshoe](./ADR-2026-09-25-provisional-name-snowshoe.md) | accepted | Working name Snowshoe; backup Catchmark |
+| [ADR-2026-09-25-provisional-name-snowshoe](./ADR-2026-09-25-provisional-name-snowshoe.md) | accepted | Working name Snowshoe; backup Catchmark; PATH bin `snowshoe` (not `snow`) |
 | [ADR-2026-09-25-monetization-ladder](./ADR-2026-09-25-monetization-ladder.md) | accepted | OSS core free → paid convenience → team seats later |
 | [ADR-2026-09-25-personal-state-gitignore](./ADR-2026-09-25-personal-state-gitignore.md) | accepted | Personal ledger gitignored / local by default |
 | [ADR-2026-09-25-product-form-orchestrator](./ADR-2026-09-25-product-form-orchestrator.md) | accepted | CLI-first orchestrator; agents are pluggable workers |
@@ -38,3 +38,5 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-09-27-app-ci-biome](./ADR-2026-09-27-app-ci-biome.md) | accepted | App CI: typecheck, bun test, Biome; keep brain-docs; no lefthook |
 | [ADR-2026-09-27-map-ui-and-skill](./ADR-2026-09-27-map-ui-and-skill.md) | accepted | Tryable local map UI (`map serve`) + drain skill; A/B stay proposed |
 | [ADR-2026-09-27-ci-supply-chain-hygiene](./ADR-2026-09-27-ci-supply-chain-hygiene.md) | accepted | Pin Actions SHA + frozen-lockfile CI + SECURITY.md; no paid scanners |
+| [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md) | accepted | Repo-agnostic skill; `work next` gates; PATH `snowshoe`; default batch 5 |
+| [ADR-2026-09-27-detail-children-refs](./ADR-2026-09-27-detail-children-refs.md) | accepted | Detail payload `children` + `refs`; unresolved anchors reject |

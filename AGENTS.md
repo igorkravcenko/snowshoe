@@ -9,7 +9,7 @@ Entrypoint for agents working in this repo.
 
 ## Product (one line)
 
-**Snowshoe** (provisional; backup **Catchmark**) — *Catch up after pull.* A git-native / ideally OSS personal repo comprehension map. Implementation status: **HP1–4 CLI + tryable map UI/skill (no learning)**; routine ADRs A/B remain proposed. CLI spelling is provisional `snowshoe …`; informal *snow* is not CLI. Default signal is skill/human → CLI (`routine refresh` / `status` / `work`); git hooks are **opt-in** (`hooks install` / `uninstall`) — `init` does not install them. Stack + clarifications: [ADR-2026-09-25-implementation-stack](docs/brain/DECISIONS/ADR-2026-09-25-implementation-stack.md). Slices: [ADR-2026-09-26-vertical-slice-cli](docs/brain/DECISIONS/ADR-2026-09-26-vertical-slice-cli.md), [ADR-2026-09-27-map-ui-and-skill](docs/brain/DECISIONS/ADR-2026-09-27-map-ui-and-skill.md).
+**Snowshoe** (provisional; backup **Catchmark**) — *Catch up after pull.* A git-native / ideally OSS personal repo comprehension map. Implementation status: **HP1–4 CLI + tryable map UI/skill**; routine ADRs A/B remain proposed. Install / PATH binary is **`snowshoe`**; informal *snow* is not PATH. Default signal is skill/human → CLI (`work next` gates `init` / `routine refresh` / `advance`); git hooks are **opt-in** (`hooks install` / `uninstall`) — `init` does not install them. Stack + clarifications: [ADR-2026-09-25-implementation-stack](docs/brain/DECISIONS/ADR-2026-09-25-implementation-stack.md). Slices: [ADR-2026-09-26-vertical-slice-cli](docs/brain/DECISIONS/ADR-2026-09-26-vertical-slice-cli.md), [ADR-2026-09-27-map-ui-and-skill](docs/brain/DECISIONS/ADR-2026-09-27-map-ui-and-skill.md), [ADR-2026-09-27-skill-drain-loop](docs/brain/DECISIONS/ADR-2026-09-27-skill-drain-loop.md).
 
 ## Hard rules
 
@@ -29,5 +29,5 @@ Entrypoint for agents working in this repo.
 | `grilling` | Stress-test a plan or decision (rounds + frontier) |
 | `grill-me` | User says "grill me" / wants to be interviewed |
 | `grill-canon` | Audit CURRENT/ADRs for staleness or contradiction |
-| `snowshoe` | Drain loop against the CLI (init / routine / work / map); never write SQLite |
+| `snowshoe` | Drain loop against PATH `snowshoe` (`work next` first; `install.md` only if missing) |
 | `.github/agents/auditor.agent.md` | Read-only consistency audit (CoS before merge) |

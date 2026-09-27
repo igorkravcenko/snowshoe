@@ -86,3 +86,22 @@ export function completeEnvelope(
 ): string {
   return JSON.stringify({ schemaVersion: 1, completions: items });
 }
+
+export function detailPayload(args: {
+  parentSlug: string;
+  unchanged?: boolean;
+  nodes?: Array<Record<string, unknown>>;
+  children?: string[];
+  refs?: Array<{ from: string; to: string; kind?: string }>;
+}): Record<string, unknown> {
+  const unchanged = args.unchanged ?? false;
+  const nodes = args.nodes ?? [];
+  const children = args.children ?? (unchanged ? [] : nodes.map((n) => String(n.slug ?? "")));
+  return {
+    parentSlug: args.parentSlug,
+    unchanged,
+    nodes,
+    children,
+    refs: args.refs ?? [],
+  };
+}
