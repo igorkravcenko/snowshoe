@@ -61,7 +61,6 @@ loop:
 
 ```bash
 snowshoe work next --json
-snowshoe init --json
 snowshoe init --json --locale ru
 snowshoe routine refresh --json
 snowshoe routine status --json
@@ -106,7 +105,7 @@ One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on t
 
 - `children`: parent→child slugs under `parentSlug`. Every `nodes[].slug` must appear here.
 - `refs`: relevance links between entities (not hierarchy). Optional `kind` (default `related`). Do not use parent/child structure here.
-- `body` (markdown string, alias `bodyMd`): **required** on each upserted node when `unchanged` is false. Write it in the init locale. The CLI writes `.snowshoe/map/nodes/<slug>.md` and sets `proseRef`. You may write that file yourself and send `proseRef` instead; empty or missing prose rejects (`missing_body:<slug>`).
+- `body` (markdown string, alias `bodyMd`): **required** on each upserted node when `unchanged` is false. Write it in the init locale in a human readable form. The CLI writes `.snowshoe/map/nodes/<slug>.md` and sets `proseRef`. You may write that file yourself and send `proseRef` instead; empty or missing prose rejects (`missing_body:<slug>`).
 
 ```json
 {
