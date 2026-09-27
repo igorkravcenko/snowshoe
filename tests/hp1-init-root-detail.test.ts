@@ -46,16 +46,15 @@ describe("HP1 cold init → root detail seed", () => {
     const rejectResults = systemReject.json.results as Array<Record<string, unknown>>;
     expect(rejectResults[0]?.status).toBe("rejected");
 
-    const next2 = await snowshoe(repo, ["work", "next", "--json"]);
-    const item = (next2.json.items as Array<Record<string, unknown>>)[0]!;
+    // Reject does not drop a still-valid lease; retry with the same token.
     const complete = await snowshoe(
       repo,
       ["work", "complete", "--json"],
       {
         stdin: completeEnvelope([
           {
-            id: String(item.stepId),
-            leaseToken: String(item.leaseToken),
+            id: String(items[0]?.stepId),
+            leaseToken: String(items[0]?.leaseToken),
             kind: "detail",
             payload: {
               parentSlug: "root",

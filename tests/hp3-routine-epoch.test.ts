@@ -73,8 +73,11 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
     expect(blast.exitCode).toBe(0);
 
     const next3 = await snowshoe(repo, ["work", "next", "--json", "--batch-size", "8"]);
-    const kinds3 = (next3.json.items as Array<Record<string, unknown>>).map((i) => i.kind);
-    expect(kinds3).not.toContain("metric_decay");
+    const items3 = next3.json.items as Array<Record<string, unknown>>;
+    expect(items3.map((i) => i.kind)).not.toContain("metric_decay");
+    // Required routine is accepted, so detail is claimable before advance.
+    const detail = items3[0]!;
+    expect(detail?.kind).toBe("detail");
 
     const advance = await snowshoe(repo, ["routine", "advance", "--json"]);
     expect(advance.exitCode).toBe(0);
@@ -84,9 +87,6 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
     expect(after.exitCode).toBe(0);
     expect(after.json.behindHead).toBe(false);
 
-    const detailNext = await snowshoe(repo, ["work", "next", "--json"]);
-    const detail = (detailNext.json.items as Array<Record<string, unknown>>)[0]!;
-    expect(detail.kind).toBe("detail");
     expect(detail.parentSlug).toBe("root");
     const done = await snowshoe(repo, ["work", "complete", "--json"], {
       stdin: completeEnvelope([
@@ -215,13 +215,11 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
     });
     expect(tooHigh.exitCode).toBe(1);
 
-    const mNext2 = await snowshoe(repo, ["work", "next", "--json"]);
-    const m2 = (mNext2.json.items as Array<Record<string, unknown>>)[0]!;
     const ok = await snowshoe(repo, ["work", "complete", "--json"], {
       stdin: completeEnvelope([
         {
-          id: String(m2.stepId),
-          leaseToken: String(m2.leaseToken),
+          id: String(mItems[0]?.stepId),
+          leaseToken: String(mItems[0]?.leaseToken),
           kind: "metric_decay",
           payload: {
             schemaVersion: 1,

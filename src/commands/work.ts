@@ -40,8 +40,10 @@ const KIND_PRIORITY: Record<StepKind, number> = {
 function claimable(step: StepRow, now: number): boolean {
   if (step.status === "pending" || step.status === "failed") return true;
   if (step.status === "leased") {
-    if (!step.lease_expires_at || step.lease_expires_at <= now) return true;
-    return true;
+    // Reclaim only when the lease is missing or past TTL. A still-valid
+    // lease must stay with the current worker; overlapping `work next`
+    // must not mint a new token.
+    return !step.lease_expires_at || step.lease_expires_at <= now;
   }
   return false;
 }
@@ -401,50 +403,19 @@ function acceptStructure(session: Session, step: StepRow, raw: unknown): Complet
       }
     }
   }
-  if (reasons.length) return { id: step.id, status: "rejected", reasons };
-
-  session.ledger.transaction(() => {
-    for (const op of payload.ops) {
-      if (op.op === "upsert_node") {
-        const slug = resolveStructureSlug(op)!;
-        const existing = session.ledger.getNode(slug);
-        const type = resolveStructureType(op) ?? existing?.type ?? "module";
-        const leaf = type === "symbol" ? true : Boolean(op.node.leaf);
-        session.ledger.upsertNode({
-          slug,
-          title: op.node.title ?? existing?.title ?? slug,
-          type,
-          leaf,
-        });
-        const anchors = (op.node.codeAnchors ?? []).map((a) => ({
-          path: a.path,
-          symbol: a.symbol,
-          startLine: a.startLine,
-          endLine: a.endLine,
-          unresolved: false,
-        }));
-        if (op.node.codeAnchors) session.ledger.replaceAnchors(slug, anchors);
-        for (const parentId of op.node.parentIds ?? []) {
-          if (session.ledger.getNode(parentId) || seenUpserts.has(parentId)) {
-            session.ledger.setEdge(parentId, slug, "parent");
-          } else {
-            reasons.push(`unresolved_parent:${parentId}`);
-          }
-        }
-      } else if (op.op === "retire_node") {
-        session.ledger.deleteNode(op.nodeId);
-      } else if (op.op === "set_edge") {
-        session.ledger.setEdge(op.from, op.to, "parent");
-      } else if (op.op === "clear_edge") {
-        session.ledger.clearEdge(op.from, op.to, "parent");
+  for (const op of payload.ops) {
+    if (op.op !== "upsert_node") continue;
+    for (const parentId of op.node.parentIds ?? []) {
+      if (!session.ledger.getNode(parentId) && !seenUpserts.has(parentId)) {
+        reasons.push(`unresolved_parent:${parentId}`);
       }
     }
-  });
+  }
   if (reasons.length) return { id: step.id, status: "rejected", reasons };
 
   const touched = gitDiffNames(session.repoRoot, epoch.base, epoch.target);
   const unmapped = new Set(payload.coverage?.unmappedPaths ?? []);
-  const anchored = session.ledger.allAnchors().map((a) => a.path);
+  const anchored = projectedAnchorPaths(session, payload);
   const uncovered = touched.filter((p) => {
     if (unmapped.has(p)) return false;
     return !anchored.some((a) => pathMatchesAnchor(p, a));
@@ -458,18 +429,86 @@ function acceptStructure(session: Session, step: StepRow, raw: unknown): Complet
   }
 
   const artifactRef = writeArtifact(session.repoRoot, epoch.epoch_id, "structure.json", payload);
-  session.ledger.updateStep(step.id, {
-    status: "accepted",
-    leaseToken: null,
-    leaseExpiresAt: null,
-    artifactRef,
+  session.ledger.transaction(() => {
+    applyStructureOps(session, payload, seenUpserts);
+    session.ledger.updateStep(step.id, {
+      status: "accepted",
+      leaseToken: null,
+      leaseExpiresAt: null,
+      artifactRef,
+    });
+    session.ledger.setMeta(`structure_noop:${epoch.epoch_id}`, payload.ops.length === 0 ? "1" : "0");
+    session.ledger.setMeta(
+      `structure_unmapped:${epoch.epoch_id}`,
+      JSON.stringify(payload.coverage?.unmappedPaths ?? []),
+    );
   });
-  session.ledger.setMeta(`structure_noop:${epoch.epoch_id}`, payload.ops.length === 0 ? "1" : "0");
-  session.ledger.setMeta(
-    `structure_unmapped:${epoch.epoch_id}`,
-    JSON.stringify(payload.coverage?.unmappedPaths ?? []),
-  );
   return { id: step.id, status: "accepted" };
+}
+
+/** Project post-ops anchor paths without writing the ledger (coverage gate). */
+function projectedAnchorPaths(session: Session, payload: StructurePayload): string[] {
+  const bySlug = new Map<string, string[]>();
+  for (const a of session.ledger.allAnchors()) {
+    const list = bySlug.get(a.slug) ?? [];
+    list.push(a.path);
+    bySlug.set(a.slug, list);
+  }
+  for (const op of payload.ops) {
+    if (op.op === "upsert_node") {
+      const slug = resolveStructureSlug(op);
+      if (!slug) continue;
+      if (op.node.codeAnchors) {
+        bySlug.set(
+          slug,
+          op.node.codeAnchors.map((a) => a.path),
+        );
+      }
+    } else if (op.op === "retire_node") {
+      bySlug.delete(op.nodeId);
+    }
+  }
+  return [...bySlug.values()].flat();
+}
+
+function applyStructureOps(
+  session: Session,
+  payload: StructurePayload,
+  seenUpserts: Set<string>,
+): void {
+  for (const op of payload.ops) {
+    if (op.op === "upsert_node") {
+      const slug = resolveStructureSlug(op)!;
+      const existing = session.ledger.getNode(slug);
+      const type = resolveStructureType(op) ?? existing?.type ?? "module";
+      const leaf = type === "symbol" ? true : Boolean(op.node.leaf);
+      session.ledger.upsertNode({
+        slug,
+        title: op.node.title ?? existing?.title ?? slug,
+        type,
+        leaf,
+      });
+      const anchors = (op.node.codeAnchors ?? []).map((a) => ({
+        path: a.path,
+        symbol: a.symbol,
+        startLine: a.startLine,
+        endLine: a.endLine,
+        unresolved: false,
+      }));
+      if (op.node.codeAnchors) session.ledger.replaceAnchors(slug, anchors);
+      for (const parentId of op.node.parentIds ?? []) {
+        if (session.ledger.getNode(parentId) || seenUpserts.has(parentId)) {
+          session.ledger.setEdge(parentId, slug, "parent");
+        }
+      }
+    } else if (op.op === "retire_node") {
+      session.ledger.deleteNode(op.nodeId);
+    } else if (op.op === "set_edge") {
+      session.ledger.setEdge(op.from, op.to, "parent");
+    } else if (op.op === "clear_edge") {
+      session.ledger.clearEdge(op.from, op.to, "parent");
+    }
+  }
 }
 
 function pathMatchesAnchor(path: string, anchor: string): boolean {
