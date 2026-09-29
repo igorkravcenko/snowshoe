@@ -50,6 +50,10 @@ header .meta {
   font-family: ui-monospace, monospace;
 }
 
+header .meta.behind {
+  color: #e08080;
+}
+
 header .header-sidebar-toggle {
   margin-left: auto;
 }

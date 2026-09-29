@@ -58,6 +58,8 @@ export type MapReadModel = {
 export type SessionInfo = {
   repoRoot: string;
   gitHead: string | null;
+  mapAnchor?: string | null;
+  refreshRequired?: boolean;
   locale?: string | null;
   expandDepth?: number;
   packageRoot?: string | null;

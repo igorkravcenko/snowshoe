@@ -38,7 +38,7 @@ import {
   structurePayloadSchema,
 } from "../schemas/zod.ts";
 import { canAdvance, writeArtifact } from "./routine.ts";
-import { type Session, withSession } from "./session.ts";
+import { refreshRequired, type Session, withSession } from "./session.ts";
 
 const KIND_PRIORITY: Record<StepKind, number> = {
   structure_sync: 0,
@@ -118,15 +118,6 @@ function gatedNext(
       locale,
     }),
   };
-}
-
-export function refreshRequired(session: Session): boolean {
-  const head = session.gitHead;
-  if (!head) return false;
-  const open = session.ledger.getOpenEpoch();
-  if (open) return head !== open.target;
-  const base = session.ledger.caughtUpBase();
-  return Boolean(base && base !== head);
 }
 
 function hasOpenWork(session: Session): boolean {

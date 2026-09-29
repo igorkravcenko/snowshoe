@@ -106,6 +106,13 @@ function TreeNode(props: {
         className={`node${props.selected === node.slug ? " selected" : ""}`}
         data-slug={node.slug}
         onClick={() => props.onSelect(node.slug)}
+        onDoubleClick={(e) => {
+          if ((e.target as HTMLElement).closest("button.twirl")) return;
+          if (hasKids) {
+            e.preventDefault();
+            props.onToggle(node.slug);
+          }
+        }}
         onKeyDown={(e) => props.onKeyDown(e, node.slug)}
         role="treeitem"
         tabIndex={props.selected === node.slug ? 0 : -1}
@@ -123,6 +130,7 @@ function TreeNode(props: {
               e.stopPropagation();
               props.onToggle(node.slug);
             }}
+            onDoubleClick={(e) => e.stopPropagation()}
           >
             {open ? "▼" : "▶"}
           </button>
@@ -375,7 +383,7 @@ export function App(): ReactElement {
     void reload();
   }, [reload]);
 
-  const shownFingerprint = model && session ? mapFingerprint(model, session.gitHead) : null;
+  const shownFingerprint = model ? mapFingerprint(model) : null;
 
   useEffect(() => {
     if (!shownFingerprint || busy) return;
@@ -384,7 +392,17 @@ export function App(): ReactElement {
       try {
         const [map, sess] = await Promise.all([fetchMapStatus(), fetchSession()]);
         if (cancelled) return;
-        setStale(mapFingerprint(map, sess.gitHead) !== shownFingerprint);
+        setSession((cur) =>
+          cur
+            ? {
+                ...cur,
+                gitHead: sess.gitHead,
+                mapAnchor: sess.mapAnchor,
+                refreshRequired: sess.refreshRequired,
+              }
+            : sess,
+        );
+        setStale(mapFingerprint(map) !== shownFingerprint);
       } catch {
         /* poll is best-effort; Reload stays manual */
       }
@@ -581,7 +599,22 @@ export function App(): ReactElement {
     <div className="app">
       <header>
         <h1>Snowshoe map</h1>
-        <span className="meta">{session?.gitHead ? session.gitHead.slice(0, 12) : "no HEAD"}</span>
+        <span
+          className={session?.refreshRequired ? "meta behind" : "meta"}
+          title={
+            session?.refreshRequired && session.gitHead
+              ? `HEAD moved. Catch up the map to ${session.gitHead.slice(0, 12)} (routine refresh / snowshoe work next).`
+              : session?.mapAnchor
+                ? `Map epoch target ${session.mapAnchor}`
+                : "Git HEAD (no epoch target yet)"
+          }
+        >
+          {session?.mapAnchor
+            ? session.mapAnchor.slice(0, 12)
+            : session?.gitHead
+              ? session.gitHead.slice(0, 12)
+              : "no HEAD"}
+        </span>
         <button
           type="button"
           className={stale ? "primary" : undefined}

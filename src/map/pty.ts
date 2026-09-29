@@ -64,6 +64,24 @@ function applyResize(terminal: Bun.Terminal | undefined, cols: unknown, rows: un
   terminal.resize(c, r);
 }
 
+export const SNOWSHOE_MODE_LEARN = "learn";
+
+/** Human-facing PTY motd. Not an agent prompt; Snowshoe does not type into the shell. */
+export function mapPtyWelcomeLines(): string[] {
+  return [
+    "Start your usual agent here. Load the snowshoe skill to talk about this repo map and study it.",
+    "",
+  ];
+}
+
+function shellArgv(shell: string): string[] {
+  const printed = mapPtyWelcomeLines()
+    .map((line) => JSON.stringify(line))
+    .join(" ");
+  const execShell = JSON.stringify(shell);
+  return ["/bin/sh", "-c", `printf '%s\\n' ${printed}; exec ${execShell} -i`];
+}
+
 /** PTY shell: new session so bash can TIOCSCTTY (job control). */
 export function spawnMapPtyShell(opts: {
   cwd: string;
@@ -81,13 +99,14 @@ export function spawnMapPtyShell(opts: {
     },
   });
   const shell = (process.env.SHELL ?? "").trim() || "/bin/bash";
-  const proc = Bun.spawn([shell], {
+  const proc = Bun.spawn(shellArgv(shell), {
     cwd: opts.cwd,
     env: {
       ...process.env,
       TERM: "xterm-256color",
       SNOWSHOE_VIEW: opts.viewId,
       SNOWSHOE_MAP_URL: opts.mapUrl,
+      SNOWSHOE_MODE: SNOWSHOE_MODE_LEARN,
     },
     terminal,
     detached: true,

@@ -1,7 +1,7 @@
 import { existsSync, statSync } from "node:fs";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { runMapDetailCancel, runMapDetailMark, runMapStatus } from "../commands/map.ts";
-import { withSession } from "../commands/session.ts";
+import { mapEpochAnchor, refreshRequired, withSession } from "../commands/session.ts";
 import { DEFAULT_MAP_EXPAND_DEPTH } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_INTERNAL, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { findRepoRoot, requireInitialized } from "../paths.ts";
@@ -97,7 +97,7 @@ async function readSlug(req: Request, url: URL): Promise<string> {
 /**
  * HTTP twins of `snowshoe map status|detail mark|cancel`.
  * GET /api/map/status returns the same JSON as `snowshoe map status --json`.
- * GET /api/session is UI-only (repoRoot / gitHead / locale); not part of the map read-model.
+ * GET /api/session is UI-only (repoRoot / gitHead / mapAnchor / locale); not part of the map read-model.
  * GET /api/file is a read-only repo-root sandbox (no ledger writes).
  * POST/GET/PUT /api/view is in-memory UI focus (not the ledger; dies with the process).
  */
@@ -130,6 +130,8 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
             {
               repoRoot: s.repoRoot,
               gitHead: s.gitHead,
+              mapAnchor: mapEpochAnchor(s),
+              refreshRequired: refreshRequired(s),
               locale: s.ledger.getMeta("locale"),
               expandDepth: opts.expandDepth ?? DEFAULT_MAP_EXPAND_DEPTH,
               packageRoot: opts.packageRoot ?? null,

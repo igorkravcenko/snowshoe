@@ -8,7 +8,7 @@ import {
   snowshoePackageRoot,
   startMapServer,
 } from "../src/map/serve.ts";
-import { completeEnvelope, detailPayload, makeGitRepo, snowshoe } from "./helpers.ts";
+import { commitFile, completeEnvelope, detailPayload, makeGitRepo, snowshoe } from "./helpers.ts";
 
 let stop: (() => void) | undefined;
 
@@ -207,6 +207,48 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
 
     const viteDev = await fetch(`${server.url}src/main.tsx`);
     expect(viteDev.status).toBe(404);
+  });
+
+  test("GET /api/session mapAnchor is epoch target; refreshRequired when HEAD moves", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+
+    const cold = (await (await fetch(`${server.url}api/session`)).json()) as {
+      gitHead: string;
+      mapAnchor: string | null;
+      refreshRequired: boolean;
+    };
+    expect(cold.mapAnchor).toBe(cold.gitHead);
+    expect(cold.refreshRequired).toBe(false);
+
+    commitFile(repo, "ahead.md", "one\n", "head ahead of caught_up_base");
+    const drifted = (await (await fetch(`${server.url}api/session`)).json()) as {
+      gitHead: string;
+      mapAnchor: string | null;
+      refreshRequired: boolean;
+    };
+    expect(drifted.refreshRequired).toBe(true);
+    expect(drifted.mapAnchor).toBe(cold.mapAnchor);
+    expect(drifted.gitHead).not.toBe(drifted.mapAnchor);
+
+    const refreshed = await snowshoe(repo, ["routine", "refresh", "--json"]);
+    expect(refreshed.json.action).toBe("opened");
+    const bound = (await (await fetch(`${server.url}api/session`)).json()) as {
+      gitHead: string;
+      mapAnchor: string | null;
+      refreshRequired: boolean;
+    };
+    expect(bound.mapAnchor).toBe(bound.gitHead);
+    expect(bound.refreshRequired).toBe(false);
+    expect(bound.mapAnchor).toBe(drifted.gitHead);
   });
 
   test("in-memory GET/PUT /api/view is per id and not the ledger session", async () => {
