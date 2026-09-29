@@ -27,6 +27,7 @@ import { mapFingerprint } from "./map-fingerprint.ts";
 import { MarkdownBody } from "./markdown.tsx";
 import { isExpandable } from "./matrix.ts";
 import { PreviewPanel } from "./Preview.tsx";
+import { applySplitDrag, DEFAULT_SPLIT, parseSplitWeights, type SplitWeights } from "./split.ts";
 import { TerminalPane } from "./Terminal.tsx";
 import {
   ancestorSlugs,
@@ -61,6 +62,7 @@ function treeKeysBlocked(target: EventTarget | null): boolean {
 
 const TREE_NAV_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"]);
 const SIDEBAR_KEY = "snowshoe.sidebar";
+const SPLIT_KEY = "snowshoe.split";
 
 function loadSidebarOpen(): boolean {
   try {
@@ -71,6 +73,39 @@ function loadSidebarOpen(): boolean {
     /* sessionStorage may be unavailable */
   }
   return true;
+}
+
+function loadSplit(): SplitWeights {
+  try {
+    return parseSplitWeights(sessionStorage.getItem(SPLIT_KEY)) ?? DEFAULT_SPLIT;
+  } catch {
+    return DEFAULT_SPLIT;
+  }
+}
+
+function SplitGutter(props: { label: string; onDelta: (dx: number) => void }): ReactElement {
+  const lastX = useRef<number | null>(null);
+  return (
+    <hr
+      className="split-gutter"
+      aria-orientation="vertical"
+      title={props.label}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        lastX.current = e.clientX;
+      }}
+      onPointerMove={(e) => {
+        if (lastX.current === null || !e.currentTarget.hasPointerCapture(e.pointerId)) return;
+        const dx = e.clientX - lastX.current;
+        lastX.current = e.clientX;
+        if (dx !== 0) props.onDelta(dx);
+      }}
+      onPointerUp={() => {
+        lastX.current = null;
+      }}
+    />
+  );
 }
 
 function mapViewHref(viewId: string, slug: string): string {
@@ -349,6 +384,8 @@ export function App(): ReactElement {
   const [viewId, setViewId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(loadSidebarOpen);
   const [sidebarTab, setSidebarTab] = useState<"terminal" | "code">("terminal");
+  const [split, setSplit] = useState(loadSplit);
+  const layoutRef = useRef<HTMLDivElement | null>(null);
   const viewBootstrapped = useRef(false);
   const skipHistoryPush = useRef(true);
 
@@ -477,6 +514,14 @@ export function App(): ReactElement {
       /* ignore */
     }
   }, [sidebarOpen]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(SPLIT_KEY, JSON.stringify(split));
+    } catch {
+      /* ignore */
+    }
+  }, [split]);
 
   useLayoutEffect(() => {
     if (!selected || !model) return;
@@ -665,7 +710,17 @@ export function App(): ReactElement {
           })
         )}
       </nav>
-      <div className={sidebarOpen ? "layout has-sidebar" : "layout"}>
+      <div
+        ref={layoutRef}
+        className={sidebarOpen ? "layout has-sidebar" : "layout"}
+        style={
+          sidebarOpen
+            ? {
+                gridTemplateColumns: `${split.tree}fr 6px ${split.detail}fr 6px ${split.sidebar}fr`,
+              }
+            : { gridTemplateColumns: `${split.tree}fr 6px ${split.detail}fr` }
+        }
+      >
         <div className="tree" role="tree" aria-label="Map tree">
           {model ? (
             <TreeNode
@@ -682,6 +737,13 @@ export function App(): ReactElement {
             <p className="hint">Loading read-model…</p>
           )}
         </div>
+        <SplitGutter
+          label="Resize tree and inspector"
+          onDelta={(dx) => {
+            const width = layoutRef.current?.clientWidth ?? 0;
+            setSplit((cur) => applySplitDrag(cur, "tree-detail", dx, width, sidebarOpen));
+          }}
+        />
         <section className="detail">
           <Inspector
             node={selectedNode}
@@ -699,40 +761,49 @@ export function App(): ReactElement {
           />
         </section>
         {sidebarOpen ? (
-          <aside className="sidebar" aria-label="Sidebar">
-            <div className="sidebar-tabs" role="tablist" aria-label="Sidebar panels">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={sidebarTab === "terminal"}
-                onClick={() => setSidebarTab("terminal")}
-              >
-                Terminal
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={sidebarTab === "code"}
-                onClick={() => setSidebarTab("code")}
-              >
-                Code
-              </button>
-            </div>
-            <div className="sidebar-body">
-              <div
-                className={sidebarTab === "terminal" ? "sidebar-panel" : "sidebar-panel hidden"}
-                role="tabpanel"
-              >
-                <TerminalPane viewId={viewId} active={sidebarTab === "terminal"} />
+          <>
+            <SplitGutter
+              label="Resize inspector and sidebar"
+              onDelta={(dx) => {
+                const width = layoutRef.current?.clientWidth ?? 0;
+                setSplit((cur) => applySplitDrag(cur, "detail-sidebar", dx, width, true));
+              }}
+            />
+            <aside className="sidebar" aria-label="Sidebar">
+              <div className="sidebar-tabs" role="tablist" aria-label="Sidebar panels">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={sidebarTab === "terminal"}
+                  onClick={() => setSidebarTab("terminal")}
+                >
+                  Terminal
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={sidebarTab === "code"}
+                  onClick={() => setSidebarTab("code")}
+                >
+                  Code
+                </button>
               </div>
-              <div
-                className={sidebarTab === "code" ? "sidebar-panel" : "sidebar-panel hidden"}
-                role="tabpanel"
-              >
-                <PreviewPanel anchor={preview} repoRoot={session?.repoRoot ?? null} />
+              <div className="sidebar-body">
+                <div
+                  className={sidebarTab === "terminal" ? "sidebar-panel" : "sidebar-panel hidden"}
+                  role="tabpanel"
+                >
+                  <TerminalPane viewId={viewId} active={sidebarTab === "terminal"} />
+                </div>
+                <div
+                  className={sidebarTab === "code" ? "sidebar-panel" : "sidebar-panel hidden"}
+                  role="tabpanel"
+                >
+                  <PreviewPanel anchor={preview} repoRoot={session?.repoRoot ?? null} />
+                </div>
               </div>
-            </div>
-          </aside>
+            </aside>
+          </>
         ) : null}
       </div>
     </div>

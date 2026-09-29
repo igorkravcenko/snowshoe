@@ -79,12 +79,24 @@ header .header-sidebar-toggle {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(220px, 34%) minmax(0, 1fr);
   min-height: 0;
 }
 
-.layout.has-sidebar {
-  grid-template-columns: minmax(220px, 24%) minmax(240px, 28%) minmax(0, 1fr);
+.split-gutter {
+  width: 6px;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  cursor: col-resize;
+  background: var(--line);
+  touch-action: none;
+  user-select: none;
+}
+
+.split-gutter:hover,
+.split-gutter:active {
+  background: var(--accent);
 }
 
 .tree,
@@ -100,7 +112,6 @@ header .header-sidebar-toggle {
   display: flex;
   flex-direction: column;
   padding: 0;
-  border-left: 1px solid var(--line);
   min-height: 0;
 }
 
@@ -146,10 +157,6 @@ header .header-sidebar-toggle {
 .xterm-host {
   flex: 1;
   min-height: 0;
-}
-
-.detail {
-  border-left: 1px solid var(--line);
 }
 
 button {
