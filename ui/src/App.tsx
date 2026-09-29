@@ -11,12 +11,14 @@ import {
 import {
   type Anchor,
   cancelDetail,
+  createMapView,
   fetchMapStatus,
   fetchSession,
   incomingRefs,
   type MapNode,
   type MapReadModel,
   markDetail,
+  putMapView,
   type SessionInfo,
   sameAnchor,
 } from "./api.ts";
@@ -25,11 +27,15 @@ import { mapFingerprint } from "./map-fingerprint.ts";
 import { MarkdownBody } from "./markdown.tsx";
 import { isExpandable } from "./matrix.ts";
 import { PreviewPanel } from "./Preview.tsx";
+import { applySplitDrag, DEFAULT_SPLIT, parseSplitWeights, type SplitWeights } from "./split.ts";
+import { TerminalPane } from "./Terminal.tsx";
 import {
   ancestorSlugs,
   applyTreeKey,
+  breadcrumbSlugs,
   initialExpandedSlugs,
   parentBySlug,
+  slugFromHash,
   visibleSlugs,
 } from "./tree.ts";
 
@@ -51,10 +57,62 @@ function focusTreeRow(slug: string): boolean {
 function treeKeysBlocked(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
   if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return true;
-  return Boolean(target.closest(".preview-panel"));
+  return Boolean(target.closest(".preview-panel, .sidebar-term, .xterm"));
 }
 
 const TREE_NAV_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"]);
+const SIDEBAR_KEY = "snowshoe.sidebar";
+const SPLIT_KEY = "snowshoe.split";
+
+function loadSidebarOpen(): boolean {
+  try {
+    const raw = sessionStorage.getItem(SIDEBAR_KEY);
+    if (raw === "0") return false;
+    if (raw === "1") return true;
+  } catch {
+    /* sessionStorage may be unavailable */
+  }
+  return true;
+}
+
+function loadSplit(): SplitWeights {
+  try {
+    return parseSplitWeights(sessionStorage.getItem(SPLIT_KEY)) ?? DEFAULT_SPLIT;
+  } catch {
+    return DEFAULT_SPLIT;
+  }
+}
+
+function SplitGutter(props: { label: string; onDelta: (dx: number) => void }): ReactElement {
+  const lastX = useRef<number | null>(null);
+  return (
+    <hr
+      className="split-gutter"
+      aria-orientation="vertical"
+      title={props.label}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        lastX.current = e.clientX;
+      }}
+      onPointerMove={(e) => {
+        if (lastX.current === null || !e.currentTarget.hasPointerCapture(e.pointerId)) return;
+        const dx = e.clientX - lastX.current;
+        lastX.current = e.clientX;
+        if (dx !== 0) props.onDelta(dx);
+      }}
+      onPointerUp={() => {
+        lastX.current = null;
+      }}
+    />
+  );
+}
+
+function mapViewHref(viewId: string, slug: string): string {
+  const q = new URLSearchParams(window.location.search);
+  q.set("v", viewId);
+  return `${window.location.pathname}?${q.toString()}#${encodeURIComponent(slug)}`;
+}
 
 function TreeNode(props: {
   slug: string;
@@ -83,6 +141,13 @@ function TreeNode(props: {
         className={`node${props.selected === node.slug ? " selected" : ""}`}
         data-slug={node.slug}
         onClick={() => props.onSelect(node.slug)}
+        onDoubleClick={(e) => {
+          if ((e.target as HTMLElement).closest("button.twirl")) return;
+          if (hasKids) {
+            e.preventDefault();
+            props.onToggle(node.slug);
+          }
+        }}
         onKeyDown={(e) => props.onKeyDown(e, node.slug)}
         role="treeitem"
         tabIndex={props.selected === node.slug ? 0 : -1}
@@ -100,6 +165,7 @@ function TreeNode(props: {
               e.stopPropagation();
               props.onToggle(node.slug);
             }}
+            onDoubleClick={(e) => e.stopPropagation()}
           >
             {open ? "▼" : "▶"}
           </button>
@@ -315,6 +381,13 @@ export function App(): ReactElement {
   const [stale, setStale] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const expandSeeded = useRef(false);
+  const [viewId, setViewId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(loadSidebarOpen);
+  const [sidebarTab, setSidebarTab] = useState<"terminal" | "code">("terminal");
+  const [split, setSplit] = useState(loadSplit);
+  const layoutRef = useRef<HTMLDivElement | null>(null);
+  const viewBootstrapped = useRef(false);
+  const skipHistoryPush = useRef(true);
 
   const reload = useCallback(async () => {
     setBusy(true);
@@ -331,6 +404,8 @@ export function App(): ReactElement {
         setExpanded(initialExpandedSlugs(map.rootSlug, nodeMap, sess.expandDepth ?? 1));
       }
       setSelected((cur) => {
+        const fromHash = slugFromHash(window.location.hash);
+        if (fromHash && map.nodes.some((n) => n.slug === fromHash)) return fromHash;
         if (cur && map.nodes.some((n) => n.slug === cur)) return cur;
         return map.rootSlug ?? map.nodes[0]?.slug ?? null;
       });
@@ -345,7 +420,7 @@ export function App(): ReactElement {
     void reload();
   }, [reload]);
 
-  const shownFingerprint = model && session ? mapFingerprint(model, session.gitHead) : null;
+  const shownFingerprint = model ? mapFingerprint(model) : null;
 
   useEffect(() => {
     if (!shownFingerprint || busy) return;
@@ -354,7 +429,17 @@ export function App(): ReactElement {
       try {
         const [map, sess] = await Promise.all([fetchMapStatus(), fetchSession()]);
         if (cancelled) return;
-        setStale(mapFingerprint(map, sess.gitHead) !== shownFingerprint);
+        setSession((cur) =>
+          cur
+            ? {
+                ...cur,
+                gitHead: sess.gitHead,
+                mapAnchor: sess.mapAnchor,
+                refreshRequired: sess.refreshRequired,
+              }
+            : sess,
+        );
+        setStale(mapFingerprint(map) !== shownFingerprint);
       } catch {
         /* poll is best-effort; Reload stays manual */
       }
@@ -373,6 +458,42 @@ export function App(): ReactElement {
     [model, nodes],
   );
   const selectedNode = selected ? (nodes.get(selected) ?? null) : null;
+  const crumbs = selected ? breadcrumbSlugs(selected, parents) : [];
+
+  useEffect(() => {
+    if (viewBootstrapped.current || !model) return;
+    viewBootstrapped.current = true;
+    let cancelled = false;
+    const boot = async () => {
+      const fromQuery = new URLSearchParams(window.location.search).get("v");
+      let id = fromQuery;
+      if (id) {
+        const res = await fetch(`/api/view/${encodeURIComponent(id)}`);
+        if (!res.ok) id = null;
+      }
+      if (!id) id = await createMapView();
+      if (cancelled || !id) return;
+      setViewId(id);
+      const slug = slugFromHash(window.location.hash) || selected || model.rootSlug;
+      const known = slug && model.nodes.some((n) => n.slug === slug) ? slug : model.rootSlug;
+      if (known) {
+        skipHistoryPush.current = true;
+        history.replaceState({ slug: known }, "", mapViewHref(id, known));
+        skipHistoryPush.current = false;
+      }
+    };
+    void boot();
+    return () => {
+      cancelled = true;
+    };
+  }, [model, selected]);
+
+  useEffect(() => {
+    if (!viewId) return;
+    void putMapView(viewId, selected).catch(() => {
+      /* view PUT is best-effort */
+    });
+  }, [viewId, selected]);
 
   useEffect(() => {
     if (!selectedNode) {
@@ -385,6 +506,22 @@ export function App(): ReactElement {
       return anchors.some((a) => sameAnchor(a, cur)) ? cur : null;
     });
   }, [selectedNode]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(SIDEBAR_KEY, sidebarOpen ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(SPLIT_KEY, JSON.stringify(split));
+    } catch {
+      /* ignore */
+    }
+  }, [split]);
 
   useLayoutEffect(() => {
     if (!selected || !model) return;
@@ -401,7 +538,7 @@ export function App(): ReactElement {
     return () => cancelAnimationFrame(raf);
   }, [model, selected]);
 
-  function selectNode(slug: string) {
+  function selectNode(slug: string, historyMode: "push" | "replace" | "none" = "push") {
     if (slug !== selected) setPreview(null);
     setSelected(slug);
     setExpanded((cur) => {
@@ -410,6 +547,16 @@ export function App(): ReactElement {
       return next;
     });
     queueMicrotask(() => focusTreeRow(slug));
+    if (
+      viewId &&
+      historyMode !== "none" &&
+      !skipHistoryPush.current &&
+      slug !== slugFromHash(window.location.hash)
+    ) {
+      const href = mapViewHref(viewId, slug);
+      if (historyMode === "replace") history.replaceState({ slug }, "", href);
+      else history.pushState({ slug }, "", href);
+    }
   }
 
   function setExpandedOpen(slug: string, open: boolean) {
@@ -438,6 +585,15 @@ export function App(): ReactElement {
     if (result.kind === "expand") setExpandedOpen(result.slug, true);
     if (result.kind === "collapse") setExpandedOpen(result.slug, false);
   }
+
+  useEffect(() => {
+    const onPop = () => {
+      const slug = slugFromHash(window.location.hash);
+      if (slug) selectNode(slug, "none");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  });
 
   useEffect(() => {
     if (!selected || !model) return;
@@ -488,7 +644,22 @@ export function App(): ReactElement {
     <div className="app">
       <header>
         <h1>Snowshoe map</h1>
-        <span className="meta">{session?.gitHead ? session.gitHead.slice(0, 12) : "no HEAD"}</span>
+        <span
+          className={session?.refreshRequired ? "meta behind" : "meta"}
+          title={
+            session?.refreshRequired && session.gitHead
+              ? `HEAD moved. Catch up the map to ${session.gitHead.slice(0, 12)} (routine refresh / snowshoe work next).`
+              : session?.mapAnchor
+                ? `Map epoch target ${session.mapAnchor}`
+                : "Git HEAD (no epoch target yet)"
+          }
+        >
+          {session?.mapAnchor
+            ? session.mapAnchor.slice(0, 12)
+            : session?.gitHead
+              ? session.gitHead.slice(0, 12)
+              : "no HEAD"}
+        </span>
         <button
           type="button"
           className={stale ? "primary" : undefined}
@@ -500,8 +671,56 @@ export function App(): ReactElement {
         </button>
         {stale ? <span className="warn">Map changed</span> : null}
         {error ? <span className="error">{error}</span> : null}
+        <button
+          type="button"
+          className="header-sidebar-toggle"
+          aria-pressed={sidebarOpen}
+          onClick={() => setSidebarOpen((open) => !open)}
+        >
+          {sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+        </button>
       </header>
-      <div className={preview ? "layout has-preview" : "layout"}>
+      <nav className="crumbs" aria-label="Location">
+        {crumbs.length === 0 ? (
+          <span className="hint">…</span>
+        ) : (
+          crumbs.map((slug, i) => {
+            const node = nodes.get(slug);
+            const label = node?.title ?? slug;
+            const last = i === crumbs.length - 1;
+            return (
+              <span key={slug}>
+                {i > 0 ? <span className="crumbs-sep"> / </span> : null}
+                {last ? (
+                  <span className="crumbs-here" title={slug}>
+                    {label}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="linkish"
+                    title={slug}
+                    onClick={() => selectNode(slug)}
+                  >
+                    {label}
+                  </button>
+                )}
+              </span>
+            );
+          })
+        )}
+      </nav>
+      <div
+        ref={layoutRef}
+        className={sidebarOpen ? "layout has-sidebar" : "layout"}
+        style={
+          sidebarOpen
+            ? {
+                gridTemplateColumns: `${split.tree}fr 6px ${split.detail}fr 6px ${split.sidebar}fr`,
+              }
+            : { gridTemplateColumns: `${split.tree}fr 6px ${split.detail}fr` }
+        }
+      >
         <div className="tree" role="tree" aria-label="Map tree">
           {model ? (
             <TreeNode
@@ -518,6 +737,13 @@ export function App(): ReactElement {
             <p className="hint">Loading read-model…</p>
           )}
         </div>
+        <SplitGutter
+          label="Resize tree and inspector"
+          onDelta={(dx) => {
+            const width = layoutRef.current?.clientWidth ?? 0;
+            setSplit((cur) => applySplitDrag(cur, "tree-detail", dx, width, sidebarOpen));
+          }}
+        />
         <section className="detail">
           <Inspector
             node={selectedNode}
@@ -526,11 +752,59 @@ export function App(): ReactElement {
             busy={busy}
             onMark={onMark}
             onCancel={onCancel}
-            onPreview={setPreview}
+            onPreview={(anchor) => {
+              setSidebarOpen(true);
+              setSidebarTab("code");
+              setPreview(anchor);
+            }}
             onGoTo={selectNode}
           />
         </section>
-        <PreviewPanel anchor={preview} repoRoot={session?.repoRoot ?? null} />
+        {sidebarOpen ? (
+          <>
+            <SplitGutter
+              label="Resize inspector and sidebar"
+              onDelta={(dx) => {
+                const width = layoutRef.current?.clientWidth ?? 0;
+                setSplit((cur) => applySplitDrag(cur, "detail-sidebar", dx, width, true));
+              }}
+            />
+            <aside className="sidebar" aria-label="Sidebar">
+              <div className="sidebar-tabs" role="tablist" aria-label="Sidebar panels">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={sidebarTab === "terminal"}
+                  onClick={() => setSidebarTab("terminal")}
+                >
+                  Terminal
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={sidebarTab === "code"}
+                  onClick={() => setSidebarTab("code")}
+                >
+                  Code
+                </button>
+              </div>
+              <div className="sidebar-body">
+                <div
+                  className={sidebarTab === "terminal" ? "sidebar-panel" : "sidebar-panel hidden"}
+                  role="tabpanel"
+                >
+                  <TerminalPane viewId={viewId} active={sidebarTab === "terminal"} />
+                </div>
+                <div
+                  className={sidebarTab === "code" ? "sidebar-panel" : "sidebar-panel hidden"}
+                  role="tabpanel"
+                >
+                  <PreviewPanel anchor={preview} repoRoot={session?.repoRoot ?? null} />
+                </div>
+              </div>
+            </aside>
+          </>
+        ) : null}
       </div>
     </div>
   );

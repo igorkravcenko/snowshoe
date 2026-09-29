@@ -1,6 +1,7 @@
 import { defineCommand } from "citty";
 import { runInit } from "./commands/init.ts";
 import { runMapDetailCancel, runMapDetailMark, runMapStatus } from "./commands/map.ts";
+import { runMapView } from "./commands/map-view.ts";
 import { runRoutineAdvance, runRoutineRefresh, runRoutineStatus } from "./commands/routine.ts";
 import { withSession } from "./commands/session.ts";
 import {
@@ -236,6 +237,22 @@ const mapDetailCmd = defineCommand({
   },
 });
 
+const mapViewCmd = defineCommand({
+  meta: {
+    name: "view",
+    description:
+      "Re-read RAM map focus from a running map serve (SNOWSHOE_MAP_URL + SNOWSHOE_VIEW)",
+  },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+    url: { type: "string", description: "Override SNOWSHOE_MAP_URL" },
+    id: { type: "string", description: "Override SNOWSHOE_VIEW" },
+  },
+  async run({ args }) {
+    return emit(await runMapView({ url: args.url, id: args.id }), args.json);
+  },
+});
+
 const mapServeCmd = defineCommand({
   meta: {
     name: "serve",
@@ -277,6 +294,7 @@ const mapCmd = defineCommand({
   subCommands: {
     status: mapStatusCmd,
     detail: mapDetailCmd,
+    view: mapViewCmd,
     serve: mapServeCmd,
   },
 });

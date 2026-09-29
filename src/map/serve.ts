@@ -7,6 +7,8 @@ import { gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
 import { findRepoRoot, requireInitialized } from "../paths.ts";
 import { handleMapHttp } from "./http.ts";
+import { mapPtyWebsocket, type PtyWsData, tryUpgradeMapPty } from "./pty.ts";
+import { createMapViewStore } from "./views.ts";
 
 export function snowshoePackageRoot(): string {
   return resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -116,6 +118,7 @@ export async function startMapServer(opts: {
   const hostname = opts.hostname ?? "127.0.0.1";
   const requestedPort = opts.port ?? 8787;
   const expandDepth = opts.expandDepth ?? DEFAULT_MAP_EXPAND_DEPTH;
+  const views = createMapViewStore();
 
   let queue: Promise<unknown> = Promise.resolve();
   const runSerialized = (fn: () => Promise<Response>): Promise<Response> => {
@@ -127,14 +130,18 @@ export async function startMapServer(opts: {
     return run;
   };
 
-  const server = Bun.serve({
+  const server = Bun.serve<PtyWsData>({
     hostname,
     port: requestedPort,
-    fetch(req) {
+    fetch(req, srv) {
+      const pty = tryUpgradeMapPty(req, srv, repoRoot);
+      if (pty) return pty;
+      if (new URL(req.url).pathname === "/api/pty") return;
       return runSerialized(() =>
-        handleMapHttp(req, { cwd: repoRoot, uiDist, expandDepth, packageRoot }),
+        handleMapHttp(req, { cwd: repoRoot, uiDist, expandDepth, packageRoot, views }),
       );
     },
+    websocket: mapPtyWebsocket,
   });
 
   const boundPort = server.port;
@@ -184,7 +191,7 @@ export async function runMapServe(opts: {
     expandDepth,
     packageRoot: server.packageRoot,
     uiDist: server.uiDist,
-    hint: "Mapped repo is cwd/repoRoot. UI files are uiDist from the running snowshoe package (bun link target), not cwd.",
+    hint: "Mapped repo is cwd. UI is uiDist. GET /api/view/:id is RAM focus. Loopback-peer PTY at /api/pty.",
   });
   return { exitCode: 0, body, server };
 }

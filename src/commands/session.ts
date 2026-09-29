@@ -8,6 +8,21 @@ export type Session = {
   ledger: Ledger;
 };
 
+/** SHA the map is bound to: open epoch target, else last advanced `caught_up_base`. */
+export function mapEpochAnchor(session: Session): string | null {
+  return session.ledger.getOpenEpoch()?.target ?? session.ledger.caughtUpBase();
+}
+
+/** Same rule as `work next` gating: HEAD left the map epoch target / caught-up base. */
+export function refreshRequired(session: Session): boolean {
+  const head = session.gitHead;
+  if (!head) return false;
+  const open = session.ledger.getOpenEpoch();
+  if (open) return head !== open.target;
+  const base = session.ledger.caughtUpBase();
+  return Boolean(base && base !== head);
+}
+
 export function openSession(cwd = process.cwd()): Session {
   const repoRoot = findRepoRoot(cwd);
   requireInitialized(repoRoot);

@@ -6,8 +6,10 @@ import type { MapNode } from "../ui/src/api.ts";
 import {
   ancestorSlugs,
   applyTreeKey,
+  breadcrumbSlugs,
   initialExpandedSlugs,
   parentBySlug,
+  slugFromHash,
   visibleSlugs,
 } from "../ui/src/tree.ts";
 
@@ -44,6 +46,9 @@ describe("map tree expand depth", () => {
     const parent = parentBySlug("root", tree());
     expect(ancestorSlugs("a1", parent)).toEqual(["root", "a"]);
     expect(ancestorSlugs("root", parent)).toEqual([]);
+    expect(breadcrumbSlugs("a1", parent)).toEqual(["root", "a", "a1"]);
+    expect(slugFromHash("#auth")).toBe("auth");
+    expect(slugFromHash("")).toBe("");
   });
 
   test("arrows walk visible rows; left/right expand and collapse", () => {

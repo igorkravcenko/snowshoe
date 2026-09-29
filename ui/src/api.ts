@@ -58,6 +58,8 @@ export type MapReadModel = {
 export type SessionInfo = {
   repoRoot: string;
   gitHead: string | null;
+  mapAnchor?: string | null;
+  refreshRequired?: boolean;
   locale?: string | null;
   expandDepth?: number;
   packageRoot?: string | null;
@@ -84,6 +86,25 @@ export async function fetchSession(): Promise<SessionInfo> {
   const body = await readJson<SessionInfo & { error?: string }>(res);
   if (!res.ok) throw new Error(body.error ?? `session HTTP ${res.status}`);
   return body;
+}
+
+export async function createMapView(): Promise<string> {
+  const res = await fetch("/api/view", { method: "POST" });
+  const body = await readJson<{ id?: string; error?: string }>(res);
+  if (!res.ok || !body.id) throw new Error(body.error ?? `view HTTP ${res.status}`);
+  return body.id;
+}
+
+export async function putMapView(id: string, slug: string | null): Promise<void> {
+  const res = await fetch(`/api/view/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ slug }),
+  });
+  const body = await readJson<{ ok?: boolean; error?: string }>(res);
+  if (!res.ok || body.ok === false) {
+    throw new Error(body.error ?? `view PUT HTTP ${res.status}`);
+  }
 }
 
 export async function markDetail(slug: string): Promise<void> {

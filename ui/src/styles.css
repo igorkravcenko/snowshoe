@@ -24,7 +24,7 @@ body,
 
 .app {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto 1fr;
   height: 100%;
 }
 
@@ -50,26 +50,113 @@ header .meta {
   font-family: ui-monospace, monospace;
 }
 
+header .meta.behind {
+  color: #e08080;
+}
+
+header .header-sidebar-toggle {
+  margin-left: auto;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 13px;
+}
+
+.crumbs-sep {
+  color: var(--muted);
+}
+
+.crumbs-here {
+  color: var(--text);
+}
+
 .layout {
   display: grid;
-  grid-template-columns: minmax(220px, 34%) minmax(0, 1fr);
   min-height: 0;
 }
 
-.layout.has-preview {
-  grid-template-columns: minmax(220px, 24%) minmax(240px, 28%) minmax(0, 1fr);
+.split-gutter {
+  width: 6px;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  cursor: col-resize;
+  background: var(--line);
+  touch-action: none;
+  user-select: none;
+}
+
+.split-gutter:hover,
+.split-gutter:active {
+  background: var(--accent);
 }
 
 .tree,
 .detail,
-.preview-panel {
+.preview-panel,
+.sidebar {
   overflow: auto;
   padding: 12px 16px;
   min-width: 0;
 }
 
-.detail {
-  border-left: 1px solid var(--line);
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  min-height: 0;
+}
+
+.sidebar-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.sidebar-panel {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar-body > .sidebar-panel {
+  position: absolute;
+  inset: 0;
+}
+
+.sidebar-panel.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.sidebar-term {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+}
+
+.xterm-host {
+  flex: 1;
+  min-height: 0;
 }
 
 button {
@@ -93,6 +180,17 @@ button.primary {
 button.danger {
   background: #3a2a2a;
   border-color: #6a4040;
+}
+
+.sidebar-tabs button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 8px 12px;
+}
+
+.sidebar-tabs button[aria-selected="true"] {
+  background: #243040;
 }
 
 .node {
@@ -237,10 +335,12 @@ button.linkish.active {
 }
 
 .preview-panel {
-  border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 12px 16px;
+  min-height: 0;
+  flex: 1;
 }
 
 .preview-panel h2 {

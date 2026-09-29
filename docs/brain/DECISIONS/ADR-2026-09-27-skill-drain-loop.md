@@ -7,7 +7,7 @@ date: 2026-09-27
 
 ## Status
 
-Accepted. Amends the skill package in [ADR-2026-09-27-map-ui-and-skill](./ADR-2026-09-27-map-ui-and-skill.md). Does **not** promote proposed routine ADRs A/B. Does **not** add learning.
+Accepted. Amends the skill package in [ADR-2026-09-27-map-ui-and-skill](./ADR-2026-09-27-map-ui-and-skill.md). Does **not** promote proposed routine ADRs A/B. Does **not** ship learning/quiz/verify. 2026-09-29: package is a thin `SKILL.md` gate plus `drain.md` / `learn.md` (learn file is channel instructions, not a quiz product).
 
 ## Context
 
@@ -19,11 +19,14 @@ Igor-locked: the skill must be repo-agnostic and self-contained; entry is `work 
 
 ### Skill
 
-- Package remains `.cursor/skills/snowshoe/` (`SKILL.md` + sibling `install.md`).
-- Skill protocol is the drain loop only. Learning absence is product WIP, not skill text.
-- Assume **`snowshoe` on PATH**. If missing, open `install.md` in the same folder only then — not a separate skill, not loaded into a normal drain.
-- Payload examples live in the skill (or `snowshoe … --help`). Do not point agents at `docs/brain/schemas/…`.
-- Human uses the map UI to mark, cancel, and reload. Agent completes via CLI; human reloads.
+- Package remains **one** Cursor skill at `.cursor/skills/snowshoe/` (`SKILL.md` gate + `drain.md` + `learn.md` + sibling `install.md`). Not three skills.
+- `SKILL.md` is the **only** copy of shared operator rules: PATH/`--json`, bin name / `snoe`, do not write the ledger, do not start `map serve` unless asked, one branch, `install.md` only if missing. YAML `description` covers after-pull drain **and** map-PTY / study-the-map (`SNOWSHOE_MODE=learn`). `drain.md` / `learn.md` / `install.md` do not restate those lines.
+- **No binary** (`command -v snowshoe` fails) → read `install.md` only (not loaded on a normal drain or learn). Recheck PATH. Still missing → STOP (new shell). Present and this turn already classified → that branch. Present but they only asked to install / intent unclear → one question: drain, learn, or stop.
+- **Intent** (this invocation): (a) the user prompt that invoked the skill; (b) nearby user text **this turn only**; (c) `SNOWSHOE_MODE=learn` if text is still empty; (d) **drain**. Explicit drain in the prompt beats env. Greys: “look at the map” / “what is this node” → learn; “after pull / catch up / marked nodes / work next” → drain.
+- **One branch per invocation.** Never read both `drain.md` and `learn.md`. If both intents appear, one-line ask or first/stronger signal.
+- Drain protocol lives in `drain.md` (`work next` loop). `learn.md` is conversation about the mapped repo (`map view` / `map status`); no quiz/verify; do not complete claimed steps (re-invoke for drain). `install.md` is how to get the binary on PATH, not when to load it.
+- Payload examples live in `drain.md` (or `snowshoe … --help`). Do not point agents at `docs/brain/schemas/…`.
+- Human uses the map UI to mark, cancel, and reload. Agent completes via CLI on the drain branch; human reloads.
 
 ### `work next` gating
 
@@ -53,10 +56,11 @@ Install / PATH binary is **`snowshoe`**. Informal *snow* is not PATH. Optional u
 - Opaque fail before `init` — rejected; structured `todo` is followable.
 - Default `--batch-size 1` — rejected; too chatty for a drain loop.
 - Separate install skill — rejected; sibling file, loaded only when missing.
+- Three Cursor skills (drain / learn / install) — rejected; one package, progressive disclosure.
 
 ## Consequences
 
-- CURRENT: skill is PATH-`snowshoe`, `work next` gated, default batch 5. Optional `--wait`: [ADR-2026-09-27-work-next-wait](./ADR-2026-09-27-work-next-wait.md).
+- CURRENT: skill package is a gate; drain still PATH-`snowshoe`, `work next` gated, default batch 5. Optional `--wait`: [ADR-2026-09-27-work-next-wait](./ADR-2026-09-27-work-next-wait.md). `learn.md` is not quiz.
 - Proposed ADR-B CLI families stay proposed; this ADR specifies the working `work next` envelope for the slice.
 
 ## Evidence

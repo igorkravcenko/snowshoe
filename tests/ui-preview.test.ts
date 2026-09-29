@@ -41,12 +41,11 @@ describe("map UI code preview", () => {
     const nodes = [{ slug: "root", type: "system", leaf: false, children: [] as string[] }];
     const a = { generatedAt: "2026-01-01T00:00:00.000Z", rootSlug: "root", nodes };
     const b = { generatedAt: "2026-01-02T00:00:00.000Z", rootSlug: "root", nodes };
-    expect(mapFingerprint(a, "abc")).toBe(mapFingerprint(b, "abc"));
+    expect(mapFingerprint(a)).toBe(mapFingerprint(b));
     const pending = {
       ...a,
       nodes: [{ ...nodes[0]!, detailStatus: "pending" as const }],
     };
-    expect(mapFingerprint(a, "abc")).not.toBe(mapFingerprint(pending, "abc"));
-    expect(mapFingerprint(a, "abc")).not.toBe(mapFingerprint(a, "def"));
+    expect(mapFingerprint(a)).not.toBe(mapFingerprint(pending));
   });
 });

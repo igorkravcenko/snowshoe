@@ -86,7 +86,14 @@ export function PreviewPanel(props: {
     return () => cancelAnimationFrame(id);
   }, [data, anchor?.startLine]);
 
-  if (!anchor) return null;
+  if (!anchor) {
+    return (
+      <section className="preview-panel" aria-label="Code preview">
+        <h2>Code</h2>
+        <p className="hint">Select an anchor in the inspector to preview here.</p>
+      </section>
+    );
+  }
 
   const href = repoRoot ? editorHref(repoRoot, anchor) : undefined;
   const start = data?.startLine ?? anchor.startLine;

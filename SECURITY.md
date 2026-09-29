@@ -33,8 +33,9 @@ If a secret lands in git, rotate it. Do not assume a later delete is enough.
 - Pin GitHub Actions by **full commit SHA** (human tag in a comment). Bump
   Actions by changing the SHA on purpose, not by floating `@v4` / `@v2`.
 - Review packages that run **install scripts** before adding them.
-- `snowshoe map serve` binds **localhost** (`127.0.0.1`) for local dev. It is
-  not a public auth surface. Do not expose it as one.
+- `snowshoe map serve` binds **localhost** (`127.0.0.1`) by default. It is
+  not a public auth surface. Embedded PTY/WebSocket is allowed only when the
+  **peer address is loopback**, even if `--host` serves the map on a LAN.
 
 ## Out of scope (for now)
 

@@ -1,11 +1,12 @@
 import { existsSync, statSync } from "node:fs";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { runMapDetailCancel, runMapDetailMark, runMapStatus } from "../commands/map.ts";
-import { withSession } from "../commands/session.ts";
+import { mapEpochAnchor, refreshRequired, withSession } from "../commands/session.ts";
 import { DEFAULT_MAP_EXPAND_DEPTH } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_INTERNAL, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { findRepoRoot, requireInitialized } from "../paths.ts";
 import { FileReadError, readRepoFile } from "./file-read.ts";
+import type { MapViewStore } from "./views.ts";
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -26,6 +27,7 @@ export type MapHttpOptions = {
   uiDist: string;
   expandDepth?: number;
   packageRoot?: string;
+  views?: MapViewStore;
 };
 
 function httpStatusForExit(code: number): number {
@@ -95,8 +97,9 @@ async function readSlug(req: Request, url: URL): Promise<string> {
 /**
  * HTTP twins of `snowshoe map status|detail mark|cancel`.
  * GET /api/map/status returns the same JSON as `snowshoe map status --json`.
- * GET /api/session is UI-only (repoRoot / gitHead / locale); not part of the map read-model.
+ * GET /api/session is UI-only (repoRoot / gitHead / mapAnchor / locale); not part of the map read-model.
  * GET /api/file is a read-only repo-root sandbox (no ledger writes).
+ * POST/GET/PUT /api/view is in-memory UI focus (not the ledger; dies with the process).
  */
 export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise<Response> {
   const url = new URL(req.url);
@@ -127,6 +130,8 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
             {
               repoRoot: s.repoRoot,
               gitHead: s.gitHead,
+              mapAnchor: mapEpochAnchor(s),
+              refreshRequired: refreshRequired(s),
               locale: s.ledger.getMeta("locale"),
               expandDepth: opts.expandDepth ?? DEFAULT_MAP_EXPAND_DEPTH,
               packageRoot: opts.packageRoot ?? null,
@@ -151,6 +156,53 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
         const result = runMapDetailCancel(s, slug);
         return jsonResponse(result.body, result.exitCode);
       }, opts.cwd);
+    }
+
+    if (path === "/api/view" && req.method === "POST") {
+      if (!opts.views) {
+        return jsonResponse(
+          { schemaVersion: 1, ok: false, error: "Map views are not available" },
+          EXIT_INTERNAL,
+        );
+      }
+      const id = opts.views.create();
+      const repoRoot = findRepoRoot(opts.cwd);
+      return jsonHttp({ schemaVersion: 1, ok: true, id, slug: null, repoRoot }, 200);
+    }
+
+    const viewId = path.startsWith("/api/view/") ? path.slice("/api/view/".length) : "";
+    if (viewId && !viewId.includes("/")) {
+      if (!opts.views) {
+        return jsonResponse(
+          { schemaVersion: 1, ok: false, error: "Map views are not available" },
+          EXIT_INTERNAL,
+        );
+      }
+      if (req.method === "GET") {
+        const rec = opts.views.get(viewId);
+        if (!rec) {
+          return jsonHttp({ schemaVersion: 1, ok: false, error: "Unknown view id" }, 404);
+        }
+        const repoRoot = findRepoRoot(opts.cwd);
+        return jsonHttp({ schemaVersion: 1, ok: true, id: viewId, slug: rec.slug, repoRoot }, 200);
+      }
+      if (req.method === "PUT") {
+        const text = await req.text();
+        let slug: string | null;
+        try {
+          const parsed = JSON.parse(text) as { slug?: unknown };
+          if (parsed.slug === null) slug = null;
+          else if (typeof parsed.slug === "string") slug = parsed.slug;
+          else throw new Error("bad slug");
+        } catch {
+          throw new CliError("Invalid JSON body (expected { slug })", EXIT_USAGE);
+        }
+        const rec = opts.views.put(viewId, slug);
+        if (!rec) {
+          return jsonHttp({ schemaVersion: 1, ok: false, error: "Unknown view id" }, 404);
+        }
+        return jsonHttp({ schemaVersion: 1, ok: true, id: viewId, slug: rec.slug }, 200);
+      }
     }
 
     if (path.startsWith("/api/")) {
