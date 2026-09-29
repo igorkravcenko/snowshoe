@@ -48,13 +48,14 @@ export type CliResult = {
 export async function snowshoe(
   cwd: string,
   args: string[],
-  opts: { stdin?: string } = {},
+  opts: { stdin?: string; env?: Record<string, string> } = {},
 ): Promise<CliResult> {
   const proc = Bun.spawn(["bun", CLI, ...args], {
     cwd,
     stdin: opts.stdin !== undefined ? "pipe" : "ignore",
     stdout: "pipe",
     stderr: "pipe",
+    env: opts.env ? { ...process.env, ...opts.env } : undefined,
   });
   if (opts.stdin !== undefined) {
     const stdin = proc.stdin;

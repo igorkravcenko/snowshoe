@@ -86,6 +86,25 @@ export async function fetchSession(): Promise<SessionInfo> {
   return body;
 }
 
+export async function createMapView(): Promise<string> {
+  const res = await fetch("/api/view", { method: "POST" });
+  const body = await readJson<{ id?: string; error?: string }>(res);
+  if (!res.ok || !body.id) throw new Error(body.error ?? `view HTTP ${res.status}`);
+  return body.id;
+}
+
+export async function putMapView(id: string, slug: string | null): Promise<void> {
+  const res = await fetch(`/api/view/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ slug }),
+  });
+  const body = await readJson<{ ok?: boolean; error?: string }>(res);
+  if (!res.ok || body.ok === false) {
+    throw new Error(body.error ?? `view PUT HTTP ${res.status}`);
+  }
+}
+
 export async function markDetail(slug: string): Promise<void> {
   const res = await fetch("/api/map/detail/mark", {
     method: "POST",

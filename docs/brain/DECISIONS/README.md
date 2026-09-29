@@ -41,3 +41,4 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md) | accepted | Repo-agnostic skill; `work next` gates; PATH `snowshoe`; default batch 5 |
 | [ADR-2026-09-27-detail-children-refs](./ADR-2026-09-27-detail-children-refs.md) | accepted | Detail payload `children` + `refs`; unresolved anchors reject |
 | [ADR-2026-09-27-work-next-wait](./ADR-2026-09-27-work-next-wait.md) | accepted | `work next --wait` blocks idle; not a daemon; skill opt-in |
+| [ADR-2026-09-29-map-pty-channel](./ADR-2026-09-29-map-pty-channel.md) | accepted | Loopback-peer PTY in map UI + `map view`; not chat/HITL/learning |

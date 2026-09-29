@@ -146,6 +146,8 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).toContain("No entity body yet");
     expect(js).toContain("No refs on this node");
     expect(js).toContain("Preview in UI");
+    expect(js).toContain("/api/view");
+    expect(js).toContain("Location");
     expect(js).not.toContain("Dumb client");
     expect(js).not.toContain("prose: ");
     expect(js).not.toContain("ledger.sqlite");
@@ -205,5 +207,85 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
 
     const viteDev = await fetch(`${server.url}src/main.tsx`);
     expect(viteDev.status).toBe(404);
+  });
+
+  test("in-memory GET/PUT /api/view is per id and not the ledger session", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+
+    const created = await fetch(`${server.url}api/view`, { method: "POST" });
+    expect(created.ok).toBe(true);
+    const createdJson = (await created.json()) as { id: string; slug: string | null };
+    expect(createdJson.id).toBeTruthy();
+    expect(createdJson.slug).toBeNull();
+
+    const missing = await fetch(`${server.url}api/view/not-a-real-id`);
+    expect(missing.status).toBe(404);
+
+    const put = await fetch(`${server.url}api/view/${createdJson.id}`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug: "root" }),
+    });
+    expect(put.ok).toBe(true);
+    const got = await fetch(`${server.url}api/view/${createdJson.id}`);
+    const gotJson = (await got.json()) as { slug: string | null; repoRoot?: string };
+    expect(gotJson.slug).toBe("root");
+    expect(gotJson.repoRoot).toBe(repo);
+
+    const sess = await fetch(`${server.url}api/session`);
+    const sessJson = (await sess.json()) as { repoRoot?: string; slug?: string };
+    expect(sessJson.repoRoot).toBe(repo);
+    expect(sessJson.slug).toBeUndefined();
+  });
+
+  test("map view needs env or flags; --json reads live RAM view", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const missing = await snowshoe(repo, ["map", "view", "--json"], {
+      env: { SNOWSHOE_MAP_URL: "", SNOWSHOE_VIEW: "" },
+    });
+    expect(missing.exitCode).toBe(2);
+    expect(String(missing.json.error)).toMatch(/SNOWSHOE_MAP_URL/);
+
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+    const created = await fetch(`${server.url}api/view`, { method: "POST" });
+    const createdJson = (await created.json()) as { id: string };
+    await fetch(`${server.url}api/view/${createdJson.id}`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug: "root" }),
+    });
+    const viewed = await snowshoe(repo, ["map", "view", "--json"], {
+      env: { SNOWSHOE_MAP_URL: server.url.replace(/\/$/, ""), SNOWSHOE_VIEW: createdJson.id },
+    });
+    expect(viewed.exitCode).toBe(0);
+    expect(viewed.json.command).toBe("map.view");
+    expect(viewed.json.slug).toBe("root");
+    expect(viewed.json.id).toBe(createdJson.id);
+    expect(viewed.json.repoRoot).toBe(repo);
+
+    const viaFlags = await snowshoe(
+      repo,
+      ["map", "view", "--json", "--url", server.url.replace(/\/$/, ""), "--id", createdJson.id],
+      { env: { SNOWSHOE_MAP_URL: "", SNOWSHOE_VIEW: "" } },
+    );
+    expect(viaFlags.exitCode).toBe(0);
+    expect(viaFlags.json.slug).toBe("root");
   });
 });

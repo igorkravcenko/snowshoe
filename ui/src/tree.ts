@@ -55,6 +55,22 @@ export function ancestorSlugs(slug: string, parent: Map<string, string>): string
   return chain.reverse();
 }
 
+/** Parent chain including `slug` (root → … → current). */
+export function breadcrumbSlugs(slug: string, parent: Map<string, string>): string[] {
+  return [...ancestorSlugs(slug, parent), slug];
+}
+
+/** `#auth` / `#` → slug or empty. */
+export function slugFromHash(hash: string): string {
+  const raw = hash.startsWith("#") ? hash.slice(1) : hash;
+  if (!raw) return "";
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 /** Preorder of nodes that are currently shown (expanded parents). */
 export function visibleSlugs(
   rootSlug: string,
