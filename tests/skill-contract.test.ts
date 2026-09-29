@@ -3,16 +3,42 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { completeEnvelope, detailPayload, makeGitRepo, snowshoe } from "./helpers.ts";
 
-const SKILL = join(import.meta.dir, "../.cursor/skills/snowshoe/SKILL.md");
-const INSTALL = join(import.meta.dir, "../.cursor/skills/snowshoe/install.md");
+const SKILL_DIR = join(import.meta.dir, "../.cursor/skills/snowshoe");
+const SKILL = join(SKILL_DIR, "SKILL.md");
+const DRAIN = join(SKILL_DIR, "drain.md");
+const LEARN = join(SKILL_DIR, "learn.md");
+const INSTALL = join(SKILL_DIR, "install.md");
 
 describe("snowshoe skill contract (dry-run of instructions)", () => {
-  const text = readFileSync(SKILL, "utf8");
+  const gate = readFileSync(SKILL, "utf8");
+  const drain = readFileSync(DRAIN, "utf8");
+  const learn = readFileSync(LEARN, "utf8");
 
-  test("is agent-loadable and names the drain commands", () => {
-    expect(text).toContain("name: snowshoe");
+  test("SKILL.md is a router (not the drain body)", () => {
+    expect(gate).toContain("name: snowshoe");
+    expect(gate).toMatch(/SNOWSHOE_MODE=learn/);
     expect(existsSync(INSTALL)).toBe(true);
-    expect(text).toMatch(/install\.md/);
+    expect(existsSync(DRAIN)).toBe(true);
+    expect(existsSync(LEARN)).toBe(true);
+    expect(gate).toMatch(/install\.md/);
+    expect(gate).toMatch(/drain\.md/);
+    expect(gate).toMatch(/learn\.md/);
+    expect(gate).not.toContain("bun src/index.ts");
+    expect(gate).not.toContain("waitTimedOut");
+    expect(gate).not.toContain("missing_body");
+    expect(gate).not.toContain("work next --json --wait");
+  });
+
+  test("drain.md is repo-agnostic PATH snowshoe (no snowshoe-repo internals)", () => {
+    expect(drain.toLowerCase()).not.toContain("no learning");
+    expect(drain).not.toMatch(/docs\/brain\/schemas\//);
+    expect(drain).not.toContain("--batch-size 1");
+    expect(drain).not.toContain("anchorsUnresolved");
+    expect(drain).not.toContain("HP1");
+    expect(drain).not.toContain("Out of scope");
+    expect(drain).not.toContain("work fail");
+    expect(drain.toLowerCase()).not.toContain("workfail");
+    expect(drain).not.toContain("bun src/index.ts");
     for (const cmd of [
       "work next --json",
       "work next --json --wait",
@@ -24,29 +50,25 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
       "routine advance --json",
       "map status --json",
     ]) {
-      expect(text).toContain(cmd);
+      expect(drain).toContain(cmd);
     }
+    expect(drain).toContain("--wait");
+    expect(drain).toContain("waitTimedOut");
+    expect(drain).toContain("children");
+    expect(drain).toContain("refs");
+    expect(drain).toContain("--locale");
+    expect(drain).toContain("body");
+    expect(drain).toContain("missing_body");
+    expect(drain).toContain("startLine");
+    expect(drain).toContain("endLine");
   });
 
-  test("is repo-agnostic PATH snowshoe (no snowshoe-repo internals)", () => {
-    expect(text).not.toContain("bun src/index.ts");
-    expect(text.toLowerCase()).not.toContain("no learning");
-    expect(text).not.toMatch(/docs\/brain\/schemas\//);
-    expect(text).not.toContain("--batch-size 1");
-    expect(text).not.toContain("anchorsUnresolved");
-    expect(text).not.toContain("HP1");
-    expect(text).not.toContain("Out of scope");
-    expect(text).not.toContain("work fail");
-    expect(text.toLowerCase()).not.toContain("workfail");
-    expect(text).toContain("--wait");
-    expect(text).toContain("waitTimedOut");
-    expect(text).toContain("children");
-    expect(text).toContain("refs");
-    expect(text).toContain("--locale");
-    expect(text).toContain("body");
-    expect(text).toContain("missing_body");
-    expect(text).toContain("startLine");
-    expect(text).toContain("endLine");
+  test("learn.md is a map-conversation stub (no quiz, no complete)", () => {
+    expect(learn).toContain("map view --json");
+    expect(learn).toContain("SNOWSHOE_MAP_URL");
+    expect(learn).toContain("SNOWSHOE_VIEW");
+    expect(learn).not.toContain("work complete");
+    expect(learn).not.toContain("work next --json");
   });
 
   test("dry-run: documented work next → complete → map status", async () => {

@@ -29,5 +29,5 @@ Entrypoint for agents working in this repo.
 | `grilling` | Stress-test a plan or decision (rounds + frontier) |
 | `grill-me` | User says "grill me" / wants to be interviewed |
 | `grill-canon` | Audit CURRENT/ADRs for staleness or contradiction |
-| `snowshoe` | Drain loop against PATH `snowshoe` (`work next` first; `install.md` only if missing) |
+| `snowshoe` | Gate: PATH `snowshoe` (`install.md` only if missing), then `drain.md` (`work next`) or `learn.md` (map conversation; `SNOWSHOE_MODE=learn`) |
 | `.github/agents/auditor.agent.md` | Read-only consistency audit (CoS before merge) |
