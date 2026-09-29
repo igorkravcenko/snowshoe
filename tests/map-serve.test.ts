@@ -135,6 +135,8 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     const jsRes = await fetch(`${server.url.replace(/\/$/, "")}${asset![1]}`);
     expect(jsRes.ok).toBe(true);
     const js = await jsRes.text();
+    expect(js).not.toContain('from"prism-react-renderer"');
+    expect(js).not.toContain('from"@xterm/xterm"');
     expect(js).toContain("Reload · updated");
     expect(js).toContain("Map changed");
     expect(js).toContain("/api/map/status");

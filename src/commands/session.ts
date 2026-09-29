@@ -1,4 +1,4 @@
-import { Ledger } from "../db/ledger.ts";
+import { Ledger, runWithSqliteBusyRetry } from "../db/ledger.ts";
 import { gitHead } from "../git.ts";
 import { findRepoRoot, ledgerPath, requireInitialized } from "../paths.ts";
 
@@ -26,10 +26,12 @@ export function refreshRequired(session: Session): boolean {
 export function openSession(cwd = process.cwd()): Session {
   const repoRoot = findRepoRoot(cwd);
   requireInitialized(repoRoot);
+  const head = gitHead(repoRoot);
+  const ledger = runWithSqliteBusyRetry(() => new Ledger(repoRoot, ledgerPath(repoRoot)));
   return {
     repoRoot,
-    gitHead: gitHead(repoRoot),
-    ledger: new Ledger(repoRoot, ledgerPath(repoRoot)),
+    gitHead: head,
+    ledger,
   };
 }
 

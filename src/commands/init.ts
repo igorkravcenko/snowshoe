@@ -1,6 +1,6 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { Ledger } from "../db/ledger.ts";
+import { Ledger, runWithSqliteBusyRetry } from "../db/ledger.ts";
 import { parseLocaleInput } from "../domain/locale.ts";
 import { ROOT_SLUG } from "../domain/types.ts";
 import { EXIT_OK } from "../errors.ts";
@@ -37,7 +37,7 @@ export function runInit(
 
   const locale = parseLocaleInput({ locale: opts.locale, uiLanguage: opts.uiLanguage });
 
-  const ledger = new Ledger(repoRoot, ledgerPath(repoRoot));
+  const ledger = runWithSqliteBusyRetry(() => new Ledger(repoRoot, ledgerPath(repoRoot)));
   try {
     const empty = ledger.isEmpty();
     let seededDetail = false;
