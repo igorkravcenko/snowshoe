@@ -75,7 +75,7 @@ async function readJson<T>(res: Response): Promise<T> {
 }
 
 export async function fetchMapStatus(): Promise<MapReadModel> {
-  const res = await fetch("/api/map/status");
+  const res = await fetch("/api/map/status?allFields=1");
   const body = await readJson<MapReadModel & { error?: string }>(res);
   if (!res.ok) throw new Error(body.error ?? `map status HTTP ${res.status}`);
   return body;

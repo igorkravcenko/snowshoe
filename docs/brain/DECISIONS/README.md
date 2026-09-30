@@ -39,6 +39,6 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-09-27-map-ui-and-skill](./ADR-2026-09-27-map-ui-and-skill.md) | accepted | Tryable local map UI (`map serve`) + drain skill; A/B stay proposed |
 | [ADR-2026-09-27-ci-supply-chain-hygiene](./ADR-2026-09-27-ci-supply-chain-hygiene.md) | accepted | Pin Actions SHA + frozen-lockfile CI + SECURITY.md; no paid scanners |
 | [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md) | accepted | Skill gate + `drain.md`/`learn.md`; `work next` gates drain; PATH `snowshoe`; batch 5 |
-| [ADR-2026-09-27-detail-children-refs](./ADR-2026-09-27-detail-children-refs.md) | accepted | Detail payload `children` + `refs`; unresolved anchors reject |
+| [ADR-2026-09-27-detail-children-refs](./ADR-2026-09-27-detail-children-refs.md) | accepted | Detail `children`/`refs`; parent enrich; retire/clearEdges in subtree |
 | [ADR-2026-09-27-work-next-wait](./ADR-2026-09-27-work-next-wait.md) | accepted | `work next --wait` blocks idle; not a daemon; skill opt-in |
 | [ADR-2026-09-29-map-pty-channel](./ADR-2026-09-29-map-pty-channel.md) | accepted | Loopback-peer PTY in map UI + `map view`; not chat/HITL/learning |

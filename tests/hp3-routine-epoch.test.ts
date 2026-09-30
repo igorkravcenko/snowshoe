@@ -245,7 +245,7 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
     const advance = await snowshoe(repo, ["routine", "advance", "--json"]);
     expect(advance.exitCode).toBe(0);
 
-    const map = await snowshoe(repo, ["map", "status", "--json"]);
+    const map = await snowshoe(repo, ["map", "status", "--json", "--all-fields"]);
     const pay = (map.json.nodes as Array<Record<string, unknown>>).find((n) => n.slug === "pay")!;
     expect((pay.metrics as Record<string, number>).internals).toBe(0.5);
   });

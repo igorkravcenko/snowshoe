@@ -19,8 +19,13 @@ Day-1 detail complete mashed parent→child structure and any other links into o
 
 Inner `kind=detail` payload:
 
-- **`children`**: parent→child slugs under `parentSlug`. Every `nodes[].slug` must appear. Util writes hierarchy edges (`kind=parent`).
+- **`children`**: parent→child slugs under `parentSlug`. Every `nodes[].slug` except `parentSlug` must appear. Util writes hierarchy edges (`kind=parent`).
 - **`refs`**: non-hierarchy relevance links `{ from, to, kind? }` (default `kind` `related`). `kind` must not be `parent`.
+- **`parentSlug` in `nodes[]`**: enrich the marked node (title, type, `leaf`, body, anchors). Not reparent. `root` cannot be upserted.
+- **`retire`**: delete descendant slugs (not `parentSlug`, not `root`); cascade like ledger delete.
+- **`clearEdges`**: remove an edge. `kind` default `related`. `parent` only from `parentSlug` to a current child.
+
+`unchanged: true` with any of `nodes` / `children` / `refs` / `retire` / `clearEdges` non-empty **rejects**.
 
 Do not send a single `edges` list. If `edges` is present, **hard-reject** with a deprecation reason pointing at `children` and `refs`.
 
@@ -40,7 +45,7 @@ Forbidden node types and similar constraints stay util-side; the skill does not 
 
 ## Consequences
 
-- CURRENT: detail complete uses `children` + `refs`; unresolved anchors reject.
+- CURRENT: detail complete uses `children` + `refs`; optional enrich/`retire`/`clearEdges` in the parent subtree; unresolved anchors reject.
 - Zod, `detail-complete.schema.json`, complete handlers, skill examples, and tests match this contract.
 - Notes that still say `edges` / soft `anchorsUnresolved` are historical working memory, not truth.
 

@@ -1,6 +1,6 @@
 ---
 status: canonical
-updated: 2026-09-29
+updated: 2026-09-30
 ---
 
 # CURRENT
@@ -41,7 +41,7 @@ No Snowshoe ARR or user counts exist to cite. Do not invent them. There is no pr
 
 ## Now
 
-HP1–4 CLI plus tryable `snowshoe map serve` and `.cursor/skills/snowshoe/` (shared PATH/`--json`/ledger rules only in gate `SKILL.md`; `drain.md` / `learn.md`; sibling `install.md` is install how-to). Locale at init; required entity body on detail upsert; in-UI code preview; optional `work next --wait`. Slice still has no learning/quiz/verify. Map PTY is a channel only ([ADR-2026-09-29-map-pty-channel.md](./DECISIONS/ADR-2026-09-29-map-pty-channel.md)); banner + `SNOWSHOE_MODE=learn` do not ship quiz/verify. Proposed routine ADRs A/B are **not** promoted. Skill + payload: [ADR-2026-09-27-skill-drain-loop.md](./DECISIONS/ADR-2026-09-27-skill-drain-loop.md), [ADR-2026-09-27-work-next-wait.md](./DECISIONS/ADR-2026-09-27-work-next-wait.md), [ADR-2026-09-27-detail-children-refs.md](./DECISIONS/ADR-2026-09-27-detail-children-refs.md), [ADR-2026-09-27-locale-body-preview.md](./DECISIONS/ADR-2026-09-27-locale-body-preview.md). Manual try: [notes/how-to-try-e2e.md](./notes/how-to-try-e2e.md). Positioning: [docs/product/positioning.md](../product/positioning.md). Working notes on form detail: [notes/product-form-detail.md](./notes/product-form-detail.md).
+HP1–4 CLI plus tryable `snowshoe map serve` and `.cursor/skills/snowshoe/` (shared PATH/`--json`/ledger rules only in gate `SKILL.md`; `drain.md` / `learn.md`; sibling `install.md` is install how-to). Detail drain hop: grow vs `unchanged` (no child quota). `map status` default columns are `slug` + `children`; `--all-fields` is every column (map UI uses `?allFields=1`); `--fields` is a comma-separated allowlist. `--slug` is focus (alone = that node); `--depth` is a subtree from focus or from `root`; `--neighborhood --slug` is the ego graph (`edges`). Detail complete may enrich the marked node, `retire` descendants, `clearEdges` in-subtree. Locale at init; required entity body on detail upsert; in-UI code preview; optional `work next --wait`. Slice still has no learning/quiz/verify. Map PTY is a channel only ([ADR-2026-09-29-map-pty-channel.md](./DECISIONS/ADR-2026-09-29-map-pty-channel.md)); banner + `SNOWSHOE_MODE=learn` do not ship quiz/verify. Proposed routine ADRs A/B are **not** promoted. Skill + payload: [ADR-2026-09-27-skill-drain-loop.md](./DECISIONS/ADR-2026-09-27-skill-drain-loop.md), [ADR-2026-09-27-work-next-wait.md](./DECISIONS/ADR-2026-09-27-work-next-wait.md), [ADR-2026-09-27-detail-children-refs.md](./DECISIONS/ADR-2026-09-27-detail-children-refs.md), [ADR-2026-09-27-locale-body-preview.md](./DECISIONS/ADR-2026-09-27-locale-body-preview.md). Manual try: [notes/how-to-try-e2e.md](./notes/how-to-try-e2e.md). Positioning: [docs/product/positioning.md](../product/positioning.md). Working notes on form detail: [notes/product-form-detail.md](./notes/product-form-detail.md).
 
 ## Process / quality
 

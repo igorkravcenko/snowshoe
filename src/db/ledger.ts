@@ -268,6 +268,15 @@ export class Ledger {
     return rows.map((r) => ({ to: r.to_slug, kind: r.kind }));
   }
 
+  refsTo(slug: string): Array<{ from: string; kind: string }> {
+    const rows = this.db
+      .query(
+        "SELECT from_slug, kind FROM edges WHERE to_slug = ? AND kind != 'parent' ORDER BY from_slug, kind",
+      )
+      .all(slug) as { from_slug: string; kind: string }[];
+    return rows.map((r) => ({ from: r.from_slug, kind: r.kind }));
+  }
+
   replaceAnchors(
     slug: string,
     anchors: Array<{

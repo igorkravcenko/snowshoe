@@ -94,6 +94,8 @@ export function detailPayload(args: {
   nodes?: Array<Record<string, unknown>>;
   children?: string[];
   refs?: Array<{ from: string; to: string; kind?: string }>;
+  retire?: string[];
+  clearEdges?: Array<{ from: string; to: string; kind?: string }>;
 }): Record<string, unknown> {
   const unchanged = args.unchanged ?? false;
   const nodes = (args.nodes ?? []).map((n) => {
@@ -101,12 +103,18 @@ export function detailPayload(args: {
     if (typeof n.body === "string" || typeof n.bodyMd === "string") return n;
     return { ...n, body: `Body for ${String(n.slug ?? "node")}` };
   });
-  const children = args.children ?? (unchanged ? [] : nodes.map((n) => String(n.slug ?? "")));
+  const children =
+    args.children ??
+    (unchanged
+      ? []
+      : nodes.map((n) => String(n.slug ?? "")).filter((s) => s && s !== args.parentSlug));
   return {
     parentSlug: args.parentSlug,
     unchanged,
     nodes,
     children,
     refs: args.refs ?? [],
+    retire: args.retire ?? [],
+    clearEdges: args.clearEdges ?? [],
   };
 }
