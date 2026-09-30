@@ -1,4 +1,5 @@
 import { defineCommand } from "citty";
+import { runFeedbackAdd, runFeedbackList } from "./commands/feedback.ts";
 import { runInit } from "./commands/init.ts";
 import {
   parseMapStatusOpts,
@@ -340,6 +341,39 @@ const mapCmd = defineCommand({
   },
 });
 
+const feedbackAddCmd = defineCommand({
+  meta: { name: "add", description: "Append a dev note about Snowshoe (optional)" },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+    input: {
+      type: "string",
+      description: "JSON { text, command? } (else stdin)",
+    },
+  },
+  async run({ args }) {
+    const raw = await readStdinOrFlag(args.input);
+    return emit(runFeedbackAdd(process.cwd(), raw), args.json);
+  },
+});
+
+const feedbackListCmd = defineCommand({
+  meta: { name: "list", description: "List local Snowshoe feedback (newest first)" },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+  },
+  run({ args }) {
+    return emit(runFeedbackList(process.cwd()), args.json);
+  },
+});
+
+const feedbackCmd = defineCommand({
+  meta: { name: "feedback", description: "Optional local inbox for notes about Snowshoe" },
+  subCommands: {
+    add: feedbackAddCmd,
+    list: feedbackListCmd,
+  },
+});
+
 export const main = defineCommand({
   meta: {
     name: "snowshoe",
@@ -351,5 +385,6 @@ export const main = defineCommand({
     routine: routineCmd,
     work: workCmd,
     map: mapCmd,
+    feedback: feedbackCmd,
   },
 });

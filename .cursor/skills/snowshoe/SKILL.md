@@ -50,3 +50,7 @@ If **both** drain and learn appear in one turn → ask one line which branch, or
 
 - Learn → read **`learn.md`**
 - Drain (default) → read **`drain.md`**
+
+## 4. Optional feedback
+
+`snowshoe feedback add --json` (stdin `{ "text": "…", "command": "optional" }`) appends a local note about Snowshoe. Use only if the tool is unclear, frustrating, or you have a concrete idea. Not required. Do not log secrets or lease tokens. Then continue drain or learn.

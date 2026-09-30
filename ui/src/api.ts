@@ -65,6 +65,13 @@ export type SessionInfo = {
   packageRoot?: string | null;
 };
 
+export type FeedbackEntry = {
+  id: string;
+  createdAt: string;
+  text: string;
+  command?: string;
+};
+
 async function readJson<T>(res: Response): Promise<T> {
   const text = await res.text();
   try {
@@ -79,6 +86,13 @@ export async function fetchMapStatus(): Promise<MapReadModel> {
   const body = await readJson<MapReadModel & { error?: string }>(res);
   if (!res.ok) throw new Error(body.error ?? `map status HTTP ${res.status}`);
   return body;
+}
+
+export async function fetchFeedback(): Promise<FeedbackEntry[]> {
+  const res = await fetch("/api/feedback");
+  const body = await readJson<{ entries?: FeedbackEntry[]; error?: string }>(res);
+  if (!res.ok) throw new Error(body.error ?? `feedback HTTP ${res.status}`);
+  return body.entries ?? [];
 }
 
 export async function fetchSession(): Promise<SessionInfo> {

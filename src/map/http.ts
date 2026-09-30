@@ -1,5 +1,6 @@
 import { existsSync, statSync } from "node:fs";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
+import { runFeedbackList } from "../commands/feedback.ts";
 import {
   parseMapStatusOpts,
   runMapDetailCancel,
@@ -105,7 +106,7 @@ async function readSlug(req: Request, url: URL): Promise<string> {
  * (`fields`, `slug`, `depth`, `neighborhood`, `allFields` / `all-fields`).
  * GET /api/session is UI-only (repoRoot / gitHead / mapAnchor / locale); not part of the map read-model.
  * GET /api/file is a read-only repo-root sandbox (no ledger writes).
- * POST/GET/PUT /api/view is in-memory UI focus (not the ledger; dies with the process).
+ * GET /api/feedback is a twin of `snowshoe feedback list --json` (dev inbox; not the map).
  */
 export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise<Response> {
   const url = new URL(req.url);
@@ -142,6 +143,11 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
         );
         return jsonResponse(result.body, result.exitCode);
       }, opts.cwd);
+    }
+
+    if (path === "/api/feedback" && req.method === "GET") {
+      const result = runFeedbackList(opts.cwd);
+      return jsonResponse(result.body, result.exitCode);
     }
 
     if (path === "/api/session" && req.method === "GET") {
