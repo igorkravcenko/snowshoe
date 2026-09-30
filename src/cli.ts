@@ -1,6 +1,11 @@
 import { defineCommand } from "citty";
 import { runInit } from "./commands/init.ts";
-import { runMapDetailCancel, runMapDetailMark, runMapStatus } from "./commands/map.ts";
+import {
+  parseMapStatusOpts,
+  runMapDetailCancel,
+  runMapDetailMark,
+  runMapStatus,
+} from "./commands/map.ts";
 import { runMapView } from "./commands/map-view.ts";
 import { runRoutineAdvance, runRoutineRefresh, runRoutineStatus } from "./commands/routine.ts";
 import { withSession } from "./commands/session.ts";
@@ -201,9 +206,45 @@ const mapStatusCmd = defineCommand({
   meta: { name: "status", description: "Map read-model JSON" },
   args: {
     json: { type: "boolean", description: "JSON output", default: false },
+    fields: {
+      type: "string",
+      description: "Comma-separated node columns (default slug,children). Not with --all-fields",
+    },
+    "all-fields": {
+      type: "boolean",
+      description: "Every node column (UI). Not with --fields",
+      default: false,
+    },
+    slug: {
+      type: "string",
+      description: "Focus slug (alone = that node; with --depth = subtree)",
+    },
+    depth: {
+      type: "string",
+      description: "Subtree depth from --slug, or from root if no slug. Not with --neighborhood",
+    },
+    neighborhood: {
+      type: "boolean",
+      description: "Ego graph around --slug (parents, children, refs, edges). Not with --depth",
+      default: false,
+    },
   },
   run({ args }) {
-    return withSession((s) => emit(runMapStatus(s), args.json));
+    return withSession((s) =>
+      emit(
+        runMapStatus(
+          s,
+          parseMapStatusOpts({
+            fields: args.fields,
+            slug: args.slug,
+            depth: args.depth,
+            neighborhood: args.neighborhood,
+            allFields: args.allFields ?? args["all-fields"],
+          }),
+        ),
+        args.json,
+      ),
+    );
   },
 });
 

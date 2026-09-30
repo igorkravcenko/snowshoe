@@ -59,8 +59,8 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     });
     stop = server.stop;
 
-    const cli = await snowshoe(repo, ["map", "status", "--json"]);
-    const httpRes = await fetch(`${server.url}api/map/status`);
+    const cli = await snowshoe(repo, ["map", "status", "--json", "--all-fields"]);
+    const httpRes = await fetch(`${server.url}api/map/status?allFields=1`);
     expect(httpRes.ok).toBe(true);
     const httpJson = (await httpRes.json()) as Record<string, unknown>;
     expect(httpJson.rootSlug).toBe("root");
@@ -71,6 +71,25 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     const authHttp = httpNodes.find((n) => n.slug === "auth")!;
     expect(authHttp.detailStatus).toBeNull();
     expect((authHttp.anchors as Array<Record<string, unknown>>)[0]?.path).toBe("README.md");
+
+    const treeHttp = await fetch(
+      `${server.url}api/map/status?fields=slug,title,type,leaf,children,refs&slug=auth&depth=0`,
+    );
+    expect(treeHttp.ok).toBe(true);
+    const treeJson = (await treeHttp.json()) as {
+      fields?: string[];
+      nodes: Array<{ slug: string }>;
+    };
+    expect(treeJson.fields).toEqual(["slug", "title", "type", "leaf", "children", "refs"]);
+    expect(treeJson.nodes.map((n) => n.slug)).toEqual(["auth"]);
+
+    const nbHttp = await fetch(
+      `${server.url}api/map/status?fields=slug,title,type,leaf,children,refs&slug=auth&neighborhood=1`,
+    );
+    expect(nbHttp.ok).toBe(true);
+    const nbJson = (await nbHttp.json()) as { neighborhood?: boolean; edges: unknown[] };
+    expect(nbJson.neighborhood).toBe(true);
+    expect(Array.isArray(nbJson.edges)).toBe(true);
 
     const sess = await fetch(`${server.url}api/session`);
     const sessJson = (await sess.json()) as {
@@ -92,11 +111,11 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(markJson.command).toBe("map.detail.mark");
     expect(markJson.status).toBe("pending");
 
-    const pending = await fetch(`${server.url}api/map/status`);
+    const pending = await fetch(`${server.url}api/map/status?allFields=1`);
     const pendingJson = (await pending.json()) as { nodes: Array<Record<string, unknown>> };
     expect(pendingJson.nodes.find((n) => n.slug === "auth")?.detailStatus).toBe("pending");
 
-    const cliPending = await snowshoe(repo, ["map", "status", "--json"]);
+    const cliPending = await snowshoe(repo, ["map", "status", "--json", "--all-fields"]);
     const cliAuth = (cliPending.json.nodes as Array<Record<string, unknown>>).find(
       (n) => n.slug === "auth",
     )!;
@@ -109,7 +128,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     });
     expect(cancel.ok).toBe(true);
 
-    const after = await fetch(`${server.url}api/map/status`);
+    const after = await fetch(`${server.url}api/map/status?allFields=1`);
     const afterJson = (await after.json()) as { nodes: Array<Record<string, unknown>> };
     expect(afterJson.nodes.find((n) => n.slug === "auth")?.detailStatus).toBeNull();
   });

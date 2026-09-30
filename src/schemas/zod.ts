@@ -38,6 +38,14 @@ export const detailRefSchema = z
   })
   .strict();
 
+export const detailClearEdgeSchema = z
+  .object({
+    from: z.string().min(1),
+    to: z.string().min(1),
+    kind: z.string().min(1).optional(),
+  })
+  .strict();
+
 /** Inner completions[].payload when kind=detail. Metrics stripped before parse. */
 export const detailPayloadSchema = z
   .object({
@@ -45,6 +53,8 @@ export const detailPayloadSchema = z
     nodes: z.array(detailNodeSchema),
     children: z.array(z.string().min(1)).default([]),
     refs: z.array(detailRefSchema).default([]),
+    retire: z.array(z.string().min(1)).default([]),
+    clearEdges: z.array(detailClearEdgeSchema).default([]),
     unchanged: z.boolean(),
   })
   .strict();

@@ -28,6 +28,7 @@ describe("HP1 cold init → root detail seed", () => {
     expect(items[0]?.kind).toBe("detail");
     expect(items[0]?.parentSlug).toBe("root");
     expect(items[0]?.allowedChildTypes).toEqual(["module", "external"]);
+    expect(items[0]?.children).toEqual([]);
 
     const systemReject = await snowshoe(repo, ["work", "complete", "--json"], {
       stdin: completeEnvelope([
@@ -132,7 +133,7 @@ describe("HP1 cold init → root detail seed", () => {
     expect(accepted[0]?.status).toBe("accepted");
     expect(accepted[0]?.anchorsUnresolved).toBeUndefined();
 
-    const map = await snowshoe(repo, ["map", "status", "--json"]);
+    const map = await snowshoe(repo, ["map", "status", "--json", "--all-fields"]);
     expect(map.exitCode).toBe(0);
     expect(map.json.rootSlug).toBe("root");
     const nodes = map.json.nodes as Array<Record<string, unknown>>;

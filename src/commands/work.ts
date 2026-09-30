@@ -1,5 +1,6 @@
 import { existsSync, watch } from "node:fs";
 import { isSqliteBusyError, type StepRow } from "../db/ledger.ts";
+import { descendantSlugs } from "../domain/graph.ts";
 import { allowedChildTypes, childAllowed } from "../domain/matrix.ts";
 import { requiredLevels, severityCap } from "../domain/metrics.ts";
 import {
@@ -321,6 +322,7 @@ function formatWorkItem(session: Session, step: StepRow, epochId: string | null)
       ...base,
       parentSlug: step.parent_slug,
       allowedChildTypes: types,
+      children: step.parent_slug ? session.ledger.childrenOf(step.parent_slug) : [],
     };
   }
   return {
@@ -446,7 +448,17 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
     return { id: step.id, status: "rejected", reasons: ["unknown_parent"] };
   }
 
+  const mutateEmpty =
+    payload.nodes.length === 0 &&
+    payload.children.length === 0 &&
+    payload.refs.length === 0 &&
+    payload.retire.length === 0 &&
+    payload.clearEdges.length === 0;
+
   if (payload.unchanged) {
+    if (!mutateEmpty) {
+      return { id: step.id, status: "rejected", reasons: ["unchanged_with_mutate"] };
+    }
     session.ledger.updateStep(step.id, {
       status: "done",
       leaseToken: null,
@@ -456,10 +468,29 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
   }
 
   const reasons: string[] = [];
+  const hopSet = descendantSlugs(session.ledger, payload.parentSlug);
+  const retireSet = new Set(payload.retire);
+  for (const slug of payload.retire) {
+    if (slug === ROOT_SLUG || slug === payload.parentSlug) {
+      reasons.push(`cannot_retire:${slug}`);
+      continue;
+    }
+    if (!session.ledger.getNode(slug)) {
+      reasons.push(`unknown_retire:${slug}`);
+      continue;
+    }
+    if (!hopSet.has(slug)) {
+      reasons.push(`retire_outside_subtree:${slug}`);
+    }
+  }
+
   const newSlugs = new Set<string>();
   for (const node of payload.nodes) {
-    if (node.slug === ROOT_SLUG || node.slug === payload.parentSlug) {
-      reasons.push(`cannot_upsert_parent_or_root:${node.slug}`);
+    if (node.slug === ROOT_SLUG) {
+      reasons.push(`cannot_upsert_root:${node.slug}`);
+    }
+    if (retireSet.has(node.slug)) {
+      reasons.push(`retire_and_upsert:${node.slug}`);
     }
     newSlugs.add(node.slug);
   }
@@ -471,10 +502,23 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
   const proseBySlug = new Map<string, string>();
   const proseWrites: Array<{ ref: string; text: string }> = [];
   for (const node of payload.nodes) {
-    if (!childSet.has(node.slug)) {
+    const isParent = node.slug === payload.parentSlug;
+    if (!isParent && !childSet.has(node.slug)) {
       reasons.push(`missing_child:${node.slug}`);
     }
-    if (!childAllowed(parent.type, node.type)) {
+    if (isParent) {
+      const remaining = new Set(
+        session.ledger.childrenOf(payload.parentSlug).filter((c) => !retireSet.has(c)),
+      );
+      for (const extra of payload.children) remaining.add(extra);
+      for (const childSlug of remaining) {
+        const fromPayload = payload.nodes.find((n) => n.slug === childSlug);
+        const ct = fromPayload?.type ?? session.ledger.getNode(childSlug)?.type;
+        if (ct && !childAllowed(node.type, ct)) {
+          reasons.push(`matrix_forbid:${node.type}->${ct}:${childSlug}`);
+        }
+      }
+    } else if (!childAllowed(parent.type, node.type)) {
       reasons.push(`matrix_forbid:${parent.type}->${node.type}:${node.slug}`);
     }
     const inline = inlineBody(node);
@@ -525,6 +569,19 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
       reasons.push(`unknown_ref_endpoint:${ref.from}->${ref.to}`);
     }
   }
+
+  const currentChildren = new Set(session.ledger.childrenOf(payload.parentSlug));
+  for (const edge of payload.clearEdges) {
+    const kind = edge.kind ?? "related";
+    if (kind === "parent") {
+      if (edge.from !== payload.parentSlug || !currentChildren.has(edge.to)) {
+        reasons.push(`clear_parent_edge_forbidden:${edge.from}->${edge.to}`);
+      }
+    } else if (!hopSet.has(edge.from) && !hopSet.has(edge.to)) {
+      reasons.push(`clear_edge_outside_subtree:${edge.from}->${edge.to}`);
+    }
+  }
+
   if (reasons.length) {
     return { id: step.id, status: "rejected", reasons };
   }
@@ -538,10 +595,10 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
       const leaf = node.type === "symbol" ? true : Boolean(node.leaf);
       session.ledger.upsertNode({
         slug: node.slug,
-        title: node.title ?? node.slug,
+        title: node.title ?? existed?.title ?? node.slug,
         type: node.type,
         leaf,
-        proseRef: proseBySlug.get(node.slug) ?? node.proseRef ?? null,
+        proseRef: proseBySlug.get(node.slug) ?? node.proseRef ?? existed?.prose_ref ?? null,
       });
       if (!existed) session.ledger.seedZeroMetrics(node.slug);
       const anchors = (node.anchors ?? []).map((a) => ({
@@ -558,6 +615,12 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
     }
     for (const ref of payload.refs) {
       session.ledger.setEdge(ref.from, ref.to, ref.kind ?? "related");
+    }
+    for (const edge of payload.clearEdges) {
+      session.ledger.clearEdge(edge.from, edge.to, edge.kind ?? "related");
+    }
+    for (const slug of payload.retire) {
+      session.ledger.deleteNode(slug);
     }
     session.ledger.updateStep(step.id, {
       status: "done",

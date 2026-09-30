@@ -19,10 +19,10 @@ snowshoe map view --json
 
 (`--url` / `--id` override the env vars.)
 
-The tree itself:
+The tree / local graph (default columns are `slug` + `children`; `--all-fields` for bodies/anchors):
 
 ```bash
-snowshoe map status --json
+snowshoe map status --json --slug <focus>
+snowshoe map status --json --neighborhood --slug <focus>
+snowshoe map status --json --fields title,type,leaf,children,refs --slug <focus>
 ```
-
-Use `map view` for “what is selected now”; use `map status` for nodes, bodies, refs, anchors. Do not invent slugs.

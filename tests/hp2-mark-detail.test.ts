@@ -30,7 +30,7 @@ describe("HP2 user mark → detail one hop", () => {
     expect(mark.exitCode).toBe(0);
     expect(mark.json.status).toBe("pending");
 
-    const pendingMap = await snowshoe(repo, ["map", "status", "--json"]);
+    const pendingMap = await snowshoe(repo, ["map", "status", "--json", "--all-fields"]);
     const authPending = (pendingMap.json.nodes as Array<Record<string, unknown>>).find(
       (n) => n.slug === "auth",
     )!;
@@ -60,7 +60,7 @@ describe("HP2 user mark → detail one hop", () => {
     });
     expect(complete.exitCode).toBe(0);
 
-    const map = await snowshoe(repo, ["map", "status", "--json"]);
+    const map = await snowshoe(repo, ["map", "status", "--json", "--all-fields"]);
     const nodes = map.json.nodes as Array<Record<string, unknown>>;
     const auth = nodes.find((n) => n.slug === "auth")!;
     expect(auth.detailStatus).toBeNull();

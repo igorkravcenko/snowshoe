@@ -47,7 +47,7 @@ loop:
 
 ### Interactive `--wait`
 
-Use `--wait` **only** when the human asked to keep draining the map as they mark nodes (same session, map UI open). Do not use it for a one-shot catch-up after pull.
+Use `--wait` **only** when the human asked to keep draining the map as they mark nodes (same session, map UI open). Do not use it for a one-shot catch-up after pull. At most **one** `--wait` loop in the session — do not start a second waiter.
 
 ```bash
 snowshoe work next --json --wait
@@ -68,6 +68,11 @@ snowshoe routine status --json
 snowshoe routine advance --json
 snowshoe work complete --json
 snowshoe map status --json
+snowshoe map status --json --slug <parent>
+snowshoe map status --json --depth 1
+snowshoe map status --json --neighborhood --slug <node>
+snowshoe map status --json --all-fields
+snowshoe map status --json --fields title,type,leaf,children,refs --slug <parent>
 ```
 
 Use `init`, `routine refresh`, and `routine advance` when `work next` puts them in `todo` — not as a competing entry path.
@@ -102,10 +107,19 @@ Envelope:
 
 ### `kind=detail`
 
-One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on that item.
+One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on that item. The claimed item includes `children` (current parent→child slugs). Prefer that over a full `map status`. If you need more: `map status --json --slug <parent>` (that node only; add `--depth N` for a subtree) or `--neighborhood --slug <node>` (parents, children, refs, `edges`). `--depth` without `--slug` is a subtree from `root`. Do not combine `--depth` with `--neighborhood`. Default columns are `slug` and `children`. `--fields` is a comma-separated allowlist. `--all-fields` is every column (bodies, anchors). Do not combine `--all-fields` with `--fields`.
 
-- `children`: parent→child slugs under `parentSlug`. Every `nodes[].slug` must appear here.
-- `refs`: relevance links between entities (not hierarchy). Optional `kind` (default `related`). Do not use parent/child structure here.
+**Decide the hop before writing.** Mark means “look at this parent,” not “must mint children.”
+
+1. **No growth** — dead end, already correct, or exploratory: `unchanged: true` with empty `nodes` / `children` / `refs` / `retire` / `clearEdges`. That is a successful complete. Non-empty mutate with `unchanged` rejects (`unchanged_with_mutate`).
+2. **Grow or fix** — as many new children as the **cut** needs (a surface can be a long list); not a tour of the repo. Same axis as an existing sibling → **ref** that slug; do not invent a clone (`cli-work` vs `work`). `leaf: true` when the next hop would only be code (`anchors[]`). `symbol` is always a leaf.
+
+You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, type, `leaf`, body, anchors). Do not put it in `children[]`. You cannot upsert `root`. You cannot reparent (move a node under a different parent).
+
+- `children`: parent→child slugs under `parentSlug`. Every `nodes[].slug` except `parentSlug` must appear here.
+- `refs`: relevance links (not hierarchy). Optional `kind` (default `related`). Not `parent`.
+- `retire`: delete descendant slugs (not `parentSlug`, not `root`). Cascade edges/anchors/metrics.
+- `clearEdges`: `{ from, to, kind? }`. `kind` default `related`. `parent` only `from=parentSlug` and `to` a current child (unlink). Ref clears: at least one end in the parent subtree.
 - `body` (markdown string, alias `bodyMd`): **required** on each upserted node when `unchanged` is false. Write it in the init locale in a human readable form. The CLI writes `.snowshoe/map/nodes/<slug>.md` and sets `proseRef`. You may write that file yourself and send `proseRef` instead; empty or missing prose rejects (`missing_body:<slug>`).
 
 ```json

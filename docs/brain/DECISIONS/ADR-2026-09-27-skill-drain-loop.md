@@ -24,7 +24,7 @@ Igor-locked: the skill must be repo-agnostic and self-contained; entry is `work 
 - **No binary** (`command -v snowshoe` fails) → read `install.md` only (not loaded on a normal drain or learn). Recheck PATH. Still missing → STOP (new shell). Present and this turn already classified → that branch. Present but they only asked to install / intent unclear → one question: drain, learn, or stop.
 - **Intent** (this invocation): (a) the user prompt that invoked the skill; (b) nearby user text **this turn only**; (c) `SNOWSHOE_MODE=learn` if text is still empty; (d) **drain**. Explicit drain in the prompt beats env. Greys: “look at the map” / “what is this node” → learn; “after pull / catch up / marked nodes / work next” → drain.
 - **One branch per invocation.** Never read both `drain.md` and `learn.md`. If both intents appear, one-line ask or first/stronger signal.
-- Drain protocol lives in `drain.md` (`work next` loop). `learn.md` is conversation about the mapped repo (`map view` / `map status`); no quiz/verify; do not complete claimed steps (re-invoke for drain). `install.md` is how to get the binary on PATH, not when to load it.
+- Drain protocol lives in `drain.md` (`work next` loop). Detail hop: grow vs `unchanged` (no child-count cap; prefer refs to existing slugs; `leaf` when the next hop is only code). One `--wait` loop per session. Read models: `work next` `children[]`, or `map status --slug` / `--depth` / `--neighborhood --slug` (default columns `slug,children`; `--all-fields` for the rest). Detail complete may enrich `parentSlug`, `retire` descendants, `clearEdges` in-subtree. `learn.md` is conversation about the mapped repo; no quiz/verify; do not complete claimed steps (re-invoke for drain). `install.md` is how to get the binary on PATH, not when to load it.
 - Payload examples live in `drain.md` (or `snowshoe … --help`). Do not point agents at `docs/brain/schemas/…`.
 - Human uses the map UI to mark, cancel, and reload. Agent completes via CLI on the drain branch; human reloads.
 
@@ -36,7 +36,7 @@ Igor-locked: the skill must be repo-agnostic and self-contained; entry is `work 
 |---|---|
 | `action` | `init` · `refresh` · `advance` · `work` · `idle` |
 | `todo` | Exact command when gated: `snowshoe init --json`, `snowshoe routine refresh --json`, or `snowshoe routine advance --json`. `null` otherwise. |
-| `items` | Claimed steps. Empty unless claiming work. |
+| `items` | Claimed steps. Empty unless claiming work. Detail items include `parentSlug`, `allowedChildTypes`, `children` (current child slugs). |
 
 Order: uninitialized → `init`; HEAD/target moved needs refresh → `refresh`; claimable work → `work`; queue idle and FSM allows advance → `advance`; else `idle`. Keep `--json`. Exit 0 on followable gates (not an opaque usage fail).
 

@@ -61,10 +61,19 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(drain).toContain("missing_body");
     expect(drain).toContain("startLine");
     expect(drain).toContain("endLine");
+    expect(drain).toContain("unchanged: true");
+    expect(drain).toContain("--all-fields");
+    expect(drain).toContain("--neighborhood");
+    expect(drain).toContain("--fields title,type,leaf,children,refs");
+    expect(drain).not.toContain("--fields tree");
+    expect(drain).not.toContain("--fields full");
+    expect(drain).toContain("retire");
+    expect(drain).not.toContain("1–3");
   });
 
   test("learn.md is a map-conversation stub (no quiz, no complete)", () => {
     expect(learn).toContain("map view --json");
+    expect(learn).toContain("--fields title,type,leaf,children,refs");
     expect(learn).toContain("SNOWSHOE_MAP_URL");
     expect(learn).toContain("SNOWSHOE_VIEW");
     expect(learn).not.toContain("work complete");

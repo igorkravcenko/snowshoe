@@ -1,6 +1,11 @@
 import { existsSync, statSync } from "node:fs";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
-import { runMapDetailCancel, runMapDetailMark, runMapStatus } from "../commands/map.ts";
+import {
+  parseMapStatusOpts,
+  runMapDetailCancel,
+  runMapDetailMark,
+  runMapStatus,
+} from "../commands/map.ts";
 import { mapEpochAnchor, refreshRequired, withSession } from "../commands/session.ts";
 import { DEFAULT_MAP_EXPAND_DEPTH } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_INTERNAL, EXIT_OK, EXIT_USAGE } from "../errors.ts";
@@ -96,7 +101,8 @@ async function readSlug(req: Request, url: URL): Promise<string> {
 
 /**
  * HTTP twins of `snowshoe map status|detail mark|cancel`.
- * GET /api/map/status returns the same JSON as `snowshoe map status --json`.
+ * GET /api/map/status returns the same JSON as `snowshoe map status --json`
+ * (`fields`, `slug`, `depth`, `neighborhood`, `allFields` / `all-fields`).
  * GET /api/session is UI-only (repoRoot / gitHead / mapAnchor / locale); not part of the map read-model.
  * GET /api/file is a read-only repo-root sandbox (no ledger writes).
  * POST/GET/PUT /api/view is in-memory UI focus (not the ledger; dies with the process).
@@ -118,7 +124,22 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
 
     if (path === "/api/map/status" && req.method === "GET") {
       return withSession((s) => {
-        const result = runMapStatus(s);
+        const result = runMapStatus(
+          s,
+          parseMapStatusOpts({
+            fields: url.searchParams.get("fields") ?? undefined,
+            slug: url.searchParams.get("slug") ?? undefined,
+            depth: url.searchParams.get("depth") ?? undefined,
+            neighborhood: url.searchParams.has("neighborhood")
+              ? (url.searchParams.get("neighborhood") ?? "")
+              : undefined,
+            allFields: url.searchParams.has("allFields")
+              ? (url.searchParams.get("allFields") ?? "")
+              : url.searchParams.has("all-fields")
+                ? (url.searchParams.get("all-fields") ?? "")
+                : undefined,
+          }),
+        );
         return jsonResponse(result.body, result.exitCode);
       }, opts.cwd);
     }

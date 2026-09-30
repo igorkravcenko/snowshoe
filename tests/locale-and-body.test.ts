@@ -135,7 +135,7 @@ describe("entity body on detail complete", () => {
     expect(existsSync(prosePath)).toBe(true);
     expect(readFileSync(prosePath, "utf8")).toContain("Точка входа");
 
-    const map = await snowshoe(repo, ["map", "status", "--json"]);
+    const map = await snowshoe(repo, ["map", "status", "--json", "--all-fields"]);
     const cli = (map.json.nodes as Array<Record<string, unknown>>).find((n) => n.slug === "cli")!;
     expect(cli.proseRef).toBe(".snowshoe/map/nodes/cli.md");
     expect(cli.bodyMd).toContain("Точка входа");
@@ -175,7 +175,7 @@ describe("entity body on detail complete", () => {
       ]),
     });
     expect(ok.exitCode).toBe(0);
-    const map = await snowshoe(repo, ["map", "status", "--json"]);
+    const map = await snowshoe(repo, ["map", "status", "--json", "--all-fields"]);
     const auth = (map.json.nodes as Array<Record<string, unknown>>).find((n) => n.slug === "auth")!;
     expect(auth.bodyMd).toContain("Auth module body");
   });

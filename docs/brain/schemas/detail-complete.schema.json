@@ -70,7 +70,7 @@
     },
     "children": {
       "type": "array",
-      "description": "Parent→child slugs under parentSlug (hierarchy). Every node.slug must appear here.",
+      "description": "Parent→child slugs under parentSlug (hierarchy). Every nodes[].slug except parentSlug must appear here.",
       "items": {
         "type": "string",
         "minLength": 1
@@ -98,7 +98,29 @@
           }
         }
       }
+    },
+    "retire": {
+      "type": "array",
+      "description": "Delete descendant slugs (not parentSlug, not root).",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "clearEdges": {
+      "type": "array",
+      "description": "Remove an edge. kind default related; parent only from parentSlug to a current child.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to"],
+        "properties": {
+          "from": { "type": "string", "minLength": 1 },
+          "to": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "minLength": 1 }
+        }
+      }
     }
   },
-  "description": "Inner completions[].payload when kind=detail. Outer envelope (id, leaseToken, kind) is the work-complete wrapper. Agent omits metrics. Missing/moved anchor paths hard-reject. Do not send edges; use children + refs. Util silently rejects forbidden node types."
+  "description": "Inner completions[].payload when kind=detail. Outer envelope (id, leaseToken, kind) is the work-complete wrapper. Agent omits metrics. Missing/moved anchor paths hard-reject. Do not send edges; use children + refs. Optional retire / clearEdges stay in the parent subtree. parentSlug may appear in nodes (enrich); root may not. Util silently rejects forbidden node types."
 }
