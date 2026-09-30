@@ -23,6 +23,7 @@ import {
   sameAnchor,
 } from "./api.ts";
 import { bandFor, colorFor, nodeFloat } from "./bands.ts";
+import { FeedbackPane } from "./Feedback.tsx";
 import { mapFingerprint } from "./map-fingerprint.ts";
 import { MarkdownBody } from "./markdown.tsx";
 import { isExpandable } from "./matrix.ts";
@@ -383,7 +384,7 @@ export function App(): ReactElement {
   const expandSeeded = useRef(false);
   const [viewId, setViewId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(loadSidebarOpen);
-  const [sidebarTab, setSidebarTab] = useState<"terminal" | "code">("terminal");
+  const [sidebarTab, setSidebarTab] = useState<"terminal" | "code" | "feedback">("terminal");
   const [split, setSplit] = useState(loadSplit);
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const viewBootstrapped = useRef(false);
@@ -787,6 +788,14 @@ export function App(): ReactElement {
                 >
                   Code
                 </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={sidebarTab === "feedback"}
+                  onClick={() => setSidebarTab("feedback")}
+                >
+                  Feedback
+                </button>
               </div>
               <div className="sidebar-body">
                 <div
@@ -800,6 +809,12 @@ export function App(): ReactElement {
                   role="tabpanel"
                 >
                   <PreviewPanel anchor={preview} repoRoot={session?.repoRoot ?? null} />
+                </div>
+                <div
+                  className={sidebarTab === "feedback" ? "sidebar-panel" : "sidebar-panel hidden"}
+                  role="tabpanel"
+                >
+                  <FeedbackPane active={sidebarTab === "feedback"} />
                 </div>
               </div>
             </aside>

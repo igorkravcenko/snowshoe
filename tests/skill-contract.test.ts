@@ -26,7 +26,8 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(gate).not.toContain("bun src/index.ts");
     expect(gate).not.toContain("waitTimedOut");
     expect(gate).not.toContain("missing_body");
-    expect(gate).not.toContain("work next --json --wait");
+    expect(gate).toContain("feedback add --json");
+    expect(gate).toContain("Not required");
   });
 
   test("drain.md is repo-agnostic PATH snowshoe (no snowshoe-repo internals)", () => {

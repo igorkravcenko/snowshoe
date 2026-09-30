@@ -46,6 +46,32 @@ async function seedAuth(repo: string): Promise<void> {
 }
 
 describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
+  test("GET /api/feedback matches CLI feedback list", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    await snowshoe(repo, ["feedback", "add", "--json"], {
+      stdin: JSON.stringify({ text: "http twin note" }),
+    });
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+    const cli = await snowshoe(repo, ["feedback", "list", "--json"]);
+    const httpRes = await fetch(`${server.url}api/feedback`);
+    expect(httpRes.ok).toBe(true);
+    const httpJson = (await httpRes.json()) as {
+      entries: Array<{ text: string }>;
+      command: string;
+    };
+    expect(httpJson.command).toBe("feedback.list");
+    expect(httpJson.entries[0]?.text).toBe("http twin note");
+    expect((cli.json.entries as Array<{ text: string }>)[0]?.text).toBe(httpJson.entries[0]?.text);
+  });
+
   test("GET /api/map/status matches CLI map status shape; mark/cancel via POST", async () => {
     const repo = makeGitRepo();
     await seedAuth(repo);
@@ -161,6 +187,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).toContain("/api/map/status");
     expect(js).toContain("/api/map/detail/mark");
     expect(js).toContain("/api/file");
+    expect(js).toContain("/api/feedback");
     expect(js).toContain("Code preview");
     expect(js).toContain("Open in editor");
     expect(js).toContain("vscode://file");
