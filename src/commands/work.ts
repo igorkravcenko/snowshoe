@@ -1,5 +1,5 @@
 import { existsSync, watch } from "node:fs";
-import type { StepRow } from "../db/ledger.ts";
+import { isSqliteBusyError, type StepRow } from "../db/ledger.ts";
 import { descendantSlugs } from "../domain/graph.ts";
 import { allowedChildTypes, childAllowed } from "../domain/matrix.ts";
 import { requiredLevels, severityCap } from "../domain/metrics.ts";
@@ -207,7 +207,12 @@ export async function runWorkNextFromCwd(
         ? Math.min(WORK_NEXT_WAIT_FALLBACK_MS, remaining)
         : WORK_NEXT_WAIT_FALLBACK_MS;
     await waitForSnowshoeNudge(cwd, sleepFor);
-    result = runWorkNextOnceFromCwd({ batchSize: opts.batchSize }, cwd);
+    try {
+      result = runWorkNextOnceFromCwd({ batchSize: opts.batchSize }, cwd);
+    } catch (err) {
+      // Watch fires on WAL while map serve still holds the writer. Stay idle and wait again.
+      if (!isSqliteBusyError(err)) throw err;
+    }
   }
   return result;
 }

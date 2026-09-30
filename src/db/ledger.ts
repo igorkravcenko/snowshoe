@@ -68,6 +68,32 @@ export type BlastNodeRow = {
   severity: string;
 };
 
+/** SQLite busy wait (ms). Must be set before other PRAGMAs on open. */
+export const SQLITE_BUSY_TIMEOUT_MS = 5000;
+
+export function isSqliteBusyError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /database is locked|database table is locked|SQLITE_BUSY|SQLITE_LOCKED/i.test(message);
+}
+
+function sleepSync(ms: number): void {
+  const buf = new Int32Array(new SharedArrayBuffer(4));
+  Atomics.wait(buf, 0, 0, ms);
+}
+
+/** Retry a sync SQLite open/query when another process holds the ledger (map serve vs `--wait`). */
+export function runWithSqliteBusyRetry<T>(fn: () => T, budgetMs = SQLITE_BUSY_TIMEOUT_MS * 2): T {
+  const deadline = Date.now() + budgetMs;
+  for (;;) {
+    try {
+      return fn();
+    } catch (err) {
+      if (!isSqliteBusyError(err) || Date.now() >= deadline) throw err;
+      sleepSync(40);
+    }
+  }
+}
+
 const MIGRATE_SQL = `
 CREATE TABLE IF NOT EXISTS meta (
   key TEXT PRIMARY KEY,
@@ -155,11 +181,22 @@ export class Ledger {
     this.repoRoot = repoRoot;
     mkdirSync(dirname(filename), { recursive: true });
     mkdirSync(snowshoeDir(repoRoot), { recursive: true });
-    this.db = new Database(filename, { create: true });
-    this.db.exec("PRAGMA journal_mode = WAL;");
-    this.db.exec("PRAGMA foreign_keys = ON;");
-    this.db.exec("PRAGMA busy_timeout = 5000;");
-    this.db.exec(MIGRATE_SQL);
+    this.db = runWithSqliteBusyRetry(() => {
+      const db = new Database(filename, { create: true });
+      try {
+        db.exec(`PRAGMA busy_timeout = ${SQLITE_BUSY_TIMEOUT_MS};`);
+        db.exec("PRAGMA foreign_keys = ON;");
+        const journal = db.query("PRAGMA journal_mode").get() as { journal_mode?: string } | null;
+        if (String(journal?.journal_mode ?? "").toLowerCase() !== "wal") {
+          db.exec("PRAGMA journal_mode = WAL;");
+        }
+        db.exec(MIGRATE_SQL);
+        return db;
+      } catch (err) {
+        db.close();
+        throw err;
+      }
+    });
   }
 
   close(): void {
