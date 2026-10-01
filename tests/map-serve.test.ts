@@ -185,7 +185,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).toContain("Reload · updated");
     expect(js).toContain("Map changed");
     expect(js).toContain("/api/map/status");
-    expect(js).toContain("/api/map/detail/mark");
+    expect(js).toContain("/api/map/mark");
     expect(js).toContain("/api/file");
     expect(js).toContain("/api/feedback");
     expect(js).toContain("Code preview");
@@ -193,6 +193,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).toContain("vscode://file");
     expect(js).toContain("No entity body yet");
     expect(js).toContain("No refs on this node");
+    expect(js).toContain("No children yet");
     expect(js).toContain("Preview in UI");
     expect(js).toContain("/api/view");
     expect(js).toContain("Location");

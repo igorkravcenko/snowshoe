@@ -4,7 +4,7 @@ export type SplitWeights = {
   sidebar: number;
 };
 
-export const DEFAULT_SPLIT: SplitWeights = { tree: 24, detail: 28, sidebar: 48 };
+export const DEFAULT_SPLIT: SplitWeights = { tree: 32, detail: 40, sidebar: 28 };
 export const GUTTER_PX = 6;
 export const MIN_TREE_PX = 160;
 export const MIN_DETAIL_PX = 200;

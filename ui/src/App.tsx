@@ -10,22 +10,24 @@ import {
 } from "react";
 import {
   type Anchor,
-  cancelDetail,
   createMapView,
   fetchMapStatus,
   fetchSession,
   incomingRefs,
   type MapNode,
   type MapReadModel,
-  markDetail,
+  markNode,
   putMapView,
   type SessionInfo,
   sameAnchor,
+  setLeaf,
+  unmarkNode,
 } from "./api.ts";
 import { bandFor, colorFor, nodeFloat } from "./bands.ts";
 import { FeedbackPane } from "./Feedback.tsx";
 import { mapFingerprint } from "./map-fingerprint.ts";
 import { MarkdownBody } from "./markdown.tsx";
+import { MARK_KINDS, MARK_LABELS, type MarkKind } from "./marks.ts";
 import { isExpandable } from "./matrix.ts";
 import { PreviewPanel } from "./Preview.tsx";
 import { applySplitDrag, DEFAULT_SPLIT, parseSplitWeights, type SplitWeights } from "./split.ts";
@@ -63,7 +65,7 @@ function treeKeysBlocked(target: EventTarget | null): boolean {
 
 const TREE_NAV_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"]);
 const SIDEBAR_KEY = "snowshoe.sidebar";
-const SPLIT_KEY = "snowshoe.split";
+const SPLIT_KEY = "snowshoe.split.v2";
 
 function loadSidebarOpen(): boolean {
   try {
@@ -174,7 +176,7 @@ function TreeNode(props: {
           <span className="twirl" aria-hidden />
         )}
         <span className="swatch" style={{ background: colorFor(float) }} title={bandFor(float)} />
-        <span>{node.title ?? node.slug}</span>
+        <span className="node-title">{node.title ?? node.slug}</span>
         <span className="hint">{node.type}</span>
         {pending ? (
           <span className={`badge${pending === "leased" ? " leased" : ""}`}>{pending}</span>
@@ -209,8 +211,11 @@ function Inspector(props: {
   nodes: Map<string, MapNode>;
   preview: Anchor | null;
   busy: boolean;
-  onMark: (slug: string) => void;
-  onCancel: (slug: string) => void;
+  menuOpen: boolean;
+  onMenuOpen: (open: boolean) => void;
+  onMark: (slug: string, kind: MarkKind) => void;
+  onUnmark: (slug: string, kind: string) => void;
+  onLeaf: (slug: string, leaf: boolean) => void;
   onPreview: (anchor: Anchor) => void;
   onGoTo: (slug: string) => void;
 }): ReactElement {
@@ -222,9 +227,6 @@ function Inspector(props: {
       </p>
     );
   }
-  const expandable = isExpandable(node.type, node.leaf);
-  const canMark = expandable && !node.detailStatus;
-  const canCancel = node.detailStatus === "pending";
   const metrics = node.metrics ?? {};
   const levels = [
     ["overview", metrics.overview],
@@ -234,6 +236,8 @@ function Inspector(props: {
   const anchors = node.anchors ?? [];
   const outgoing = node.refs ?? [];
   const incoming = incomingRefs(props.nodes.values(), node.slug);
+  const marks = node.marks ?? [];
+  const marked = new Set(marks);
 
   return (
     <div>
@@ -254,28 +258,67 @@ function Inspector(props: {
           </div>
         ))}
       </div>
-      <div className="row">
-        <button
-          type="button"
-          className="primary"
-          disabled={!canMark || props.busy}
-          onClick={() => props.onMark(node.slug)}
-        >
-          Mark detail
-        </button>
-        <button
-          type="button"
-          className="danger"
-          disabled={!canCancel || props.busy}
-          onClick={() => props.onCancel(node.slug)}
-        >
-          Cancel pending
-        </button>
+      <div className="row mark-row">
+        <div className="mark-control">
+          <button
+            type="button"
+            className="primary"
+            disabled={props.busy}
+            aria-expanded={props.menuOpen}
+            onClick={() => props.onMenuOpen(!props.menuOpen)}
+          >
+            Mark
+          </button>
+          {props.menuOpen ? (
+            <div className="mark-menu" role="menu">
+              {MARK_KINDS.map((kind) => (
+                <button
+                  key={kind}
+                  type="button"
+                  role="menuitem"
+                  disabled={props.busy || marked.has(kind)}
+                  onClick={() => {
+                    props.onMenuOpen(false);
+                    props.onMark(node.slug, kind);
+                  }}
+                >
+                  {MARK_LABELS[kind]}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <label className="leaf-toggle">
+          <input
+            type="checkbox"
+            checked={node.leaf}
+            disabled={props.busy}
+            onChange={(e) => props.onLeaf(node.slug, e.target.checked)}
+          />
+          Leaf
+        </label>
       </div>
-      {!expandable ? <p className="hint">Leaves cannot be marked for detail.</p> : null}
+      {marks.length > 0 ? (
+        <div className="mark-chips">
+          {marks.map((kind) => (
+            <span key={kind} className="mark-chip">
+              {MARK_LABELS[kind as MarkKind] ?? kind}
+              <button
+                type="button"
+                className="chip-x"
+                disabled={props.busy}
+                aria-label={`Remove ${kind} mark`}
+                onClick={() => props.onUnmark(node.slug, kind)}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
       {node.detailStatus === "leased" ? (
         <p className="hint">
-          Leased — cancel waits for TTL/reclaim. Do not complete work from this UI.
+          Leased — unmark waits for TTL/reclaim. Do not complete work from this UI.
         </p>
       ) : null}
       {node.anchorsUnresolved && node.anchorsUnresolved.length > 0 ? (
@@ -368,6 +411,34 @@ function Inspector(props: {
           })}
         </ul>
       )}
+      <h3>Children</h3>
+      {node.children.length === 0 ? (
+        <p className="hint">No children yet. Mark detail to split further.</p>
+      ) : (
+        <ul className="anchors">
+          {node.children.map((child) => {
+            const target = props.nodes.get(child);
+            const label = target?.title ?? child;
+            return (
+              <li key={child}>
+                {target ? (
+                  <button
+                    type="button"
+                    className="linkish"
+                    onClick={() => props.onGoTo(child)}
+                    title={`Go to ${child}`}
+                  >
+                    {label}
+                  </button>
+                ) : (
+                  <span className="warn">{child}</span>
+                )}
+                {target && label !== child ? <span className="hint"> {child}</span> : null}
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
@@ -386,6 +457,7 @@ export function App(): ReactElement {
   const [sidebarOpen, setSidebarOpen] = useState(loadSidebarOpen);
   const [sidebarTab, setSidebarTab] = useState<"terminal" | "code" | "feedback">("terminal");
   const [split, setSplit] = useState(loadSplit);
+  const [markMenu, setMarkMenu] = useState(false);
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const viewBootstrapped = useRef(false);
   const skipHistoryPush = useRef(true);
@@ -541,6 +613,7 @@ export function App(): ReactElement {
 
   function selectNode(slug: string, historyMode: "push" | "replace" | "none" = "push") {
     if (slug !== selected) setPreview(null);
+    setMarkMenu(false);
     setSelected(slug);
     setExpanded((cur) => {
       const next = new Set(cur);
@@ -617,11 +690,11 @@ export function App(): ReactElement {
     });
   }
 
-  async function onMark(slug: string) {
+  async function onMark(slug: string, kind: MarkKind) {
     setBusy(true);
     setError(null);
     try {
-      await markDetail(slug);
+      await markNode(slug, kind);
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -629,11 +702,23 @@ export function App(): ReactElement {
     }
   }
 
-  async function onCancel(slug: string) {
+  async function onUnmark(slug: string, kind: string) {
     setBusy(true);
     setError(null);
     try {
-      await cancelDetail(slug);
+      await unmarkNode(slug, kind);
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setBusy(false);
+    }
+  }
+
+  async function onLeaf(slug: string, leaf: boolean) {
+    setBusy(true);
+    setError(null);
+    try {
+      await setLeaf(slug, leaf);
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -751,8 +836,11 @@ export function App(): ReactElement {
             nodes={nodes}
             preview={preview}
             busy={busy}
+            menuOpen={markMenu}
+            onMenuOpen={setMarkMenu}
             onMark={onMark}
-            onCancel={onCancel}
+            onUnmark={onUnmark}
+            onLeaf={onLeaf}
             onPreview={(anchor) => {
               setSidebarOpen(true);
               setSidebarTab("code");

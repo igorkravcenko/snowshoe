@@ -14,6 +14,7 @@ describe("map column split", () => {
     expect(parseSplitWeights(null)).toBeNull();
     expect(parseSplitWeights("{")).toBeNull();
     expect(parseSplitWeights(JSON.stringify(DEFAULT_SPLIT))).toEqual(DEFAULT_SPLIT);
+    expect(DEFAULT_SPLIT).toEqual({ tree: 32, detail: 40, sidebar: 28 });
   });
 
   test("tree-detail drag grows tree and shrinks inspector", () => {

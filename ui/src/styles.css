@@ -108,6 +108,10 @@ header .header-sidebar-toggle {
   min-width: 0;
 }
 
+.tree {
+  overflow-x: auto;
+}
+
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -241,6 +245,13 @@ button.danger {
   padding: 4px 6px;
   border-radius: 6px;
   cursor: pointer;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.node-title {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .twirl {
@@ -348,6 +359,66 @@ span.twirl {
   gap: 8px;
   flex-wrap: wrap;
   margin: 12px 0;
+}
+
+.mark-row {
+  align-items: center;
+}
+
+.mark-control {
+  position: relative;
+}
+
+.mark-menu {
+  position: absolute;
+  z-index: 5;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  min-width: 10rem;
+  background: #1b232c;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.mark-menu button {
+  text-align: left;
+}
+
+.leaf-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.mark-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.mark-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
+  border-radius: 999px;
+  background: #243040;
+  border: 1px solid #3a4a5c;
+  font-size: 12px;
+}
+
+.chip-x {
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  line-height: 1;
 }
 
 button.linkish {

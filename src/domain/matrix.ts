@@ -9,12 +9,12 @@ export const CHILD_TYPE_MATRIX: Record<EntityType, EntityType[]> = {
   module: ["module", "surface", "flow"],
   surface: ["flow", "symbol"],
   flow: ["symbol", "module"],
-  symbol: [],
+  symbol: ["symbol"],
   external: ["surface", "flow"],
 };
 
 export function allowedChildTypes(parentType: EntityType, leaf: boolean): EntityType[] {
-  if (leaf || parentType === "symbol") return [];
+  if (leaf) return [];
   return [...CHILD_TYPE_MATRIX[parentType]];
 }
 

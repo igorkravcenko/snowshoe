@@ -104,6 +104,15 @@ describe("repo file sandbox (GET /api/file)", () => {
     expect(body.endLine).toBe(2);
     expect(statSync(ledger).mtimeMs).toBe(before);
 
+    writeFileSync(join(repo, "src", "hello.ts"), "hdr\nconst a = 1;\nconst b = 2;\n");
+    const rebased = readRepoFile(repo, "src/hello.ts", {
+      start: 2,
+      lineText: "const b = 2;",
+      span: 1,
+    });
+    expect(rebased.startLine).toBe(3);
+    expect(rebased.endLine).toBe(3);
+
     const missingPath = await fileApi(repo, "");
     expect(missingPath.status).toBe(400);
 

@@ -5,6 +5,8 @@ export type Anchor = {
   symbol?: string;
   startLine?: number;
   endLine?: number;
+  lineText?: string;
+  span?: number;
 };
 
 export function sameAnchor(a: Anchor, b: Anchor): boolean {
@@ -22,6 +24,7 @@ export type MapNode = {
   type: string;
   leaf: boolean;
   detailStatus?: DetailStatus;
+  marks?: string[];
   metrics?: {
     overview?: number;
     contracts?: number;
@@ -121,15 +124,39 @@ export async function putMapView(id: string, slug: string | null): Promise<void>
   }
 }
 
-export async function markDetail(slug: string): Promise<void> {
-  const res = await fetch("/api/map/detail/mark", {
+export async function markNode(slug: string, kind: string): Promise<void> {
+  const res = await fetch("/api/map/mark", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ slug }),
+    body: JSON.stringify({ slug, kind }),
   });
   const body = await readJson<{ ok?: boolean; error?: string; reasons?: string[] }>(res);
   if (!res.ok || body.ok === false) {
     throw new Error(body.error ?? body.reasons?.join(", ") ?? `mark HTTP ${res.status}`);
+  }
+}
+
+export async function unmarkNode(slug: string, kind: string): Promise<void> {
+  const res = await fetch("/api/map/unmark", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ slug, kind }),
+  });
+  const body = await readJson<{ ok?: boolean; error?: string; reasons?: string[] }>(res);
+  if (!res.ok || body.ok === false) {
+    throw new Error(body.error ?? body.reasons?.join(", ") ?? `unmark HTTP ${res.status}`);
+  }
+}
+
+export async function setLeaf(slug: string, leaf: boolean): Promise<void> {
+  const res = await fetch("/api/map/leaf", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ slug, leaf }),
+  });
+  const body = await readJson<{ ok?: boolean; error?: string; reasons?: string[] }>(res);
+  if (!res.ok || body.ok === false) {
+    throw new Error(body.error ?? body.reasons?.join(", ") ?? `leaf HTTP ${res.status}`);
   }
 }
 
@@ -141,28 +168,21 @@ export type FilePreview = {
   lineCount: number;
 };
 
-export async function fetchFile(path: string, start?: number, end?: number): Promise<FilePreview> {
+export async function fetchFile(
+  path: string,
+  opts: { start?: number; end?: number; lineText?: string; span?: number } = {},
+): Promise<FilePreview> {
   const q = new URLSearchParams({ path });
-  if (start !== undefined) q.set("start", String(start));
-  if (end !== undefined) q.set("end", String(end));
+  if (opts.start !== undefined) q.set("start", String(opts.start));
+  if (opts.end !== undefined) q.set("end", String(opts.end));
+  if (opts.span !== undefined) q.set("span", String(opts.span));
+  if (opts.lineText) q.set("lineText", opts.lineText);
   const res = await fetch(`/api/file?${q.toString()}`);
   const body = await readJson<FilePreview & { error?: string; ok?: boolean }>(res);
   if (!res.ok || body.ok === false) {
     throw new Error(body.error ?? `file HTTP ${res.status}`);
   }
   return body;
-}
-
-export async function cancelDetail(slug: string): Promise<void> {
-  const res = await fetch("/api/map/detail/cancel", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ slug }),
-  });
-  const body = await readJson<{ ok?: boolean; error?: string; reasons?: string[] }>(res);
-  if (!res.ok || body.ok === false) {
-    throw new Error(body.error ?? body.reasons?.join(", ") ?? `cancel HTTP ${res.status}`);
-  }
 }
 
 /** Editor/OS open from the UI. The util never launches an editor. */

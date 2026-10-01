@@ -73,9 +73,15 @@ snowshoe map status --json --depth 1
 snowshoe map status --json --neighborhood --slug <node>
 snowshoe map status --json --all-fields
 snowshoe map status --json --fields title,type,leaf,children,refs --slug <parent>
+snowshoe map mark --json --slug <slug> --kind detail
+snowshoe map detail mark --json --slug <slug>
+snowshoe map detail cancel --json --slug <slug>
+snowshoe help --json
 ```
 
-Use `init`, `routine refresh`, and `routine advance` when `work next` puts them in `todo` — not as a competing entry path.
+Use `init`, `routine refresh`, and `routine advance` when `work next` puts them in `todo` — not as a competing entry path. `snowshoe help --json` is the command index.
+
+`map mark` / `map detail mark` / `cancel`: only if **this turn** the human asked to mark, expand, or cancel those nodes. Do not crawl unmarked nodes. Then `work next` as usual. Work mark kinds are `detail`, `enrich`, `fix` (one queue step). `learn` and `quiz` are not `work next`.
 
 When `todo` is `snowshoe init --json`, you may add `--locale <tag>` (alias `--ui-language`) with a BCP-47 tag such as `ru` or `en`. Init is idempotent: the same command on an existing ledger sets or updates locale meta.
 
@@ -112,7 +118,7 @@ One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on t
 **Decide the hop before writing.** Mark means “look at this parent,” not “must mint children.”
 
 1. **No growth** — dead end, already correct, or exploratory: `unchanged: true` with empty `nodes` / `children` / `refs` / `retire` / `clearEdges`. That is a successful complete. Non-empty mutate with `unchanged` rejects (`unchanged_with_mutate`).
-2. **Grow or fix** — as many new children as the **cut** needs (a surface can be a long list); not a tour of the repo. Same axis as an existing sibling → **ref** that slug; do not invent a clone (`cli-work` vs `work`). `leaf: true` when the next hop would only be code (`anchors[]`). `symbol` is always a leaf.
+2. **Grow or fix** — as many new children as the **cut** needs (a surface can be a long list); not a tour of the repo. The map is a mental model, not 1:1 with code. If the honest list would be huge, add an **intermediate grouping** layer (responsibility / feature), not dozens of siblings. If some children matter more, put those on this hop and leave the rest for a later mark detail. Same axis as an existing sibling → **ref** that slug; do not invent a clone (`cli-work` vs `work`). `leaf: true` when the next hop would only be code (`anchors[]`). `symbol` may have `symbol` children (class → methods). Mark detail on a `leaf` parent means split further: honor `allowedChildTypes` from `work next` (that hop ignores the stop-flag).
 
 You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, type, `leaf`, body, anchors). Do not put it in `children[]`. You cannot upsert `root`. You cannot reparent (move a node under a different parent).
 
@@ -162,9 +168,9 @@ You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, t
 - `unchanged: true` with empty `nodes` / `children` / `refs` clears the todo without growing the graph.
 - `proseRef`, if used, must stay under `.snowshoe/map/`.
 - Anchor `path`s must exist in the repo (missing or moved paths reject the complete).
-- Each anchor is `{ path, symbol?, startLine?, endLine? }`. `path` is required (repo-relative). `startLine` / `endLine` are **1-based, inclusive**. `endLine` is optional: omit it to mark a single line; set both to mark a contiguous slice (`endLine >= startLine`). `symbol` is an optional label, not a substitute for lines.
+- Each anchor is `{ path, symbol?, startLine?, endLine? }`. `path` is required (repo-relative). `startLine` / `endLine` are **1-based, inclusive**. `endLine` is optional: send it only when the end is known; omit rather than guess. The ledger stores fragment size from that span. `symbol` is an optional label, not a substitute for lines.
 - The map UI loads the **whole file**, scrolls to `startLine` (if set), and highlights `startLine…endLine` or just `startLine`. Prefer a real span (function, section) over always `startLine: 1`.
-- Follow `allowedChildTypes` from `work next`. Leaves (`symbol` or `leaf: true`) are opened by the human from `anchors[]`.
+- Follow `allowedChildTypes` from `work next`. `leaf: true` nodes are a stop-flag; humans still open `anchors[]`. A later mark detail on that node is a request to cut children.
 
 ### Routine kinds
 
@@ -190,7 +196,7 @@ The diff for these steps is `git diff --name-only <base>..<target>` (commits in 
 
 ## Map UI
 
-The human marks a node, cancels a pending mark, and reloads the map. Reload in the UI lights up when the ledger moved (`work complete`, CLI mark, another tab); they still click Reload. They read entity bodies, follow `refs`, and preview code from anchors (whole file, scroll to `startLine`, highlight the line or `startLine`–`endLine`; `vscode://` is secondary). You complete work through the CLI.
+The human marks in the map UI, or **this turn** asks you to `map mark` / `map detail mark` / `cancel`. They reload the map. You complete claimed steps through the CLI. Reload in the UI lights up when the ledger moved (`work complete`, CLI mark, another tab); they still click Reload. They read entity bodies, follow `refs`, and preview code from anchors (whole file, scroll to `startLine`, highlight the line or `startLine`–`endLine`; `vscode://` is secondary).
 
 ```bash
 snowshoe map status --json

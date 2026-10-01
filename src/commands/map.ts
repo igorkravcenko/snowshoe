@@ -1,4 +1,5 @@
 import { descendantSlugs } from "../domain/graph.ts";
+import { isWorkMarkKind, type MarkKind, parseMarkKind } from "../domain/marks.ts";
 import { isSlug, ROOT_SLUG } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { envelope } from "../json.ts";
@@ -11,6 +12,7 @@ export const MAP_STATUS_NODE_FIELDS = [
   "type",
   "leaf",
   "detailStatus",
+  "marks",
   "metrics",
   "anchors",
   "anchorsUnresolved",
@@ -77,14 +79,18 @@ function fullNode(session: Session, slug: string): Record<string, unknown> | nul
     ...(a.symbol ? { symbol: a.symbol } : {}),
     ...(a.start_line ? { startLine: a.start_line } : {}),
     ...(a.end_line ? { endLine: a.end_line } : {}),
+    ...(a.line_text ? { lineText: a.line_text } : {}),
+    ...(a.span ? { span: a.span } : {}),
   }));
   const unresolved = session.ledger.unresolvedAnchorPaths(n.slug);
+  const marks = session.ledger.marksOf(n.slug);
   return {
     slug: n.slug,
     title: n.title,
     type: n.type,
-    leaf: n.leaf === 1 || n.type === "symbol",
+    leaf: n.leaf === 1,
     detailStatus: active ? (active.status === "leased" ? "leased" : "pending") : null,
+    marks,
     ...(hasMetrics
       ? {
           metrics: {
@@ -101,6 +107,18 @@ function fullNode(session: Session, slug: string): Record<string, unknown> | nul
     children: session.ledger.childrenOf(n.slug),
     refs: session.ledger.refsFrom(n.slug),
   };
+}
+
+export function parseLeafFlag(raw: unknown): boolean {
+  if (raw === true) return true;
+  if (raw === false) return false;
+  if (raw === undefined || raw === null || raw === "") {
+    throw new CliError("Missing --leaf (true or false)", EXIT_USAGE);
+  }
+  const s = String(raw).trim().toLowerCase();
+  if (s === "1" || s === "true" || s === "yes") return true;
+  if (s === "0" || s === "false" || s === "no") return false;
+  throw new CliError("Invalid --leaf (true or false)", EXIT_USAGE);
 }
 
 function truthyFlag(raw: unknown): boolean {
@@ -257,29 +275,13 @@ export function runMapStatus(
   };
 }
 
-export function runMapDetailMark(
+function enqueueDetailStep(
   session: Session,
   slug: string,
-): { exitCode: number; body: Record<string, unknown> } {
-  if (!slug || !isSlug(slug)) {
-    throw new CliError("Invalid --slug", EXIT_USAGE);
-  }
-  const node = session.ledger.getNode(slug);
-  if (!node) {
-    throw new CliError(`Unknown slug: ${slug}`, EXIT_USAGE);
-  }
+): { stepId: string; alreadyQueued: boolean; status: string } {
   const existing = session.ledger.activeDetailFor(slug);
   if (existing) {
-    return {
-      exitCode: EXIT_OK,
-      body: envelope("map.detail.mark", session.repoRoot, session.gitHead, {
-        ok: true,
-        slug,
-        stepId: existing.id,
-        alreadyQueued: true,
-        status: existing.status,
-      }),
-    };
+    return { stepId: existing.id, alreadyQueued: true, status: existing.status };
   }
   const stepId = `detail:${slug}`;
   const prior = session.ledger.getStep(stepId);
@@ -296,15 +298,145 @@ export function runMapDetailMark(
       parentSlug: slug,
     });
   }
+  return { stepId, alreadyQueued: false, status: "pending" };
+}
+
+function cancelPendingDetail(
+  session: Session,
+  slug: string,
+):
+  | { ok: true; stepId: string }
+  | { ok: false; reasons: string[]; stepId?: string; status?: string } {
+  const existing = session.ledger.activeDetailFor(slug);
+  if (!existing) {
+    return { ok: false, reasons: ["no_pending_detail"] };
+  }
+  if (existing.status !== "pending") {
+    return {
+      ok: false,
+      reasons: ["cancel_only_from_pending"],
+      stepId: existing.id,
+      status: existing.status,
+    };
+  }
+  session.ledger.updateStep(existing.id, {
+    status: "cancelled",
+    leaseToken: null,
+    leaseExpiresAt: null,
+  });
+  return { ok: true, stepId: existing.id };
+}
+
+export function runMapMark(
+  session: Session,
+  slug: string,
+  kindRaw: unknown = "detail",
+): { exitCode: number; body: Record<string, unknown> } {
+  if (!slug || !isSlug(slug)) {
+    throw new CliError("Invalid --slug", EXIT_USAGE);
+  }
+  const kind: MarkKind = parseMarkKind(kindRaw ?? "detail");
+  const node = session.ledger.getNode(slug);
+  if (!node) {
+    throw new CliError(`Unknown slug: ${slug}`, EXIT_USAGE);
+  }
+  const added = session.ledger.addMark(slug, kind);
+  let queued: { stepId: string; alreadyQueued: boolean; status: string } | undefined;
+  if (isWorkMarkKind(kind)) {
+    queued = enqueueDetailStep(session, slug);
+  }
   return {
     exitCode: EXIT_OK,
-    body: envelope("map.detail.mark", session.repoRoot, session.gitHead, {
+    body: envelope("map.mark", session.repoRoot, session.gitHead, {
       ok: true,
       slug,
-      stepId,
-      alreadyQueued: false,
-      status: "pending",
+      kind,
+      alreadyMarked: !added,
+      ...(queued
+        ? { stepId: queued.stepId, alreadyQueued: queued.alreadyQueued, status: queued.status }
+        : {}),
     }),
+  };
+}
+
+export function runMapUnmark(
+  session: Session,
+  slug: string,
+  kindRaw: unknown,
+): { exitCode: number; body: Record<string, unknown> } {
+  if (!slug || !isSlug(slug)) {
+    throw new CliError("Invalid --slug", EXIT_USAGE);
+  }
+  const kind: MarkKind = parseMarkKind(kindRaw);
+  const node = session.ledger.getNode(slug);
+  if (!node) {
+    throw new CliError(`Unknown slug: ${slug}`, EXIT_USAGE);
+  }
+  const removed = session.ledger.removeMark(slug, kind);
+  let cancelled: { stepId: string } | undefined;
+  if (isWorkMarkKind(kind)) {
+    const remaining = session.ledger.marksOf(slug).filter((k) => isWorkMarkKind(k));
+    if (remaining.length === 0) {
+      const result = cancelPendingDetail(session, slug);
+      if (result.ok) cancelled = { stepId: result.stepId };
+    }
+  }
+  return {
+    exitCode: EXIT_OK,
+    body: envelope("map.unmark", session.repoRoot, session.gitHead, {
+      ok: true,
+      slug,
+      kind,
+      removed,
+      ...(cancelled ? { stepId: cancelled.stepId, status: "cancelled" } : {}),
+    }),
+  };
+}
+
+export function runMapSetLeaf(
+  session: Session,
+  slug: string,
+  leaf: boolean,
+): { exitCode: number; body: Record<string, unknown> } {
+  if (!slug || !isSlug(slug)) {
+    throw new CliError("Invalid --slug", EXIT_USAGE);
+  }
+  const node = session.ledger.getNode(slug);
+  if (!node) {
+    throw new CliError(`Unknown slug: ${slug}`, EXIT_USAGE);
+  }
+  session.ledger.upsertNode({
+    slug: node.slug,
+    title: node.title,
+    type: node.type,
+    leaf,
+    proseRef: node.prose_ref,
+  });
+  return {
+    exitCode: EXIT_OK,
+    body: envelope("map.leaf", session.repoRoot, session.gitHead, {
+      ok: true,
+      slug,
+      leaf,
+    }),
+  };
+}
+
+export function runMapDetailMark(
+  session: Session,
+  slug: string,
+): { exitCode: number; body: Record<string, unknown> } {
+  const result = runMapMark(session, slug, "detail");
+  const {
+    command: _command,
+    schemaVersion: _schema,
+    repoRoot: _root,
+    gitHead: _head,
+    ...rest
+  } = result.body;
+  return {
+    exitCode: result.exitCode,
+    body: envelope("map.detail.mark", session.repoRoot, session.gitHead, rest),
   };
 }
 
@@ -315,40 +447,26 @@ export function runMapDetailCancel(
   if (!slug || !isSlug(slug)) {
     throw new CliError("Invalid --slug", EXIT_USAGE);
   }
-  const existing = session.ledger.activeDetailFor(slug);
-  if (!existing) {
+  const cancelled = cancelPendingDetail(session, slug);
+  if (!cancelled.ok) {
     return {
       exitCode: EXIT_ATTENTION,
       body: envelope("map.detail.cancel", session.repoRoot, session.gitHead, {
         ok: false,
         slug,
-        reasons: ["no_pending_detail"],
+        ...(cancelled.stepId ? { stepId: cancelled.stepId } : {}),
+        reasons: cancelled.reasons,
+        ...(cancelled.status ? { status: cancelled.status } : {}),
       }),
     };
   }
-  if (existing.status !== "pending") {
-    return {
-      exitCode: EXIT_ATTENTION,
-      body: envelope("map.detail.cancel", session.repoRoot, session.gitHead, {
-        ok: false,
-        slug,
-        stepId: existing.id,
-        reasons: ["cancel_only_from_pending"],
-        status: existing.status,
-      }),
-    };
-  }
-  session.ledger.updateStep(existing.id, {
-    status: "cancelled",
-    leaseToken: null,
-    leaseExpiresAt: null,
-  });
+  session.ledger.clearWorkMarks(slug);
   return {
     exitCode: EXIT_OK,
     body: envelope("map.detail.cancel", session.repoRoot, session.gitHead, {
       ok: true,
       slug,
-      stepId: existing.id,
+      stepId: cancelled.stepId,
     }),
   };
 }
