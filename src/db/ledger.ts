@@ -27,6 +27,8 @@ export type AnchorRow = {
   symbol: string | null;
   start_line: number | null;
   end_line: number | null;
+  line_text: string | null;
+  span: number | null;
   unresolved: number;
 };
 
@@ -67,6 +69,13 @@ export type BlastNodeRow = {
   node_id: string;
   severity: string;
 };
+
+function ensureAnchorColumns(db: Database): void {
+  const cols = db.query("PRAGMA table_info(anchors)").all() as Array<{ name: string }>;
+  const names = new Set(cols.map((c) => c.name));
+  if (!names.has("line_text")) db.exec("ALTER TABLE anchors ADD COLUMN line_text TEXT");
+  if (!names.has("span")) db.exec("ALTER TABLE anchors ADD COLUMN span INTEGER");
+}
 
 /** SQLite busy wait (ms). Must be set before other PRAGMAs on open. */
 export const SQLITE_BUSY_TIMEOUT_MS = 5000;
@@ -124,6 +133,8 @@ CREATE TABLE IF NOT EXISTS anchors (
   symbol TEXT,
   start_line INTEGER,
   end_line INTEGER,
+  line_text TEXT,
+  span INTEGER,
   unresolved INTEGER NOT NULL DEFAULT 0
 );
 
@@ -171,6 +182,13 @@ CREATE INDEX IF NOT EXISTS idx_steps_status_kind ON steps (status, kind);
 CREATE INDEX IF NOT EXISTS idx_steps_parent ON steps (parent_slug, kind, status);
 CREATE INDEX IF NOT EXISTS idx_anchors_slug ON anchors (slug);
 CREATE INDEX IF NOT EXISTS idx_edges_from ON edges (from_slug);
+
+CREATE TABLE IF NOT EXISTS node_marks (
+  slug TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (slug, kind)
+);
 `;
 
 export class Ledger {
@@ -191,6 +209,7 @@ export class Ledger {
           db.exec("PRAGMA journal_mode = WAL;");
         }
         db.exec(MIGRATE_SQL);
+        ensureAnchorColumns(db);
         return db;
       } catch (err) {
         db.close();
@@ -262,6 +281,7 @@ export class Ledger {
   deleteNode(slug: string): void {
     this.db.run("DELETE FROM anchors WHERE slug = ?", [slug]);
     this.db.run("DELETE FROM metrics WHERE slug = ?", [slug]);
+    this.db.run("DELETE FROM node_marks WHERE slug = ?", [slug]);
     this.db.run("DELETE FROM edges WHERE from_slug = ? OR to_slug = ?", [slug, slug]);
     this.db.run("DELETE FROM nodes WHERE slug = ?", [slug]);
   }
@@ -321,24 +341,64 @@ export class Ledger {
       symbol?: string | null;
       startLine?: number | null;
       endLine?: number | null;
+      lineText?: string | null;
+      span?: number | null;
       unresolved?: boolean;
     }>,
   ): void {
     this.db.run("DELETE FROM anchors WHERE slug = ?", [slug]);
     for (const a of anchors) {
       this.db.run(
-        `INSERT INTO anchors (slug, path, symbol, start_line, end_line, unresolved)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO anchors (slug, path, symbol, start_line, end_line, line_text, span, unresolved)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           slug,
           a.path,
           a.symbol ?? null,
           a.startLine ?? null,
           a.endLine ?? null,
+          a.lineText ?? null,
+          a.span ?? null,
           a.unresolved ? 1 : 0,
         ],
       );
     }
+  }
+
+  marksOf(slug: string): string[] {
+    const rows = this.db
+      .query("SELECT kind FROM node_marks WHERE slug = ? ORDER BY created_at DESC, kind")
+      .all(slug) as { kind: string }[];
+    return rows.map((r) => r.kind);
+  }
+
+  hasMark(slug: string, kind: string): boolean {
+    const row = this.db
+      .query("SELECT 1 AS ok FROM node_marks WHERE slug = ? AND kind = ?")
+      .get(slug, kind) as { ok: number } | null;
+    return Boolean(row);
+  }
+
+  addMark(slug: string, kind: string): boolean {
+    if (this.hasMark(slug, kind)) return false;
+    this.db.run("INSERT INTO node_marks (slug, kind, created_at) VALUES (?, ?, ?)", [
+      slug,
+      kind,
+      this.now(),
+    ]);
+    return true;
+  }
+
+  removeMark(slug: string, kind: string): boolean {
+    if (!this.hasMark(slug, kind)) return false;
+    this.db.run("DELETE FROM node_marks WHERE slug = ? AND kind = ?", [slug, kind]);
+    return true;
+  }
+
+  clearWorkMarks(slug: string): void {
+    this.db.run("DELETE FROM node_marks WHERE slug = ? AND kind IN ('detail', 'enrich', 'fix')", [
+      slug,
+    ]);
   }
 
   anchorsOf(slug: string): AnchorRow[] {

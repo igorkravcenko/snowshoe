@@ -26,7 +26,10 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(gate).not.toContain("bun src/index.ts");
     expect(gate).not.toContain("waitTimedOut");
     expect(gate).not.toContain("missing_body");
-    expect(gate).toContain("feedback add --json");
+    expect(gate).toContain("help --json");
+    expect(gate).toContain("map mark");
+    expect(gate).toContain("map detail mark");
+    expect(gate).toContain("this turn");
     expect(gate).toContain("Not required");
   });
 
@@ -50,6 +53,9 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
       "work complete --json",
       "routine advance --json",
       "map status --json",
+      "map mark --json --slug <slug> --kind detail",
+      "map detail mark --json --slug <slug>",
+      "help --json",
     ]) {
       expect(drain).toContain(cmd);
     }
@@ -69,7 +75,8 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(drain).not.toContain("--fields tree");
     expect(drain).not.toContain("--fields full");
     expect(drain).toContain("retire");
-    expect(drain).not.toContain("1–3");
+    expect(drain).toContain("intermediate grouping");
+    expect(drain).not.toContain("symbol is always a leaf");
   });
 
   test("learn.md is a map-conversation stub (no quiz, no complete)", () => {

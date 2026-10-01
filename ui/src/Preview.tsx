@@ -59,7 +59,12 @@ export function PreviewPanel(props: {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    void fetchFile(anchor.path, anchor.startLine, anchor.endLine)
+    void fetchFile(anchor.path, {
+      start: anchor.startLine,
+      end: anchor.endLine,
+      lineText: anchor.lineText,
+      span: anchor.span,
+    })
       .then((body) => {
         if (!cancelled) {
           setData(body);

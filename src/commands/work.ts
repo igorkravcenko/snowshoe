@@ -1,6 +1,7 @@
 import { existsSync, watch } from "node:fs";
 import { isSqliteBusyError, type StepRow } from "../db/ledger.ts";
 import { descendantSlugs } from "../domain/graph.ts";
+import { isWorkMarkKind } from "../domain/marks.ts";
 import { allowedChildTypes, childAllowed } from "../domain/matrix.ts";
 import { requiredLevels, severityCap } from "../domain/metrics.ts";
 import {
@@ -19,6 +20,7 @@ import {
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { gitCommitInRange, gitDiffNames, gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
+import { captureAnchorMeta } from "../map/anchor-capture.ts";
 import { defaultProseRef, inlineBody, readProseFile, writeProseFile } from "../map/prose.ts";
 import {
   anchorExists,
@@ -307,6 +309,37 @@ export function runWorkNext(
   };
 }
 
+function persistAnchors(
+  session: Session,
+  anchors: Array<{
+    path: string;
+    symbol?: string | null;
+    startLine?: number;
+    endLine?: number;
+  }>,
+): Array<{
+  path: string;
+  symbol?: string | null;
+  startLine?: number | null;
+  endLine?: number | null;
+  lineText?: string | null;
+  span?: number | null;
+  unresolved: boolean;
+}> {
+  return anchors.map((a) => {
+    const meta = captureAnchorMeta(session.repoRoot, a.path, a.startLine, a.endLine);
+    return {
+      path: a.path,
+      symbol: a.symbol,
+      startLine: a.startLine,
+      endLine: a.endLine,
+      lineText: meta.lineText,
+      span: meta.span,
+      unresolved: false,
+    };
+  });
+}
+
 function formatWorkItem(session: Session, step: StepRow, epochId: string | null) {
   const epoch = epochId ? session.ledger.getEpoch(epochId) : session.ledger.getOpenEpoch();
   const base = {
@@ -317,12 +350,15 @@ function formatWorkItem(session: Session, step: StepRow, epochId: string | null)
   };
   if (step.kind === "detail") {
     const parent = step.parent_slug ? session.ledger.getNode(step.parent_slug) : null;
-    const types = parent ? allowedChildTypes(parent.type, parent.leaf === 1) : [];
+    const types = parent ? allowedChildTypes(parent.type, false) : [];
     return {
       ...base,
       parentSlug: step.parent_slug,
       allowedChildTypes: types,
       children: step.parent_slug ? session.ledger.childrenOf(step.parent_slug) : [],
+      marks: step.parent_slug
+        ? session.ledger.marksOf(step.parent_slug).filter((k) => isWorkMarkKind(k))
+        : [],
     };
   }
   return {
@@ -464,6 +500,7 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
       leaseToken: null,
       leaseExpiresAt: null,
     });
+    session.ledger.clearWorkMarks(payload.parentSlug);
     return { id: step.id, status: "accepted" };
   }
 
@@ -592,7 +629,7 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
     }
     for (const node of payload.nodes) {
       const existed = session.ledger.getNode(node.slug);
-      const leaf = node.type === "symbol" ? true : Boolean(node.leaf);
+      const leaf = Boolean(node.leaf);
       session.ledger.upsertNode({
         slug: node.slug,
         title: node.title ?? existed?.title ?? node.slug,
@@ -601,14 +638,8 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
         proseRef: proseBySlug.get(node.slug) ?? node.proseRef ?? existed?.prose_ref ?? null,
       });
       if (!existed) session.ledger.seedZeroMetrics(node.slug);
-      const anchors = (node.anchors ?? []).map((a) => ({
-        path: a.path,
-        symbol: a.symbol,
-        startLine: a.startLine,
-        endLine: a.endLine,
-        unresolved: false,
-      }));
-      if (node.anchors) session.ledger.replaceAnchors(node.slug, anchors);
+      if (node.anchors)
+        session.ledger.replaceAnchors(node.slug, persistAnchors(session, node.anchors));
     }
     for (const child of payload.children) {
       session.ledger.setEdge(payload.parentSlug, child, "parent");
@@ -627,6 +658,7 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
       leaseToken: null,
       leaseExpiresAt: null,
     });
+    session.ledger.clearWorkMarks(payload.parentSlug);
   });
 
   return { id: step.id, status: "accepted" };
@@ -764,21 +796,16 @@ function applyStructureOps(
       const slug = resolveStructureSlug(op)!;
       const existing = session.ledger.getNode(slug);
       const type = resolveStructureType(op) ?? existing?.type ?? "module";
-      const leaf = type === "symbol" ? true : Boolean(op.node.leaf);
+      const leaf = Boolean(op.node.leaf);
       session.ledger.upsertNode({
         slug,
         title: op.node.title ?? existing?.title ?? slug,
         type,
         leaf,
       });
-      const anchors = (op.node.codeAnchors ?? []).map((a) => ({
-        path: a.path,
-        symbol: a.symbol,
-        startLine: a.startLine,
-        endLine: a.endLine,
-        unresolved: false,
-      }));
-      if (op.node.codeAnchors) session.ledger.replaceAnchors(slug, anchors);
+      if (op.node.codeAnchors) {
+        session.ledger.replaceAnchors(slug, persistAnchors(session, op.node.codeAnchors));
+      }
       for (const parentId of op.node.parentIds ?? []) {
         if (session.ledger.getNode(parentId) || seenUpserts.has(parentId)) {
           session.ledger.setEdge(parentId, slug, "parent");

@@ -1,11 +1,16 @@
 import { defineCommand } from "citty";
 import { runFeedbackAdd, runFeedbackList } from "./commands/feedback.ts";
+import { runHelp } from "./commands/help.ts";
 import { runInit } from "./commands/init.ts";
 import {
+  parseLeafFlag,
   parseMapStatusOpts,
   runMapDetailCancel,
   runMapDetailMark,
+  runMapMark,
+  runMapSetLeaf,
   runMapStatus,
+  runMapUnmark,
 } from "./commands/map.ts";
 import { runMapView } from "./commands/map-view.ts";
 import { runRoutineAdvance, runRoutineRefresh, runRoutineStatus } from "./commands/routine.ts";
@@ -249,6 +254,50 @@ const mapStatusCmd = defineCommand({
   },
 });
 
+const mapMarkCmd = defineCommand({
+  meta: { name: "mark", description: "Add a mark kind (work kinds share one detail step)" },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+    slug: { type: "string", description: "Node slug", required: true },
+    kind: {
+      type: "string",
+      description: "Mark kind: detail, enrich, fix, learn, quiz (default detail)",
+      default: "detail",
+    },
+  },
+  run({ args }) {
+    return withSession((s) =>
+      emit(runMapMark(s, String(args.slug), args.kind ?? "detail"), args.json),
+    );
+  },
+});
+
+const mapUnmarkCmd = defineCommand({
+  meta: { name: "unmark", description: "Remove a mark kind" },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+    slug: { type: "string", description: "Node slug", required: true },
+    kind: { type: "string", description: "Mark kind to remove", required: true },
+  },
+  run({ args }) {
+    return withSession((s) => emit(runMapUnmark(s, String(args.slug), args.kind), args.json));
+  },
+});
+
+const mapLeafCmd = defineCommand({
+  meta: { name: "leaf", description: "Set the leaf stop-flag on a node" },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+    slug: { type: "string", description: "Node slug", required: true },
+    leaf: { type: "string", description: "true or false", required: true },
+  },
+  run({ args }) {
+    return withSession((s) =>
+      emit(runMapSetLeaf(s, String(args.slug), parseLeafFlag(args.leaf)), args.json),
+    );
+  },
+});
+
 const mapDetailMarkCmd = defineCommand({
   meta: { name: "mark", description: "Enqueue kind=detail for a slug" },
   args: {
@@ -335,6 +384,9 @@ const mapCmd = defineCommand({
   meta: { name: "map", description: "Map read-model, detail ops, and local UI" },
   subCommands: {
     status: mapStatusCmd,
+    mark: mapMarkCmd,
+    unmark: mapUnmarkCmd,
+    leaf: mapLeafCmd,
     detail: mapDetailCmd,
     view: mapViewCmd,
     serve: mapServeCmd,
@@ -374,6 +426,16 @@ const feedbackCmd = defineCommand({
   },
 });
 
+const helpCmd = defineCommand({
+  meta: { name: "help", description: "Agent command index (JSON)" },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+  },
+  run({ args }) {
+    return emit(runHelp(process.cwd()), args.json);
+  },
+});
+
 export const main = defineCommand({
   meta: {
     name: "snowshoe",
@@ -381,6 +443,7 @@ export const main = defineCommand({
     version: "0.0.1",
   },
   subCommands: {
+    help: helpCmd,
     init: initCmd,
     routine: routineCmd,
     work: workCmd,

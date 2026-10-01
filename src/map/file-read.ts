@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { isAbsolute, relative, resolve, sep } from "node:path";
+import { rebaseAnchor } from "./anchor-rebase.ts";
 
 export const MAX_FILE_BYTES = 1_000_000;
 
@@ -77,7 +78,7 @@ function countLines(text: string): number {
 export function readRepoFile(
   repoRoot: string,
   requested: string,
-  range: { start?: number; end?: number } = {},
+  range: { start?: number; end?: number; lineText?: string; span?: number } = {},
 ): FileReadResult {
   const { abs, rel } = resolveRepoFile(repoRoot, requested);
   if (!existsSync(abs)) {
@@ -108,8 +109,22 @@ export function readRepoFile(
     throw new FileReadError("Not a text file", 400);
   }
   const text = buf.toString("utf8");
-  const startLine = parseLine(range.start, "start");
-  const endLine = parseLine(range.end, "end");
+  let startLine = parseLine(range.start, "start");
+  let endLine = parseLine(range.end, "end");
+  const span = parseLine(range.span, "span");
+  if (range.lineText !== undefined && range.lineText.trim() !== "") {
+    const rebased = rebaseAnchor({
+      fileText: text,
+      storedStart: startLine,
+      lineText: range.lineText,
+      span:
+        span ?? (startLine !== undefined && endLine !== undefined ? endLine - startLine + 1 : null),
+    });
+    startLine = rebased.startLine ?? startLine;
+    endLine = rebased.endLine ?? endLine;
+  } else if (startLine !== undefined && span !== undefined) {
+    endLine = startLine + span - 1;
+  }
   if (startLine !== undefined && endLine !== undefined && startLine > endLine) {
     throw new FileReadError("start must be <= end", 400);
   }

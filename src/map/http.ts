@@ -2,10 +2,14 @@ import { existsSync, statSync } from "node:fs";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { runFeedbackList } from "../commands/feedback.ts";
 import {
+  parseLeafFlag,
   parseMapStatusOpts,
   runMapDetailCancel,
   runMapDetailMark,
+  runMapMark,
+  runMapSetLeaf,
   runMapStatus,
+  runMapUnmark,
 } from "../commands/map.ts";
 import { mapEpochAnchor, refreshRequired, withSession } from "../commands/session.ts";
 import { DEFAULT_MAP_EXPAND_DEPTH } from "../domain/types.ts";
@@ -87,21 +91,30 @@ function queryInt(url: URL, name: string): number | undefined {
   return n;
 }
 
-async function readSlug(req: Request, url: URL): Promise<string> {
-  const fromQuery = url.searchParams.get("slug");
-  if (fromQuery) return fromQuery;
+async function readJsonBody(req: Request): Promise<Record<string, unknown>> {
   const text = await req.text();
-  if (!text.trim()) return "";
+  if (!text.trim()) return {};
   try {
-    const parsed = JSON.parse(text) as { slug?: unknown };
-    return typeof parsed.slug === "string" ? parsed.slug : "";
-  } catch {
-    throw new CliError("Invalid JSON body (expected { slug })", EXIT_USAGE);
+    const parsed = JSON.parse(text) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new CliError("Invalid JSON body (expected object)", EXIT_USAGE);
+    }
+    return parsed as Record<string, unknown>;
+  } catch (err) {
+    if (err instanceof CliError) throw err;
+    throw new CliError("Invalid JSON body", EXIT_USAGE);
   }
 }
 
+async function readSlug(req: Request, url: URL): Promise<string> {
+  const fromQuery = url.searchParams.get("slug");
+  if (fromQuery) return fromQuery;
+  const parsed = await readJsonBody(req);
+  return typeof parsed.slug === "string" ? parsed.slug : "";
+}
+
 /**
- * HTTP twins of `snowshoe map status|detail mark|cancel`.
+ * HTTP twins of `snowshoe map status|mark|unmark|leaf` and `map detail mark|cancel`.
  * GET /api/map/status returns the same JSON as `snowshoe map status --json`
  * (`fields`, `slug`, `depth`, `neighborhood`, `allFields` / `all-fields`).
  * GET /api/session is UI-only (repoRoot / gitHead / mapAnchor / locale); not part of the map read-model.
@@ -119,6 +132,8 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
       const result = readRepoFile(repoRoot, url.searchParams.get("path") ?? "", {
         start: queryInt(url, "start"),
         end: queryInt(url, "end"),
+        span: queryInt(url, "span"),
+        lineText: url.searchParams.get("lineText") ?? undefined,
       });
       return jsonHttp({ schemaVersion: 1, ...result }, 200);
     }
@@ -167,6 +182,36 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
           ),
         opts.cwd,
       );
+    }
+
+    if (path === "/api/map/mark" && req.method === "POST") {
+      const body = await readJsonBody(req);
+      const slug = url.searchParams.get("slug") || (typeof body.slug === "string" ? body.slug : "");
+      const kind = url.searchParams.get("kind") ?? body.kind ?? "detail";
+      return withSession((s) => {
+        const result = runMapMark(s, slug, kind);
+        return jsonResponse(result.body, result.exitCode);
+      }, opts.cwd);
+    }
+
+    if (path === "/api/map/unmark" && req.method === "POST") {
+      const body = await readJsonBody(req);
+      const slug = url.searchParams.get("slug") || (typeof body.slug === "string" ? body.slug : "");
+      const kind = url.searchParams.get("kind") ?? body.kind;
+      return withSession((s) => {
+        const result = runMapUnmark(s, slug, kind);
+        return jsonResponse(result.body, result.exitCode);
+      }, opts.cwd);
+    }
+
+    if (path === "/api/map/leaf" && req.method === "POST") {
+      const body = await readJsonBody(req);
+      const slug = url.searchParams.get("slug") || (typeof body.slug === "string" ? body.slug : "");
+      const leafRaw = url.searchParams.get("leaf") ?? body.leaf;
+      return withSession((s) => {
+        const result = runMapSetLeaf(s, slug, parseLeafFlag(leafRaw));
+        return jsonResponse(result.body, result.exitCode);
+      }, opts.cwd);
     }
 
     if (path === "/api/map/detail/mark" && req.method === "POST") {

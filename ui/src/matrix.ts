@@ -4,11 +4,11 @@ export const CHILD_TYPES: Record<string, string[]> = {
   module: ["module", "surface", "flow"],
   surface: ["flow", "symbol"],
   flow: ["symbol", "module"],
-  symbol: [],
+  symbol: ["symbol"],
   external: ["surface", "flow"],
 };
 
 export function isExpandable(type: string, leaf: boolean): boolean {
-  if (leaf || type === "symbol") return false;
+  if (leaf) return false;
   return (CHILD_TYPES[type] ?? []).length > 0;
 }
