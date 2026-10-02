@@ -70,6 +70,18 @@ function TerminalSession(props: {
       if (ws.readyState === WebSocket.OPEN) ws.send(data);
     });
 
+    // xterm maps Enter and Shift+Enter both to CR; cursor-agent expects
+    // the kitty CSI-u form for Shift+Enter (same as VS Code /setup-terminal).
+    term.attachCustomKeyEventHandler((ev) => {
+      if (ev.type !== "keydown") return true;
+      if (ev.key !== "Enter" || !ev.shiftKey || ev.altKey || ev.ctrlKey || ev.metaKey) {
+        return true;
+      }
+      ev.preventDefault();
+      if (ws.readyState === WebSocket.OPEN) ws.send("\x1b[13;2u");
+      return false;
+    });
+
     const ro = new ResizeObserver(() => sendResize());
     ro.observe(el);
 
