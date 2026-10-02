@@ -16,6 +16,14 @@ export const MARK_LABELS: Record<MarkKind, string> = {
   quiz: "Quiz",
 };
 
+/** Tooltip body: title · slug, then mark labels on their own line. */
+export function formatNodeTip(title: string, slug: string, marks: readonly string[]): string {
+  const head = title === slug ? slug : `${title} · ${slug}`;
+  if (marks.length === 0) return head;
+  const labels = marks.map((k) => MARK_LABELS[k as MarkKind] ?? k).join(", ");
+  return `${head}\n${labels}`;
+}
+
 export function isHumanTodoKind(kind: string): kind is HumanTodoKind {
   return (HUMAN_TODO_KINDS as readonly string[]).includes(kind);
 }

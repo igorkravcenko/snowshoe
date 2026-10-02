@@ -2,7 +2,7 @@ import { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import type { MapNode } from "./api.ts";
 import { targetLayerColors } from "./bands.ts";
 import { buildEgoGraph, edgeStrokeClass, edgeStrokeFamily, radialLayout } from "./graph.ts";
-import { MARK_KINDS, MARK_LABELS, type MarkKind } from "./marks.ts";
+import { formatNodeTip, MARK_KINDS, MARK_LABELS, type MarkKind } from "./marks.ts";
 
 const FOCUS_R = 5.2;
 const NODE_R = 3.8;
@@ -194,12 +194,19 @@ export function GraphPanel(props: {
           const isFocus = slug === focus;
           const isPrev = slug === prevSlug;
           const isNext = slug === nextSlug;
+          const marks = node?.marks ?? [];
+          const hasMarks = marks.length > 0;
+          const markLabels = marks.map((k) => MARK_LABELS[k as MarkKind] ?? k).join(", ");
           const r = diskRadius(slug, focus);
           const className = ["graph-node", isFocus ? "focus" : ""].filter(Boolean).join(" ");
-          const tipText = [title, isPrev ? "previous" : null, isNext ? "next" : null, slug]
-            .filter(Boolean)
-            .join(" · ");
-          const aria = [title, isPrev ? "(previous)" : null, isNext ? "(next)" : null, slug]
+          const tipText = formatNodeTip(title, slug, marks);
+          const aria = [
+            title,
+            isPrev ? "(previous)" : null,
+            isNext ? "(next)" : null,
+            hasMarks ? `(marked: ${markLabels})` : null,
+            slug,
+          ]
             .filter(Boolean)
             .join(" ");
           return (
@@ -258,6 +265,15 @@ export function GraphPanel(props: {
                 >
                   ↻
                 </text>
+              ) : null}
+              {hasMarks ? (
+                <circle
+                  className="graph-mark-dot"
+                  cx={r * 0.72}
+                  cy={-r * 0.72}
+                  r={1.15}
+                  aria-hidden
+                />
               ) : null}
               <text className="graph-node-label" y={r + 3.2} textAnchor="middle">
                 {title.length > 14 ? `${title.slice(0, 12)}…` : title}

@@ -148,6 +148,7 @@ header .header-sidebar-toggle {
 
 .nav-panel.tree {
   overflow-x: auto;
+  position: relative;
 }
 
 .nav-panel.graph-tab {
@@ -226,6 +227,13 @@ header .header-sidebar-toggle {
   fill: var(--graph-next);
 }
 
+.graph-mark-dot {
+  fill: #e6c84a;
+  stroke: #1b232c;
+  stroke-width: 0.35;
+  pointer-events: none;
+}
+
 .graph-node-label {
   fill: var(--text);
   font-size: 3.2px;
@@ -247,7 +255,8 @@ header .header-sidebar-toggle {
   white-space: pre-wrap;
 }
 
-.graph-ctx-menu {
+.graph-ctx-menu,
+.tree-ctx-menu {
   position: absolute;
   z-index: 6;
   top: auto;
@@ -534,6 +543,15 @@ button.danger {
 
 .node-title {
   white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tree-mark-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e6c84a;
+  border: 1px solid #1b232c;
   flex-shrink: 0;
 }
 
