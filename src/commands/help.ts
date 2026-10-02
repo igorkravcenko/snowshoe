@@ -69,6 +69,10 @@ export const AGENT_HELP = {
       run: "snowshoe feedback add --json",
       when: "Optional local note about Snowshoe. Not required. stdin { text, command? }.",
     },
+    {
+      run: "snowshoe feedback remove --json --id <id>",
+      when: "Delete one local feedback note by id (from feedback list).",
+    },
   ],
 } as const;
 

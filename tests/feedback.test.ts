@@ -39,6 +39,32 @@ describe("feedback inbox", () => {
     expect(raw.length).toBe(2);
   });
 
+  test("remove by id rewrites log; unknown id rejects", async () => {
+    const repo = makeGitRepo();
+    const a = await snowshoe(repo, ["feedback", "add", "--json"], {
+      stdin: JSON.stringify({ text: "keep me" }),
+    });
+    const b = await snowshoe(repo, ["feedback", "add", "--json"], {
+      stdin: JSON.stringify({ text: "drop me" }),
+    });
+    const dropId = (b.json.entry as { id: string }).id;
+    const keepId = (a.json.entry as { id: string }).id;
+
+    const bad = await snowshoe(repo, ["feedback", "remove", "--json", "--id", "missing"]);
+    expect(bad.exitCode).not.toBe(0);
+
+    const removed = await snowshoe(repo, ["feedback", "remove", "--json", "--id", dropId]);
+    expect(removed.exitCode).toBe(0);
+    expect(removed.json.command).toBe("feedback.remove");
+    expect(removed.json.removedId).toBe(dropId);
+
+    const list = await snowshoe(repo, ["feedback", "list", "--json"]);
+    const entries = list.json.entries as Array<{ id: string; text: string }>;
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.id).toBe(keepId);
+    expect(entries[0]?.text).toBe("keep me");
+  });
+
   test("rejects oversized text", async () => {
     const repo = makeGitRepo();
     const big = await snowshoe(repo, ["feedback", "add", "--json"], {

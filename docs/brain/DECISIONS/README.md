@@ -45,3 +45,5 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-09-30-agent-feedback-inbox](./ADR-2026-09-30-agent-feedback-inbox.md) | accepted | Optional agent JSONL inbox in `.snowshoe/feedback/`; sidebar tab; not v1 |
 | [ADR-2026-09-30-user-asked-mark-and-help](./ADR-2026-09-30-user-asked-mark-and-help.md) | accepted | Agent mark if user asked this turn; `snowshoe help --json` |
 | [ADR-2026-10-01-map-polish](./ADR-2026-10-01-map-polish.md) | accepted | Leaf stop-flag; expand/enrich/fix hops; durable anchors; narrower split |
+| [ADR-2026-10-02-map-nav-tabs](./ADR-2026-10-02-map-nav-tabs.md) | accepted | Left column tabs: Tree / Graph / human Todos (`learn`/`quiz`) |
+| [ADR-2026-10-02-map-local-graph](./ADR-2026-10-02-map-local-graph.md) | accepted | Radial ego Graph tab; one MapReadModel; History prev/next borders |

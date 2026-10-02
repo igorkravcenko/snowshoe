@@ -26,9 +26,18 @@ import {
 } from "./api.ts";
 import { bandFor, colorFor, nodeFloat } from "./bands.ts";
 import { FeedbackPane } from "./Feedback.tsx";
+import { GraphPanel } from "./Graph.tsx";
+import {
+  emptyVisitMirror,
+  type VisitMirror,
+  visitNextSlug,
+  visitPopTo,
+  visitPrevSlug,
+  visitPush,
+} from "./graph.ts";
 import { mapFingerprint } from "./map-fingerprint.ts";
 import { MarkdownBody } from "./markdown.tsx";
-import { MARK_KINDS, MARK_LABELS, type MarkKind } from "./marks.ts";
+import { humanTodoRows, MARK_KINDS, MARK_LABELS, type MarkKind } from "./marks.ts";
 import { isExpandable } from "./matrix.ts";
 import { PreviewPanel } from "./Preview.tsx";
 import { applySplitDrag, DEFAULT_SPLIT, parseSplitWeights, type SplitWeights } from "./split.ts";
@@ -42,6 +51,25 @@ import {
   slugFromHash,
   visibleSlugs,
 } from "./tree.ts";
+
+type NavTab = "tree" | "graph" | "todos";
+const NAV_TAB_KEY = "snowshoe.navTab";
+const NAV_TABS: NavTab[] = ["tree", "graph", "todos"];
+const NAV_TAB_LABELS: Record<NavTab, string> = {
+  tree: "Tree",
+  graph: "Graph",
+  todos: "Todos",
+};
+
+function loadNavTab(): NavTab {
+  try {
+    const raw = sessionStorage.getItem(NAV_TAB_KEY);
+    if (raw && (NAV_TABS as string[]).includes(raw)) return raw as NavTab;
+  } catch {
+    /* sessionStorage may be unavailable */
+  }
+  return "tree";
+}
 
 function bySlug(model: MapReadModel | null): Map<string, MapNode> {
   const map = new Map<string, MapNode>();
@@ -457,8 +485,10 @@ export function App(): ReactElement {
   const [viewId, setViewId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(loadSidebarOpen);
   const [sidebarTab, setSidebarTab] = useState<"terminal" | "code" | "feedback">("terminal");
+  const [navTab, setNavTab] = useState<NavTab>(loadNavTab);
   const [split, setSplit] = useState(loadSplit);
   const [markMenu, setMarkMenu] = useState(false);
+  const [visit, setVisit] = useState<VisitMirror>(() => emptyVisitMirror());
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const viewBootstrapped = useRef(false);
   const skipHistoryPush = useRef(true);
@@ -533,6 +563,8 @@ export function App(): ReactElement {
   );
   const selectedNode = selected ? (nodes.get(selected) ?? null) : null;
   const crumbs = selected ? breadcrumbSlugs(selected, parents) : [];
+  const prevSlug = visitPrevSlug(visit);
+  const nextSlug = visitNextSlug(visit);
 
   useEffect(() => {
     if (viewBootstrapped.current || !model) return;
@@ -554,6 +586,8 @@ export function App(): ReactElement {
         skipHistoryPush.current = true;
         history.replaceState({ slug: known }, "", mapViewHref(id, known));
         skipHistoryPush.current = false;
+        setVisit({ stack: [known], index: 0 });
+        setSelected(known);
       }
     };
     void boot();
@@ -588,6 +622,14 @@ export function App(): ReactElement {
 
   useEffect(() => {
     try {
+      sessionStorage.setItem(NAV_TAB_KEY, navTab);
+    } catch {
+      /* ignore */
+    }
+  }, [navTab]);
+
+  useEffect(() => {
+    try {
       sessionStorage.setItem(SPLIT_KEY, JSON.stringify(split));
     } catch {
       /* ignore */
@@ -618,6 +660,16 @@ export function App(): ReactElement {
       return next;
     });
     queueMicrotask(() => focusTreeRow(slug));
+    if (historyMode === "push") {
+      setVisit((cur) => visitPush(cur, slug));
+    } else if (historyMode === "replace") {
+      setVisit((cur) => {
+        if (cur.stack.length === 0 || cur.index < 0) return { stack: [slug], index: 0 };
+        const stack = [...cur.stack];
+        stack[cur.index] = slug;
+        return { stack, index: cur.index };
+      });
+    }
     if (
       viewId &&
       historyMode !== "none" &&
@@ -628,6 +680,19 @@ export function App(): ReactElement {
       if (historyMode === "replace") history.replaceState({ slug }, "", href);
       else history.pushState({ slug }, "", href);
     }
+  }
+
+  function onGraphNavigate(slug: string) {
+    if (slug === selected) return;
+    if (slug === prevSlug) {
+      history.back();
+      return;
+    }
+    if (slug === nextSlug) {
+      history.forward();
+      return;
+    }
+    selectNode(slug);
   }
 
   function setExpandedOpen(slug: string, open: boolean) {
@@ -660,14 +725,16 @@ export function App(): ReactElement {
   useEffect(() => {
     const onPop = () => {
       const slug = slugFromHash(window.location.hash);
-      if (slug) selectNode(slug, "none");
+      if (!slug) return;
+      setVisit((cur) => visitPopTo(cur, slug));
+      selectNode(slug, "none");
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   });
 
   useEffect(() => {
-    if (!selected || !model) return;
+    if (!selected || !model || navTab !== "tree") return;
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       if (!TREE_NAV_KEYS.has(e.key)) return;
@@ -677,6 +744,8 @@ export function App(): ReactElement {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
+
+  const todoRows = useMemo(() => (model ? humanTodoRows(model.nodes) : []), [model]);
 
   function toggleExpand(slug: string) {
     setExpanded((cur) => {
@@ -804,22 +873,95 @@ export function App(): ReactElement {
             : { gridTemplateColumns: `${split.tree}fr 6px ${split.detail}fr` }
         }
       >
-        <div className="tree" role="tree" aria-label="Map tree">
-          {model ? (
-            <TreeNode
-              slug={model.rootSlug}
-              nodes={nodes}
-              selected={selected}
-              expanded={expanded}
-              onSelect={selectNode}
-              onToggle={toggleExpand}
-              onKeyDown={onTreeKeyDown}
-              seen={new Set()}
-            />
-          ) : (
-            <p className="hint">Loading read-model…</p>
-          )}
-        </div>
+        <nav className="nav-pane" aria-label="Map navigation">
+          <div className="nav-tabs" role="tablist" aria-label="Map navigation panels">
+            {NAV_TABS.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={navTab === tab}
+                onClick={() => setNavTab(tab)}
+              >
+                {NAV_TAB_LABELS[tab]}
+                {tab === "todos" && todoRows.length > 0 ? (
+                  <span className="nav-tab-count">{todoRows.length}</span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+          <div className="nav-body">
+            <div
+              className={navTab === "tree" ? "nav-panel tree" : "nav-panel tree hidden"}
+              role="tabpanel"
+              aria-label="Map tree"
+            >
+              {model ? (
+                <div role="tree" aria-label="Map tree">
+                  <TreeNode
+                    slug={model.rootSlug}
+                    nodes={nodes}
+                    selected={selected}
+                    expanded={expanded}
+                    onSelect={selectNode}
+                    onToggle={toggleExpand}
+                    onKeyDown={onTreeKeyDown}
+                    seen={new Set()}
+                  />
+                </div>
+              ) : (
+                <p className="hint">Loading read-model…</p>
+              )}
+            </div>
+            <div
+              className={navTab === "graph" ? "nav-panel graph-tab" : "nav-panel graph-tab hidden"}
+              role="tabpanel"
+              aria-label="Local graph"
+            >
+              <GraphPanel
+                focus={selected}
+                nodes={nodes}
+                prevSlug={prevSlug}
+                nextSlug={nextSlug}
+                onNavigate={onGraphNavigate}
+              />
+            </div>
+            <div
+              className={navTab === "todos" ? "nav-panel" : "nav-panel hidden"}
+              role="tabpanel"
+              aria-label="Human todos"
+            >
+              {todoRows.length === 0 ? (
+                <p className="hint">
+                  No human todos yet. Mark a node with {MARK_LABELS.learn} or {MARK_LABELS.quiz} in
+                  the inspector.
+                </p>
+              ) : (
+                <ul className="todo-list" aria-label="Nodes marked learn or quiz">
+                  {todoRows.map((row) => (
+                    <li key={row.slug}>
+                      <button
+                        type="button"
+                        className={`todo-row${selected === row.slug ? " selected" : ""}`}
+                        data-slug={row.slug}
+                        onClick={() => selectNode(row.slug)}
+                      >
+                        <span className="todo-title">{row.title}</span>
+                        <span className="todo-kinds">
+                          {row.kinds.map((kind) => (
+                            <span key={kind} className="badge">
+                              {MARK_LABELS[kind]}
+                            </span>
+                          ))}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </nav>
         <SplitGutter
           label="Resize tree and inspector"
           onDelta={(dx) => {
