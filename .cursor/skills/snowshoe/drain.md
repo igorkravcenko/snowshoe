@@ -73,6 +73,7 @@ snowshoe map status --json --depth 1
 snowshoe map status --json --neighborhood --slug <node>
 snowshoe map status --json --all-fields
 snowshoe map status --json --fields title,type,leaf,children,refs --slug <parent>
+snowshoe map mark --json --slug <slug> --kind detail
 snowshoe map mark --json --slug <slug> --kind expand
 snowshoe map mark --json --slug <slug> --kind enrich
 snowshoe map mark --json --slug <slug> --kind fix
@@ -83,13 +84,14 @@ snowshoe help --json
 
 Use `init`, `routine refresh`, and `routine advance` when `work next` puts them in `todo` — not as a competing entry path. `snowshoe help --json` is the command index.
 
-`map mark` / `map detail mark` / `cancel`: only if **this turn** the human asked to mark, expand, enrich, fix, or cancel those nodes. Do not crawl unmarked nodes. Then `work next` as usual.
+`map mark` / `map detail mark` / `cancel`: only if **this turn** the human asked to mark, detail, expand, enrich, fix, or cancel those nodes. Do not crawl unmarked nodes. Then `work next` as usual.
 
 Work mark kinds (each queues **its own** step):
 
 | Kind | Meaning |
 |---|---|
-| `expand` | Grow / fill children under the node (old name: `detail`). |
+| `detail` | Grow children **and/or** rewrite this node’s fields/body (agent discretion). Prefer when the human intent is ambiguous. |
+| `expand` | Grow / fill children under the node only. |
 | `enrich` | Improve **this** node’s fields — especially the markdown `body`. No new children. |
 | `fix` | Something looks wrong here; inspect and repair structure and/or fields. |
 
@@ -101,7 +103,16 @@ When `todo` is `snowshoe init --json`, you may add `--locale <tag>` (alias `--ui
 
 Bodies are written in the user's language. Read `locale` from `init`, `work next`, or `map status` JSON.
 
-If locale is missing when you start a `kind=detail` step: deduce it from the conversation or ask the user once, then persist with `snowshoe init --json --locale <tag>` **before** writing bodies. Do not default to English unless locale is `en`.
+If locale is missing when you start a map hop that writes bodies: deduce it from the conversation or ask the user once, then persist with `snowshoe init --json --locale <tag>` **before** writing bodies. Do not default to English unless locale is `en`.
+
+## Body shape
+
+Entity markdown is human-readable. Prefer:
+
+1. **First paragraph** — overview (what this node is / does). Agents may read only this via `map status --fields …,bodyOverview`.
+2. **Blank line**, then structured detail (headings, lists, gotchas).
+
+Avoid one-line telegram bodies. Domain jargon in prose only as wiki links `[[slug]]` or `[[slug|label]]` pointing at a map node that defines the term. If nowhere fits, create/use a `glossary` child under `root` on a hop that allows children (`detail` / `expand` / `fix`). Broken `[[…]]` in the UI means fix or enrich — do not leave silent jargon.
 
 ## Completing a step
 
@@ -123,9 +134,13 @@ Envelope:
 
 `kind` must match the claimed step. Payload shape depends on `kind`. `snowshoe work complete --help` and the examples below are the contract; omit metric fields (the CLI sets them).
 
-### `kind=expand` (alias `detail`)
+### `kind=detail`
 
-One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on that item. The claimed item includes `children` (current parent→child slugs). Prefer that over a full `map status`. If you need more: `map status --json --slug <parent>` (that node only; add `--depth N` for a subtree) or `--neighborhood --slug <node>` (parents, children, refs, `edges`). `--depth` without `--slug` is a subtree from `root`. Do not combine `--depth` with `--neighborhood`. Default columns are `slug` and `children`. `--fields` is a comma-separated allowlist. `--all-fields` is every column (bodies, anchors). Do not combine `--all-fields` with `--fields`.
+Same payload shape as expand. Agent may grow children **and/or** upsert `parentSlug` body/fields. Prefer this when the human asked to “detail” or intent is unclear. Honor `allowedChildTypes` when adding children.
+
+### `kind=expand`
+
+One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on that item. The claimed item includes `children` (current parent→child slugs). Prefer that over a full `map status`. If you need more: `map status --json --slug <parent>` (that node only; add `--depth N` for a subtree) or `--neighborhood --slug <node>` (parents, children, refs, `edges`). `--depth` without `--slug` is a subtree from `root`. Do not combine `--depth` with `--neighborhood`. Default columns are `slug` and `children`. `--fields` is a comma-separated allowlist (`bodyOverview` for lead paragraphs; e.g. `--fields title,type,leaf,children,refs`). `--all-fields` is every column (bodies, anchors). Do not combine `--all-fields` with `--fields`. When scanning many nodes, prefer `bodyOverview` over full `bodyMd`.
 
 **Decide the hop before writing.** Expand means “look at this parent,” not “must mint children.”
 
@@ -138,7 +153,7 @@ You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, t
 - `refs`: relevance links (not hierarchy). Optional `kind` (default `related`). Not `parent`.
 - `retire`: delete descendant slugs (not `parentSlug`, not `root`). Cascade edges/anchors/metrics.
 - `clearEdges`: `{ from, to, kind? }`. `kind` default `related`. `parent` only `from=parentSlug` and `to` a current child (unlink). Ref clears: at least one end in the parent subtree.
-- `body` (markdown string, alias `bodyMd`): **required** on each upserted node when `unchanged` is false. Write it in the init locale in a human readable form. The CLI writes `.snowshoe/map/nodes/<slug>.md` and sets `proseRef`. You may write that file yourself and send `proseRef` instead; empty or missing prose rejects (`missing_body:<slug>`).
+- `body` (markdown string, alias `bodyMd`): **required** on each upserted node when `unchanged` is false. Write it in the init locale in a human readable form (overview paragraph, then detail). The CLI writes `.snowshoe/map/nodes/<slug>.md` and sets `proseRef`. You may write that file yourself and send `proseRef` instead; empty or missing prose rejects (`missing_body:<slug>`).
 
 ```json
 {
@@ -186,7 +201,7 @@ You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, t
 
 ### `kind=enrich`
 
-Same complete envelope family as expand, but **only** upsert `parentSlug` (title, type, `leaf`, `body` / anchors). Keep `children` / `refs` / `retire` / `clearEdges` empty. Rejects `enrich_forbids_*` / `enrich_only_parent` / `enrich_requires_parent_upsert` if you grow the graph. Prefer rewriting the markdown body in the init locale.
+Same complete envelope family as expand, but **only** upsert `parentSlug` (title, type, `leaf`, `body` / anchors). Keep `children` / `refs` / `retire` / `clearEdges` empty. Rejects `enrich_forbids_*` / `enrich_only_parent` / `enrich_requires_parent_upsert` if you grow the graph. Prefer rewriting the markdown body in the init locale (overview + detail; wiki links for jargon).
 
 ### `kind=fix`
 

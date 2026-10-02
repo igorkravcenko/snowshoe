@@ -17,17 +17,17 @@ export type EntityType = (typeof ENTITY_TYPES)[number];
 export const AGENT_ENTITY_TYPES = ["module", "surface", "flow", "symbol", "external"] as const;
 export type AgentEntityType = (typeof AGENT_ENTITY_TYPES)[number];
 
-export const MAP_HOP_KINDS = ["expand", "enrich", "fix"] as const;
+export const MAP_HOP_KINDS = ["detail", "expand", "enrich", "fix"] as const;
 export type MapHopKind = (typeof MAP_HOP_KINDS)[number];
 
 export const STEP_KINDS = [
   "structure_sync",
   "blast_radius",
   "metric_decay",
+  "detail",
   "expand",
   "enrich",
   "fix",
-  "detail",
 ] as const;
 export type StepKind = (typeof STEP_KINDS)[number];
 
@@ -52,11 +52,10 @@ export function isMetricLevel(value: string): value is MetricLevel {
 }
 
 export function isMapHopKind(value: string): boolean {
-  return value === "detail" || (MAP_HOP_KINDS as readonly string[]).includes(value);
+  return (MAP_HOP_KINDS as readonly string[]).includes(value);
 }
 
 export function canonicalMapHop(kind: string): MapHopKind | null {
-  if (kind === "detail" || kind === "expand") return "expand";
-  if (kind === "enrich" || kind === "fix") return kind;
+  if ((MAP_HOP_KINDS as readonly string[]).includes(kind)) return kind as MapHopKind;
   return null;
 }

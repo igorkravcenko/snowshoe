@@ -9,7 +9,7 @@ import {
 import { isSlug, METRIC_LEVELS, type MetricLevel, ROOT_SLUG } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { envelope } from "../json.ts";
-import { readProseFile } from "../map/prose.ts";
+import { firstParagraph, readProseFile } from "../map/prose.ts";
 import type { Session } from "./session.ts";
 
 export const MAP_STATUS_NODE_FIELDS = [
@@ -24,6 +24,7 @@ export const MAP_STATUS_NODE_FIELDS = [
   "anchorsUnresolved",
   "proseRef",
   "bodyMd",
+  "bodyOverview",
   "children",
   "refs",
 ] as const;
@@ -90,6 +91,8 @@ function fullNode(session: Session, slug: string): Record<string, unknown> | nul
   }));
   const unresolved = session.ledger.unresolvedAnchorPaths(n.slug);
   const marks = session.ledger.marksOfNormalized(n.slug);
+  const bodyMd = n.prose_ref ? (readProseFile(session.repoRoot, n.prose_ref) ?? null) : null;
+  const bodyOverview = bodyMd ? firstParagraph(bodyMd) || null : null;
   return {
     slug: n.slug,
     title: n.title,
@@ -109,7 +112,8 @@ function fullNode(session: Session, slug: string): Record<string, unknown> | nul
     anchors,
     ...(unresolved.length ? { anchorsUnresolved: unresolved } : {}),
     ...(n.prose_ref ? { proseRef: n.prose_ref } : {}),
-    bodyMd: n.prose_ref ? (readProseFile(session.repoRoot, n.prose_ref) ?? null) : null,
+    bodyMd,
+    bodyOverview,
     children: session.ledger.childrenOf(n.slug),
     refs: session.ledger.refsFrom(n.slug),
   };
@@ -349,7 +353,6 @@ export function runMapMark(
     throw new CliError(`Unknown slug: ${slug}`, EXIT_USAGE);
   }
   const added = session.ledger.addMark(slug, kind);
-  if (kind === "expand") session.ledger.removeMark(slug, "detail");
   let queued: { stepId: string; alreadyQueued: boolean; status: string } | undefined;
   if (isWorkMarkKind(kind)) {
     queued = enqueueWorkStep(session, slug, kind);
@@ -554,7 +557,7 @@ export function runMapDetailCancel(
   }
   const cancelledIds: string[] = [];
   let leased: { stepId: string; status: string } | undefined;
-  for (const kind of ["expand", "enrich", "fix"] as const) {
+  for (const kind of ["detail", "expand", "enrich", "fix"] as const) {
     const hop = session.ledger.activeHopFor(slug, kind);
     if (!hop) continue;
     if (hop.status !== "pending") {

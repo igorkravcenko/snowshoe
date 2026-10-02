@@ -91,12 +91,59 @@ export function buildEgoGraph(focus: string, nodes: Map<string, MapNode>): EgoGr
 const CX = 0.5;
 const CY = 0.5;
 const RING_R = 0.36;
-const ORPHAN_PREV: Point = { x: 0.12, y: 0.12 };
-const ORPHAN_NEXT: Point = { x: 0.88, y: 0.12 };
+/** Visit previous: left of focus on the ring. */
+const ANGLE_PREV = Math.PI;
+/** Visit next: right of focus on the ring. */
+const ANGLE_NEXT = 0;
+/** Non-neighbor prev/next park on the bottom corners (not top). */
+const ORPHAN_PREV: Point = { x: 0.14, y: 0.88 };
+const ORPHAN_NEXT: Point = { x: 0.86, y: 0.88 };
+
+function polar(angle: number): Point {
+  return { x: CX + RING_R * Math.cos(angle), y: CY + RING_R * Math.sin(angle) };
+}
+
+/** Interior points on the directed arc from `from` to `to` (endpoints exclusive). */
+function interiorOnArc(from: number, to: number, count: number): number[] {
+  const out: number[] = [];
+  for (let i = 1; i <= count; i++) {
+    const t = i / (count + 1);
+    out.push(from + (to - from) * t);
+  }
+  return out;
+}
 
 /**
- * Radial layout in unit square [0,1]². Focus at center; neighbors on a ring;
- * prev/next that are not neighbors sit in corners (no structural edge implied).
+ * Angles for non-pinned ring neighbors.
+ * With left/right visit pins, free nodes fill the upper and lower semicircles
+ * evenly (not “place on full circle then yank pins”).
+ */
+export function freeRingAngles(count: number, pinPrev: boolean, pinNext: boolean): number[] {
+  if (count <= 0) return [];
+  if (!pinPrev && !pinNext) {
+    return Array.from({ length: count }, (_, i) => -Math.PI / 2 + (2 * Math.PI * i) / count);
+  }
+  if (pinPrev && pinNext) {
+    const upperN = Math.ceil(count / 2);
+    const lowerN = count - upperN;
+    // Upper: right → left via top (0 → −π). Lower: right → left via bottom (0 → π).
+    return [...interiorOnArc(0, -Math.PI, upperN), ...interiorOnArc(0, Math.PI, lowerN)];
+  }
+  // One pin: equal spacing around the full circle, skipping the pin slot.
+  const pinAngle = pinPrev ? ANGLE_PREV : ANGLE_NEXT;
+  const total = count + 1;
+  const out: number[] = [];
+  for (let i = 1; i < total; i++) {
+    out.push(pinAngle + (2 * Math.PI * i) / total);
+  }
+  return out;
+}
+
+/**
+ * Radial layout in unit square [0,1]². Focus at center; neighbors on a ring.
+ * Visit previous is always left of focus; next always right (on-ring when a
+ * neighbor, otherwise bottom corners — no fabricated history edge).
+ * Free neighbors reflow evenly around those pins (arc fill), not a post-hoc yank.
  */
 export function radialLayout(
   focus: string,
@@ -108,22 +155,32 @@ export function radialLayout(
   positions.set(focus, { x: CX, y: CY });
 
   const ring = [...neighborSlugs].sort();
-  const n = ring.length;
-  for (let i = 0; i < n; i++) {
-    const angle = -Math.PI / 2 + (2 * Math.PI * i) / n;
-    positions.set(ring[i]!, {
-      x: CX + RING_R * Math.cos(angle),
-      y: CY + RING_R * Math.sin(angle),
-    });
+  const ringSet = new Set(ring);
+
+  const pinPrev = Boolean(prevSlug && prevSlug !== focus && ringSet.has(prevSlug));
+  const pinNext = Boolean(
+    nextSlug && nextSlug !== focus && nextSlug !== prevSlug && ringSet.has(nextSlug),
+  );
+
+  if (pinPrev && prevSlug) positions.set(prevSlug, polar(ANGLE_PREV));
+  if (pinNext && nextSlug) positions.set(nextSlug, polar(ANGLE_NEXT));
+
+  const free = ring.filter((s) => {
+    if (pinPrev && s === prevSlug) return false;
+    if (pinNext && s === nextSlug) return false;
+    return true;
+  });
+  const angles = freeRingAngles(free.length, pinPrev, pinNext);
+  for (let i = 0; i < free.length; i++) {
+    positions.set(free[i]!, polar(angles[i]!));
   }
 
   const orphans: string[] = [];
-  const ringSet = new Set(ring);
-  if (prevSlug && prevSlug !== focus && !ringSet.has(prevSlug) && !positions.has(prevSlug)) {
+  if (prevSlug && prevSlug !== focus && !positions.has(prevSlug)) {
     positions.set(prevSlug, ORPHAN_PREV);
     orphans.push(prevSlug);
   }
-  if (nextSlug && nextSlug !== focus && !ringSet.has(nextSlug) && !positions.has(nextSlug)) {
+  if (nextSlug && nextSlug !== focus && !positions.has(nextSlug)) {
     positions.set(nextSlug, ORPHAN_NEXT);
     orphans.push(nextSlug);
   }

@@ -267,7 +267,7 @@ const mapMarkCmd = defineCommand({
     kind: {
       type: "string",
       description:
-        "Mark kind: expand (grow tree), enrich (fields/body), fix (repair), learn, quiz. Alias: detail→expand",
+        "Mark kind: detail (grow and/or rewrite), expand (grow), enrich (fields/body), fix, learn, quiz",
       default: "expand",
     },
   },

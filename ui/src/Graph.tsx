@@ -1,41 +1,43 @@
-import { type ReactElement, useMemo } from "react";
+import { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import type { MapNode } from "./api.ts";
-import { targetLayerColors, targetTitle } from "./bands.ts";
+import { targetLayerColors } from "./bands.ts";
 import { buildEgoGraph, edgeStrokeClass, edgeStrokeFamily, radialLayout } from "./graph.ts";
+import { MARK_KINDS, MARK_LABELS, type MarkKind } from "./marks.ts";
 
 const FOCUS_R = 5.2;
 const NODE_R = 3.8;
 /** Clearance past the outer stroke so arrowheads are not covered. */
 const EDGE_GAP = 0.55;
+/** Show custom tip quickly (native SVG `<title>` feels multi-second). */
+const TIP_DELAY_MS = 40;
 
 function diskRadius(slug: string, focus: string): number {
   return slug === focus ? FOCUS_R : NODE_R;
 }
 
-/** Outer edge of the painted disk (radius + half stroke), plus a small gap. */
-function edgeStop(
-  slug: string,
-  focus: string,
-  prevSlug: string | null,
-  nextSlug: string | null,
-): number {
+function edgeStop(slug: string, focus: string): number {
   const r = diskRadius(slug, focus);
-  let stroke = 0.7;
-  if (slug === focus) stroke = Math.max(stroke, 0.85);
-  if (slug === prevSlug || slug === nextSlug) {
-    stroke = Math.max(stroke, slug === focus ? 1 : 0.9);
-  }
+  const stroke = slug === focus ? 0.55 : 0.7;
   return r + stroke / 2 + EDGE_GAP;
 }
+
+type TipState = { text: string; x: number; y: number };
+type CtxMenu = { slug: string; x: number; y: number };
 
 export function GraphPanel(props: {
   focus: string | null;
   nodes: Map<string, MapNode>;
   prevSlug: string | null;
   nextSlug: string | null;
+  busy?: boolean;
   onNavigate: (slug: string) => void;
+  onMark: (slug: string, kind: MarkKind) => void;
 }): ReactElement {
-  const { focus, nodes, prevSlug, nextSlug, onNavigate } = props;
+  const { focus, nodes, prevSlug, nextSlug, busy, onNavigate, onMark } = props;
+  const panelRef = useRef<HTMLDivElement>(null);
+  const tipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [tip, setTip] = useState<TipState | null>(null);
+  const [ctx, setCtx] = useState<CtxMenu | null>(null);
 
   const ego = useMemo(() => {
     if (!focus || !nodes.has(focus)) return null;
@@ -47,6 +49,63 @@ export function GraphPanel(props: {
     return radialLayout(ego.focus, ego.neighbors, prevSlug, nextSlug);
   }, [ego, prevSlug, nextSlug]);
 
+  useEffect(() => {
+    return () => {
+      if (tipTimer.current) clearTimeout(tipTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!ctx) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCtx(null);
+    };
+    const onPointer = (e: MouseEvent) => {
+      const t = e.target;
+      if (t instanceof Element && t.closest(".graph-ctx-menu")) return;
+      setCtx(null);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onPointer);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onPointer);
+    };
+  }, [ctx]);
+
+  function clearTip() {
+    if (tipTimer.current) clearTimeout(tipTimer.current);
+    tipTimer.current = null;
+    setTip(null);
+  }
+
+  function scheduleTip(text: string, clientX: number, clientY: number) {
+    if (ctx) return;
+    if (tipTimer.current) clearTimeout(tipTimer.current);
+    tipTimer.current = setTimeout(() => {
+      const box = panelRef.current?.getBoundingClientRect();
+      if (!box) return;
+      setTip({
+        text,
+        x: clientX - box.left + 10,
+        y: clientY - box.top + 12,
+      });
+    }, TIP_DELAY_MS);
+  }
+
+  function openCtx(slug: string, clientX: number, clientY: number) {
+    clearTip();
+    const box = panelRef.current?.getBoundingClientRect();
+    if (!box) return;
+    const menuW = 160;
+    const menuH = 220;
+    let x = clientX - box.left;
+    let y = clientY - box.top;
+    x = Math.max(4, Math.min(x, box.width - menuW - 4));
+    y = Math.max(4, Math.min(y, box.height - menuH - 4));
+    setCtx({ slug, x, y });
+  }
+
   if (!focus || !ego || !layout) {
     return <p className="hint">Select a node to see its local graph.</p>;
   }
@@ -55,9 +114,11 @@ export function GraphPanel(props: {
   const W = 100;
   const H = 100;
   const toSvg = (p: { x: number; y: number }) => ({ x: p.x * W, y: p.y * H });
+  const ctxNode = ctx ? nodes.get(ctx.slug) : null;
+  const ctxMarked = new Set(ctxNode?.marks ?? []);
 
   return (
-    <div className="graph-panel">
+    <div className="graph-panel" ref={panelRef}>
       <svg
         className="graph-svg"
         viewBox={`0 0 ${W} ${H}`}
@@ -99,8 +160,8 @@ export function GraphPanel(props: {
           const dx = b.x - a.x;
           const dy = b.y - a.y;
           const len = Math.hypot(dx, dy) || 1;
-          const startPad = edgeStop(e.from, focus, prevSlug, nextSlug);
-          const endPad = edgeStop(e.to, focus, prevSlug, nextSlug);
+          const startPad = edgeStop(e.from, focus);
+          const endPad = edgeStop(e.to, focus);
           const maxPad = Math.max(0, (len - 0.5) / 2);
           const fromPad = Math.min(startPad, maxPad);
           const toPad = Math.min(endPad, maxPad);
@@ -121,9 +182,7 @@ export function GraphPanel(props: {
               x2={x2}
               y2={y2}
               markerEnd={marker}
-            >
-              <title>{e.kind}</title>
-            </line>
+            />
           );
         })}
         {slugs.map((slug) => {
@@ -136,39 +195,70 @@ export function GraphPanel(props: {
           const isPrev = slug === prevSlug;
           const isNext = slug === nextSlug;
           const r = diskRadius(slug, focus);
-          const className = [
-            "graph-node",
-            isFocus ? "focus" : "",
-            isPrev ? "prev" : "",
-            isNext ? "next" : "",
-          ]
+          const className = ["graph-node", isFocus ? "focus" : ""].filter(Boolean).join(" ");
+          const tipText = [title, isPrev ? "previous" : null, isNext ? "next" : null, slug]
+            .filter(Boolean)
+            .join(" · ");
+          const aria = [title, isPrev ? "(previous)" : null, isNext ? "(next)" : null, slug]
             .filter(Boolean)
             .join(" ");
-          const label = [
-            title,
-            isPrev ? "(previous)" : null,
-            isNext ? "(next)" : null,
-            slug,
-            targetTitle(node?.metrics),
-          ]
-            .filter(Boolean)
-            .join("\n");
           return (
             <a
               key={slug}
               className={className}
               transform={`translate(${p.x} ${p.y})`}
               href={`#${encodeURIComponent(slug)}`}
-              aria-label={label}
+              aria-label={aria}
               onClick={(ev) => {
                 ev.preventDefault();
+                clearTip();
+                setCtx(null);
                 onNavigate(slug);
               }}
+              onContextMenu={(ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                openCtx(slug, ev.clientX, ev.clientY);
+              }}
+              onMouseEnter={(ev) => scheduleTip(tipText, ev.clientX, ev.clientY)}
+              onMouseMove={(ev) => {
+                if (tip && !ctx) {
+                  const box = panelRef.current?.getBoundingClientRect();
+                  if (!box) return;
+                  setTip({
+                    text: tipText,
+                    x: ev.clientX - box.left + 10,
+                    y: ev.clientY - box.top + 12,
+                  });
+                }
+              }}
+              onMouseLeave={clearTip}
             >
-              <title>{label}</title>
               <circle r={r} fill={colors.overview} className="graph-node-disk" />
               <circle r={r * 0.62} fill={colors.contracts} />
               <circle r={r * 0.28} fill={colors.internals} />
+              {isPrev ? (
+                <text
+                  className="graph-visit-badge prev"
+                  x={-r * 0.95}
+                  y={-r * 0.75}
+                  textAnchor="middle"
+                  aria-hidden
+                >
+                  ↺
+                </text>
+              ) : null}
+              {isNext ? (
+                <text
+                  className="graph-visit-badge next"
+                  x={-r * 0.95}
+                  y={-r * 0.75}
+                  textAnchor="middle"
+                  aria-hidden
+                >
+                  ↻
+                </text>
+              ) : null}
               <text className="graph-node-label" y={r + 3.2} textAnchor="middle">
                 {title.length > 14 ? `${title.slice(0, 12)}…` : title}
               </text>
@@ -176,6 +266,35 @@ export function GraphPanel(props: {
           );
         })}
       </svg>
+      {tip && !ctx ? (
+        <div className="graph-tip" style={{ left: tip.x, top: tip.y }} role="tooltip">
+          {tip.text}
+        </div>
+      ) : null}
+      {ctx ? (
+        <div
+          className="graph-ctx-menu mark-menu"
+          style={{ left: ctx.x, top: ctx.y }}
+          role="menu"
+          aria-label={`Mark ${ctx.slug}`}
+        >
+          <div className="graph-ctx-heading">{ctxNode?.title ?? ctx.slug}</div>
+          {MARK_KINDS.map((kind) => (
+            <button
+              key={kind}
+              type="button"
+              role="menuitem"
+              disabled={Boolean(busy) || ctxMarked.has(kind)}
+              onClick={() => {
+                setCtx(null);
+                onMark(ctx.slug, kind);
+              }}
+            >
+              {MARK_LABELS[kind]}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className="graph-legend" aria-hidden>
         <span>
           <i className="graph-legend-line parent" /> parent
@@ -184,10 +303,10 @@ export function GraphPanel(props: {
           <i className="graph-legend-line ref" /> ref
         </span>
         <span>
-          <i className="graph-legend-swatch prev" /> previous
+          <span className="graph-legend-badge">↺</span> previous
         </span>
         <span>
-          <i className="graph-legend-swatch next" /> next
+          <span className="graph-legend-badge">↻</span> next
         </span>
       </div>
     </div>

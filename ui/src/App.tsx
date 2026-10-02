@@ -355,7 +355,15 @@ function Inspector(props: {
       ) : null}
       <h3>Body</h3>
       {node.bodyMd?.trim() ? (
-        <MarkdownBody text={node.bodyMd} />
+        <MarkdownBody
+          text={node.bodyMd}
+          titleForSlug={(slug) => {
+            const n = props.nodes.get(slug);
+            if (!n) return undefined;
+            return n.title ?? slug;
+          }}
+          onGoTo={props.onGoTo}
+        />
       ) : (
         <p className="hint">
           No entity body yet. Detail complete must write prose in the init locale.
@@ -923,7 +931,9 @@ export function App(): ReactElement {
                 nodes={nodes}
                 prevSlug={prevSlug}
                 nextSlug={nextSlug}
+                busy={busy}
                 onNavigate={onGraphNavigate}
+                onMark={onMark}
               />
             </div>
             <div

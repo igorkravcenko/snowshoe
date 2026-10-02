@@ -35,11 +35,11 @@ describe("HP2 user mark → detail one hop", () => {
       (n) => n.slug === "auth",
     )!;
     expect(authPending.detailStatus).toBe("pending");
-    expect(authPending.marks).toEqual(["expand"]);
+    expect(authPending.marks).toEqual(["detail"]);
 
     const next = await snowshoe(repo, ["work", "next", "--json"]);
     const item = (next.json.items as Array<Record<string, unknown>>)[0]!;
-    expect(item.kind).toBe("expand");
+    expect(item.kind).toBe("detail");
     expect(item.parentSlug).toBe("auth");
     expect(item.allowedChildTypes).toEqual(["module", "surface", "flow"]);
 

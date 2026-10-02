@@ -7,7 +7,7 @@ date: 2026-10-01
 
 ## Status
 
-Accepted. Amends [ADR-2026-09-27-map-ui-and-skill](./ADR-2026-09-27-map-ui-and-skill.md) and [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md). Does **not** ship learning/quiz/verify as product. Learn/quiz **mark kinds** are personal flags only (not `work next`). 2026-10-02: work mark kinds are separate hops (`expand` / `enrich` / `fix`); `detail` is a legacy alias of `expand`.
+Accepted. Amends [ADR-2026-09-27-map-ui-and-skill](./ADR-2026-09-27-map-ui-and-skill.md) and [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md). Does **not** ship learning/quiz/verify as product. Learn/quiz **mark kinds** are personal flags only (not `work next`). 2026-10-02: work mark kinds are separate hops (`expand` / `enrich` / `fix`); `detail` was briefly a legacy alias of `expand` — superseded by [ADR-2026-10-02-detail-body-wiki](./ADR-2026-10-02-detail-body-wiki.md) (`detail` is expand∪enrich again).
 
 ## Context
 
@@ -39,7 +39,7 @@ Name: **mark** / **mark kind**. Do not call these tags in API, ADR, or UI.
 | `learn` | no | Personal flag only. |
 | `quiz` | no | Personal flag only. |
 
-Each work kind queues **its own** pending step (`expand:<slug>`, `enrich:<slug>`, `fix:<slug>`). Completing a hop clears only that mark. UI: one **Mark** control + chip strip. `map detail mark` / `cancel` remain aliases (`detail` → `expand`; cancel drops all pending work hops on the slug). `map mark` / `unmark` / `leaf` are the general CLI. HTTP twins: `POST /api/map/mark|unmark|leaf`.
+Each work kind queues **its own** pending step (`expand:<slug>`, `enrich:<slug>`, `fix:<slug>`). Completing a hop clears only that mark. UI: one **Mark** control + chip strip. `map detail mark` / `cancel` were aliases (`detail` → `expand`; cancel drops all pending work hops on the slug) — see [ADR-2026-10-02-detail-body-wiki](./ADR-2026-10-02-detail-body-wiki.md) for the restored `detail` hop. `map mark` / `unmark` / `leaf` are the general CLI. HTTP twins: `POST /api/map/mark|unmark|leaf`.
 
 ### Inspector
 

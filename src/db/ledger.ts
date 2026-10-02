@@ -390,19 +390,14 @@ export class Ledger {
   }
 
   removeMark(slug: string, kind: string): boolean {
-    const kinds = kind === "expand" ? ["expand", "detail"] : [kind];
-    let removed = false;
-    for (const k of kinds) {
-      if (!this.hasMark(slug, k)) continue;
-      this.db.run("DELETE FROM node_marks WHERE slug = ? AND kind = ?", [slug, k]);
-      removed = true;
-    }
-    return removed;
+    if (!this.hasMark(slug, kind)) return false;
+    this.db.run("DELETE FROM node_marks WHERE slug = ? AND kind = ?", [slug, kind]);
+    return true;
   }
 
   clearWorkMarks(slug: string): void {
     this.db.run(
-      "DELETE FROM node_marks WHERE slug = ? AND kind IN ('expand', 'detail', 'enrich', 'fix')",
+      "DELETE FROM node_marks WHERE slug = ? AND kind IN ('detail', 'expand', 'enrich', 'fix')",
       [slug],
     );
   }
@@ -411,10 +406,9 @@ export class Ledger {
     const seen = new Set<string>();
     const out: string[] = [];
     for (const k of this.marksOf(slug)) {
-      const n = k === "detail" ? "expand" : k;
-      if (seen.has(n)) continue;
-      seen.add(n);
-      out.push(n);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(k);
     }
     return out;
   }
@@ -558,22 +552,21 @@ export class Ledger {
   }
 
   activeHopFor(slug: string, kind: string): StepRow | null {
-    const kinds = kind === "expand" || kind === "detail" ? ["expand", "detail"] : [kind];
     return this.db
       .query(
         `SELECT * FROM steps WHERE parent_slug = ?
-         AND kind IN (${kinds.map(() => "?").join(",")})
+         AND kind = ?
          AND status IN ('pending', 'leased') ORDER BY created_at DESC LIMIT 1`,
       )
-      .get(slug, ...kinds) as StepRow | null;
+      .get(slug, kind) as StepRow | null;
   }
 
-  /** Any expand/enrich/fix (or legacy detail) hop on this slug. */
+  /** Any detail/expand/enrich/fix hop on this slug. */
   activeDetailFor(slug: string): StepRow | null {
     return this.db
       .query(
         `SELECT * FROM steps WHERE parent_slug = ?
-         AND kind IN ('expand', 'enrich', 'fix', 'detail')
+         AND kind IN ('detail', 'expand', 'enrich', 'fix')
          AND status IN ('pending', 'leased') ORDER BY created_at DESC LIMIT 1`,
       )
       .get(slug) as StepRow | null;
