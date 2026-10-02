@@ -1,6 +1,6 @@
 import { type ReactElement, useMemo } from "react";
 import type { MapNode } from "./api.ts";
-import { bandFor, colorFor, nodeFloat } from "./bands.ts";
+import { targetLayerColors, targetTitle } from "./bands.ts";
 import { buildEgoGraph, edgeStrokeClass, edgeStrokeFamily, radialLayout } from "./graph.ts";
 
 const FOCUS_R = 5.2;
@@ -131,7 +131,7 @@ export function GraphPanel(props: {
           const p = toSvg(pos);
           const node = nodes.get(slug);
           const title = node?.title ?? slug;
-          const float = node ? nodeFloat(node.metrics) : 0;
+          const colors = targetLayerColors(node?.metrics);
           const isFocus = slug === focus;
           const isPrev = slug === prevSlug;
           const isNext = slug === nextSlug;
@@ -144,9 +144,15 @@ export function GraphPanel(props: {
           ]
             .filter(Boolean)
             .join(" ");
-          const label = [title, isPrev ? "(previous)" : null, isNext ? "(next)" : null, slug]
+          const label = [
+            title,
+            isPrev ? "(previous)" : null,
+            isNext ? "(next)" : null,
+            slug,
+            targetTitle(node?.metrics),
+          ]
             .filter(Boolean)
-            .join(" ");
+            .join("\n");
           return (
             <a
               key={slug}
@@ -160,12 +166,9 @@ export function GraphPanel(props: {
               }}
             >
               <title>{label}</title>
-              <circle
-                r={r}
-                fill={colorFor(float)}
-                className="graph-node-disk"
-                data-band={bandFor(float)}
-              />
+              <circle r={r} fill={colors.overview} className="graph-node-disk" />
+              <circle r={r * 0.62} fill={colors.contracts} />
+              <circle r={r * 0.28} fill={colors.internals} />
               <text className="graph-node-label" y={r + 3.2} textAnchor="middle">
                 {title.length > 14 ? `${title.slice(0, 12)}…` : title}
               </text>

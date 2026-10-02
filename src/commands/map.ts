@@ -6,7 +6,7 @@ import {
   type WorkMarkKind,
   workStepId,
 } from "../domain/marks.ts";
-import { isSlug, ROOT_SLUG } from "../domain/types.ts";
+import { isSlug, METRIC_LEVELS, type MetricLevel, ROOT_SLUG } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { envelope } from "../json.ts";
 import { readProseFile } from "../map/prose.ts";
@@ -426,6 +426,105 @@ export function runMapSetLeaf(
       leaf,
     }),
   };
+}
+
+function parseMetricFloat(raw: unknown, flag: string): number {
+  if (raw === undefined || raw === null || raw === "") {
+    throw new CliError(`Missing ${flag}`, EXIT_USAGE);
+  }
+  const n = typeof raw === "number" ? raw : Number(String(raw).trim());
+  if (!Number.isFinite(n) || n < 0 || n > 1) {
+    throw new CliError(`${flag} must be a float in [0, 1]`, EXIT_USAGE);
+  }
+  return n;
+}
+
+/** When a child metric drops, pull parents down to min(parent, child) — never auto-raise. */
+function decayParentsOnDrop(
+  session: Session,
+  childSlug: string,
+  level: MetricLevel,
+  childValue: number,
+): void {
+  for (const parent of session.ledger.parentsOf(childSlug)) {
+    const current = session.ledger.getMetric(parent, level);
+    if (current === null) continue;
+    if (childValue < current) session.ledger.setMetric(parent, level, childValue);
+  }
+}
+
+/**
+ * Operator-facing metric write (personal comprehension). Not `metric_decay` / not `work next`.
+ * Allows raise or lower in [0,1]. Lowering may min-decay ancestors for honesty.
+ */
+export function runMapMetric(
+  session: Session,
+  slug: string,
+  updates: Partial<Record<MetricLevel, number>>,
+): { exitCode: number; body: Record<string, unknown> } {
+  if (!slug || !isSlug(slug)) {
+    throw new CliError("Invalid --slug", EXIT_USAGE);
+  }
+  const node = session.ledger.getNode(slug);
+  if (!node) {
+    throw new CliError(`Unknown slug: ${slug}`, EXIT_USAGE);
+  }
+  const levels = METRIC_LEVELS.filter((l) => updates[l] !== undefined);
+  if (levels.length === 0) {
+    throw new CliError(
+      "Provide at least one of --overview, --contracts, --internals (float in [0, 1])",
+      EXIT_USAGE,
+    );
+  }
+  const before = session.ledger.metricsOf(slug);
+  const applied: Array<{ level: MetricLevel; previous: number | null; value: number }> = [];
+  session.ledger.transaction(() => {
+    for (const level of levels) {
+      const value = updates[level]!;
+      const previous = session.ledger.getMetric(slug, level);
+      session.ledger.setMetric(slug, level, value);
+      if (previous === null || value < previous) {
+        decayParentsOnDrop(session, slug, level, value);
+      }
+      applied.push({ level, previous, value });
+    }
+  });
+  return {
+    exitCode: EXIT_OK,
+    body: envelope("map.metric", session.repoRoot, session.gitHead, {
+      ok: true,
+      slug,
+      before,
+      after: session.ledger.metricsOf(slug),
+      applied,
+    }),
+  };
+}
+
+export function parseMetricUpdates(args: {
+  overview?: unknown;
+  contracts?: unknown;
+  internals?: unknown;
+}): Partial<Record<MetricLevel, number>> {
+  const out: Partial<Record<MetricLevel, number>> = {};
+  for (const level of METRIC_LEVELS) {
+    const raw = args[level];
+    if (raw === undefined || raw === null || raw === "") continue;
+    out[level] = parseMetricFloat(raw, `--${level}`);
+  }
+  return out;
+}
+
+/** Body or query twin for HTTP: { slug, overview?, contracts?, internals? }. */
+export function metricUpdatesFromBody(
+  body: Record<string, unknown>,
+): Partial<Record<MetricLevel, number>> {
+  const out: Partial<Record<MetricLevel, number>> = {};
+  for (const level of METRIC_LEVELS) {
+    if (!(level in body) || body[level] === undefined || body[level] === null) continue;
+    out[level] = parseMetricFloat(body[level], level);
+  }
+  return out;
 }
 
 export function runMapDetailMark(
