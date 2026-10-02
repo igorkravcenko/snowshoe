@@ -113,15 +113,21 @@ export function readRepoFile(
   let endLine = parseLine(range.end, "end");
   const span = parseLine(range.span, "span");
   if (range.lineText !== undefined && range.lineText.trim() !== "") {
+    const derivedSpan =
+      span ??
+      (startLine !== undefined && endLine !== undefined && endLine >= startLine
+        ? endLine - startLine + 1
+        : null);
     const rebased = rebaseAnchor({
       fileText: text,
       storedStart: startLine,
       lineText: range.lineText,
-      span:
-        span ?? (startLine !== undefined && endLine !== undefined ? endLine - startLine + 1 : null),
+      span: derivedSpan,
     });
     startLine = rebased.startLine ?? startLine;
-    endLine = rebased.endLine ?? endLine;
+    endLine =
+      rebased.endLine ??
+      (startLine !== undefined && derivedSpan ? startLine + derivedSpan - 1 : endLine);
   } else if (startLine !== undefined && span !== undefined) {
     endLine = startLine + span - 1;
   }

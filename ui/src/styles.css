@@ -146,8 +146,11 @@ header .header-sidebar-toggle {
 }
 
 .sidebar-panel.hidden {
-  visibility: hidden;
-  pointer-events: none;
+  display: none;
+}
+
+.sidebar-body > .sidebar-panel:not(.hidden) {
+  z-index: 1;
 }
 
 .sidebar-term {

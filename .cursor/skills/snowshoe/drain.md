@@ -73,7 +73,9 @@ snowshoe map status --json --depth 1
 snowshoe map status --json --neighborhood --slug <node>
 snowshoe map status --json --all-fields
 snowshoe map status --json --fields title,type,leaf,children,refs --slug <parent>
-snowshoe map mark --json --slug <slug> --kind detail
+snowshoe map mark --json --slug <slug> --kind expand
+snowshoe map mark --json --slug <slug> --kind enrich
+snowshoe map mark --json --slug <slug> --kind fix
 snowshoe map detail mark --json --slug <slug>
 snowshoe map detail cancel --json --slug <slug>
 snowshoe help --json
@@ -81,7 +83,17 @@ snowshoe help --json
 
 Use `init`, `routine refresh`, and `routine advance` when `work next` puts them in `todo` — not as a competing entry path. `snowshoe help --json` is the command index.
 
-`map mark` / `map detail mark` / `cancel`: only if **this turn** the human asked to mark, expand, or cancel those nodes. Do not crawl unmarked nodes. Then `work next` as usual. Work mark kinds are `detail`, `enrich`, `fix` (one queue step). `learn` and `quiz` are not `work next`.
+`map mark` / `map detail mark` / `cancel`: only if **this turn** the human asked to mark, expand, enrich, fix, or cancel those nodes. Do not crawl unmarked nodes. Then `work next` as usual.
+
+Work mark kinds (each queues **its own** step):
+
+| Kind | Meaning |
+|---|---|
+| `expand` | Grow / fill children under the node (old name: `detail`). |
+| `enrich` | Improve **this** node’s fields — especially the markdown `body`. No new children. |
+| `fix` | Something looks wrong here; inspect and repair structure and/or fields. |
+
+`learn` and `quiz` are not `work next`.
 
 When `todo` is `snowshoe init --json`, you may add `--locale <tag>` (alias `--ui-language`) with a BCP-47 tag such as `ru` or `en`. Init is idempotent: the same command on an existing ledger sets or updates locale meta.
 
@@ -111,14 +123,14 @@ Envelope:
 
 `kind` must match the claimed step. Payload shape depends on `kind`. `snowshoe work complete --help` and the examples below are the contract; omit metric fields (the CLI sets them).
 
-### `kind=detail`
+### `kind=expand` (alias `detail`)
 
 One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on that item. The claimed item includes `children` (current parent→child slugs). Prefer that over a full `map status`. If you need more: `map status --json --slug <parent>` (that node only; add `--depth N` for a subtree) or `--neighborhood --slug <node>` (parents, children, refs, `edges`). `--depth` without `--slug` is a subtree from `root`. Do not combine `--depth` with `--neighborhood`. Default columns are `slug` and `children`. `--fields` is a comma-separated allowlist. `--all-fields` is every column (bodies, anchors). Do not combine `--all-fields` with `--fields`.
 
-**Decide the hop before writing.** Mark means “look at this parent,” not “must mint children.”
+**Decide the hop before writing.** Expand means “look at this parent,” not “must mint children.”
 
 1. **No growth** — dead end, already correct, or exploratory: `unchanged: true` with empty `nodes` / `children` / `refs` / `retire` / `clearEdges`. That is a successful complete. Non-empty mutate with `unchanged` rejects (`unchanged_with_mutate`).
-2. **Grow or fix** — as many new children as the **cut** needs (a surface can be a long list); not a tour of the repo. The map is a mental model, not 1:1 with code. If the honest list would be huge, add an **intermediate grouping** layer (responsibility / feature), not dozens of siblings. If some children matter more, put those on this hop and leave the rest for a later mark detail. Same axis as an existing sibling → **ref** that slug; do not invent a clone (`cli-work` vs `work`). `leaf: true` when the next hop would only be code (`anchors[]`). `symbol` may have `symbol` children (class → methods). Mark detail on a `leaf` parent means split further: honor `allowedChildTypes` from `work next` (that hop ignores the stop-flag).
+2. **Grow or fill** — as many new children as the **cut** needs (a surface can be a long list); not a tour of the repo. The map is a mental model, not 1:1 with code. If the honest list would be huge, add an **intermediate grouping** layer (responsibility / feature), not dozens of siblings. If some children matter more, put those on this hop and leave the rest for a later expand mark. Same axis as an existing sibling → **ref** that slug; do not invent a clone (`cli-work` vs `work`). `leaf: true` when the next hop would only be code (`anchors[]`). `symbol` may have `symbol` children (class → methods). Mark expand on a `leaf` parent means split further: honor `allowedChildTypes` from `work next` (that hop ignores the stop-flag).
 
 You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, type, `leaf`, body, anchors). Do not put it in `children[]`. You cannot upsert `root`. You cannot reparent (move a node under a different parent).
 
@@ -135,7 +147,7 @@ You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, t
     {
       "id": "<stepId>",
       "leaseToken": "<leaseToken>",
-      "kind": "detail",
+      "kind": "expand",
       "payload": {
         "parentSlug": "root",
         "unchanged": false,
@@ -170,11 +182,19 @@ You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, t
 - Anchor `path`s must exist in the repo (missing or moved paths reject the complete).
 - Each anchor is `{ path, symbol?, startLine?, endLine? }`. `path` is required (repo-relative). `startLine` / `endLine` are **1-based, inclusive**. `endLine` is optional: send it only when the end is known; omit rather than guess. The ledger stores fragment size from that span. `symbol` is an optional label, not a substitute for lines.
 - The map UI loads the **whole file**, scrolls to `startLine` (if set), and highlights `startLine…endLine` or just `startLine`. Prefer a real span (function, section) over always `startLine: 1`.
-- Follow `allowedChildTypes` from `work next`. `leaf: true` nodes are a stop-flag; humans still open `anchors[]`. A later mark detail on that node is a request to cut children.
+- Follow `allowedChildTypes` from `work next`. `leaf: true` nodes are a stop-flag; humans still open `anchors[]`. A later expand mark on that node is a request to cut children.
+
+### `kind=enrich`
+
+Same complete envelope family as expand, but **only** upsert `parentSlug` (title, type, `leaf`, `body` / anchors). Keep `children` / `refs` / `retire` / `clearEdges` empty. Rejects `enrich_forbids_*` / `enrich_only_parent` / `enrich_requires_parent_upsert` if you grow the graph. Prefer rewriting the markdown body in the init locale.
+
+### `kind=fix`
+
+Same payload shape as expand. Intent: the marked area is wrong or stale — re-read code/anchors, then repair children, refs, body, or retire bad nodes. Prefer a real fix over `unchanged: true` unless you confirmed nothing is broken.
 
 ### Routine kinds
 
-`work next` orders routine steps before detail. Routine items expose `base` and `target`. `base` is the pinned caught-up commit (epoch start). `target` is the commit this epoch syncs toward. Echo `base` / `target` / `nodeId` / `level` / `blastSeverity` from the item.
+`work next` orders routine steps before map hops. Routine items expose `base` and `target`. `base` is the pinned caught-up commit (epoch start). `target` is the commit this epoch syncs toward. Echo `base` / `target` / `nodeId` / `level` / `blastSeverity` from the item.
 
 The diff for these steps is `git diff --name-only <base>..<target>` (commits in that range only). Do not use the working tree, unstaged changes, or only the latest commit.
 

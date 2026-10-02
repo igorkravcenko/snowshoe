@@ -1,5 +1,11 @@
 import { descendantSlugs } from "../domain/graph.ts";
-import { isWorkMarkKind, type MarkKind, parseMarkKind } from "../domain/marks.ts";
+import {
+  isWorkMarkKind,
+  type MarkKind,
+  parseMarkKind,
+  type WorkMarkKind,
+  workStepId,
+} from "../domain/marks.ts";
 import { isSlug, ROOT_SLUG } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { envelope } from "../json.ts";
@@ -83,7 +89,7 @@ function fullNode(session: Session, slug: string): Record<string, unknown> | nul
     ...(a.span ? { span: a.span } : {}),
   }));
   const unresolved = session.ledger.unresolvedAnchorPaths(n.slug);
-  const marks = session.ledger.marksOf(n.slug);
+  const marks = session.ledger.marksOfNormalized(n.slug);
   return {
     slug: n.slug,
     title: n.title,
@@ -275,15 +281,16 @@ export function runMapStatus(
   };
 }
 
-function enqueueDetailStep(
+function enqueueWorkStep(
   session: Session,
   slug: string,
+  kind: WorkMarkKind,
 ): { stepId: string; alreadyQueued: boolean; status: string } {
-  const existing = session.ledger.activeDetailFor(slug);
+  const existing = session.ledger.activeHopFor(slug, kind);
   if (existing) {
     return { stepId: existing.id, alreadyQueued: true, status: existing.status };
   }
-  const stepId = `detail:${slug}`;
+  const stepId = workStepId(slug, kind);
   const prior = session.ledger.getStep(stepId);
   if (prior && (prior.status === "done" || prior.status === "cancelled")) {
     session.ledger.updateStep(stepId, {
@@ -294,20 +301,21 @@ function enqueueDetailStep(
   } else if (!prior) {
     session.ledger.insertStep({
       id: stepId,
-      kind: "detail",
+      kind,
       parentSlug: slug,
     });
   }
   return { stepId, alreadyQueued: false, status: "pending" };
 }
 
-function cancelPendingDetail(
+function cancelPendingHop(
   session: Session,
   slug: string,
+  kind: WorkMarkKind,
 ):
   | { ok: true; stepId: string }
   | { ok: false; reasons: string[]; stepId?: string; status?: string } {
-  const existing = session.ledger.activeDetailFor(slug);
+  const existing = session.ledger.activeHopFor(slug, kind);
   if (!existing) {
     return { ok: false, reasons: ["no_pending_detail"] };
   }
@@ -335,15 +343,16 @@ export function runMapMark(
   if (!slug || !isSlug(slug)) {
     throw new CliError("Invalid --slug", EXIT_USAGE);
   }
-  const kind: MarkKind = parseMarkKind(kindRaw ?? "detail");
+  const kind: MarkKind = parseMarkKind(kindRaw ?? "expand");
   const node = session.ledger.getNode(slug);
   if (!node) {
     throw new CliError(`Unknown slug: ${slug}`, EXIT_USAGE);
   }
   const added = session.ledger.addMark(slug, kind);
+  if (kind === "expand") session.ledger.removeMark(slug, "detail");
   let queued: { stepId: string; alreadyQueued: boolean; status: string } | undefined;
   if (isWorkMarkKind(kind)) {
-    queued = enqueueDetailStep(session, slug);
+    queued = enqueueWorkStep(session, slug, kind);
   }
   return {
     exitCode: EXIT_OK,
@@ -375,11 +384,8 @@ export function runMapUnmark(
   const removed = session.ledger.removeMark(slug, kind);
   let cancelled: { stepId: string } | undefined;
   if (isWorkMarkKind(kind)) {
-    const remaining = session.ledger.marksOf(slug).filter((k) => isWorkMarkKind(k));
-    if (remaining.length === 0) {
-      const result = cancelPendingDetail(session, slug);
-      if (result.ok) cancelled = { stepId: result.stepId };
-    }
+    const result = cancelPendingHop(session, slug, kind);
+    if (result.ok) cancelled = { stepId: result.stepId };
   }
   return {
     exitCode: EXIT_OK,
@@ -447,16 +453,30 @@ export function runMapDetailCancel(
   if (!slug || !isSlug(slug)) {
     throw new CliError("Invalid --slug", EXIT_USAGE);
   }
-  const cancelled = cancelPendingDetail(session, slug);
-  if (!cancelled.ok) {
+  const cancelledIds: string[] = [];
+  let leased: { stepId: string; status: string } | undefined;
+  for (const kind of ["expand", "enrich", "fix"] as const) {
+    const hop = session.ledger.activeHopFor(slug, kind);
+    if (!hop) continue;
+    if (hop.status !== "pending") {
+      leased = { stepId: hop.id, status: hop.status };
+      continue;
+    }
+    session.ledger.updateStep(hop.id, {
+      status: "cancelled",
+      leaseToken: null,
+      leaseExpiresAt: null,
+    });
+    cancelledIds.push(hop.id);
+  }
+  if (cancelledIds.length === 0) {
     return {
       exitCode: EXIT_ATTENTION,
       body: envelope("map.detail.cancel", session.repoRoot, session.gitHead, {
         ok: false,
         slug,
-        ...(cancelled.stepId ? { stepId: cancelled.stepId } : {}),
-        reasons: cancelled.reasons,
-        ...(cancelled.status ? { status: cancelled.status } : {}),
+        ...(leased ? { stepId: leased.stepId, status: leased.status } : {}),
+        reasons: [leased ? "cancel_only_from_pending" : "no_pending_detail"],
       }),
     };
   }
@@ -466,7 +486,7 @@ export function runMapDetailCancel(
     body: envelope("map.detail.cancel", session.repoRoot, session.gitHead, {
       ok: true,
       slug,
-      stepId: cancelled.stepId,
+      stepId: cancelledIds[0],
     }),
   };
 }

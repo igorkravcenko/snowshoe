@@ -169,7 +169,7 @@ export function runRoutineStatus(session: Session): {
   const steps = open ? session.ledger.listSteps({ epochId: open.epoch_id }) : [];
   const advance = canAdvance(session);
   const detailPending = session.ledger.listSteps({
-    kinds: ["detail"],
+    kinds: ["expand", "enrich", "fix", "detail"],
     statuses: ["pending", "leased"],
   }).length;
   const behindHead = Boolean(head && base && head !== base);

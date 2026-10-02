@@ -36,7 +36,7 @@ Igor-locked: the skill must be repo-agnostic and self-contained; entry is `work 
 |---|---|
 | `action` | `init` · `refresh` · `advance` · `work` · `idle` |
 | `todo` | Exact command when gated: `snowshoe init --json`, `snowshoe routine refresh --json`, or `snowshoe routine advance --json`. `null` otherwise. |
-| `items` | Claimed steps. Empty unless claiming work. Detail items include `parentSlug`, `allowedChildTypes`, `children` (current child slugs), `marks` (work mark kinds on the parent). |
+| `items` | Claimed steps. Empty unless claiming work. Map hops (`expand` / `enrich` / `fix`; legacy `detail` = expand) include `parentSlug`, `allowedChildTypes`, `children`, `intent`, `marks`. |
 
 Order: uninitialized → `init`; HEAD/target moved needs refresh → `refresh`; claimable work → `work`; queue idle and FSM allows advance → `advance`; else `idle`. Keep `--json`. Exit 0 on followable gates (not an opaque usage fail).
 

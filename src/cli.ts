@@ -255,19 +255,23 @@ const mapStatusCmd = defineCommand({
 });
 
 const mapMarkCmd = defineCommand({
-  meta: { name: "mark", description: "Add a mark kind (work kinds share one detail step)" },
+  meta: {
+    name: "mark",
+    description: "Add a mark kind (each work kind queues its own hop step)",
+  },
   args: {
     json: { type: "boolean", description: "JSON output", default: false },
     slug: { type: "string", description: "Node slug", required: true },
     kind: {
       type: "string",
-      description: "Mark kind: detail, enrich, fix, learn, quiz (default detail)",
-      default: "detail",
+      description:
+        "Mark kind: expand (grow tree), enrich (fields/body), fix (repair), learn, quiz. Alias: detail→expand",
+      default: "expand",
     },
   },
   run({ args }) {
     return withSession((s) =>
-      emit(runMapMark(s, String(args.slug), args.kind ?? "detail"), args.json),
+      emit(runMapMark(s, String(args.slug), args.kind ?? "expand"), args.json),
     );
   },
 });

@@ -16,7 +16,7 @@ async function seedModule(
       {
         id: String(item.stepId),
         leaseToken: String(item.leaseToken),
-        kind: "detail",
+        kind: String(item.kind),
         payload: detailPayload({
           parentSlug: "root",
           nodes: [{ slug, title: "Auth", type: "module", op: "upsert", leaf: true, ...extra }],
@@ -28,7 +28,7 @@ async function seedModule(
 }
 
 describe("map polish: marks, leaf, anchors", () => {
-  test("learn/quiz do not enqueue work; work kinds share one step; leaf mark still splits", async () => {
+  test("learn/quiz do not enqueue; expand and enrich are separate hops", async () => {
     const repo = makeGitRepo();
     await seedModule(repo, "auth");
 
@@ -69,29 +69,48 @@ describe("map polish: marks, leaf, anchors", () => {
     ]);
     const node = (status.json.nodes as Array<Record<string, unknown>>)[0]!;
     expect(node.leaf).toBe(true);
-    expect(node.marks).toHaveLength(3);
-    expect(node.marks).toEqual(expect.arrayContaining(["enrich", "detail", "learn"]));
+    expect(node.marks).toEqual(expect.arrayContaining(["enrich", "expand", "learn"]));
 
     const next = await snowshoe(repo, ["work", "next", "--json"]);
-    expect(next.json.items).toHaveLength(1);
-    const item = (next.json.items as Array<Record<string, unknown>>)[0]!;
-    expect(item.kind).toBe("detail");
-    expect(item.allowedChildTypes).toEqual(["module", "surface", "flow"]);
-    expect(item.marks).toHaveLength(2);
-    expect(item.marks).toEqual(expect.arrayContaining(["enrich", "detail"]));
+    const items = next.json.items as Array<Record<string, unknown>>;
+    expect(items.map((i) => i.kind).sort()).toEqual(["enrich", "expand"]);
+    const expand = items.find((i) => i.kind === "expand")!;
+    const enrichItem = items.find((i) => i.kind === "enrich")!;
+    expect(expand.allowedChildTypes).toEqual(["module", "surface", "flow"]);
+    expect(expand.marks).toEqual(["expand"]);
+    expect(enrichItem.allowedChildTypes).toEqual([]);
 
     const done = await snowshoe(repo, ["work", "complete", "--json"], {
       stdin: completeEnvelope([
         {
-          id: String(item.stepId),
-          leaseToken: String(item.leaseToken),
-          kind: "detail",
+          id: String(expand.stepId),
+          leaseToken: String(expand.leaseToken),
+          kind: "expand",
           payload: detailPayload({
             parentSlug: "auth",
             nodes: [
               { slug: "auth", title: "Auth", type: "module", op: "upsert", leaf: false },
               { slug: "session", title: "Session", type: "module", op: "upsert" },
             ],
+          }),
+        },
+        {
+          id: String(enrichItem.stepId),
+          leaseToken: String(enrichItem.leaseToken),
+          kind: "enrich",
+          payload: detailPayload({
+            parentSlug: "auth",
+            nodes: [
+              {
+                slug: "auth",
+                title: "Auth module",
+                type: "module",
+                op: "upsert",
+                leaf: false,
+                body: "Auth owns sessions.",
+              },
+            ],
+            children: [],
           }),
         },
       ]),
@@ -111,6 +130,31 @@ describe("map polish: marks, leaf, anchors", () => {
     expect(auth.children).toEqual(["session"]);
   });
 
+  test("enrich rejects growing children", async () => {
+    const repo = makeGitRepo();
+    await seedModule(repo, "auth", { leaf: false });
+    await snowshoe(repo, ["map", "mark", "--slug", "auth", "--kind", "enrich", "--json"]);
+    const next = await snowshoe(repo, ["work", "next", "--json"]);
+    const item = (next.json.items as Array<Record<string, unknown>>)[0]!;
+    const bad = await snowshoe(repo, ["work", "complete", "--json"], {
+      stdin: completeEnvelope([
+        {
+          id: String(item.stepId),
+          leaseToken: String(item.leaseToken),
+          kind: "enrich",
+          payload: detailPayload({
+            parentSlug: "auth",
+            nodes: [{ slug: "session", title: "Session", type: "module", op: "upsert" }],
+          }),
+        },
+      ]),
+    });
+    expect(bad.exitCode).not.toBe(0);
+    const results = bad.json.results as Array<{ status: string; reasons?: string[] }>;
+    expect(results[0]?.status).toBe("rejected");
+    expect(results[0]?.reasons?.some((r) => r.startsWith("enrich_"))).toBe(true);
+  });
+
   test("unmark last work kind cancels pending; symbol may have children", async () => {
     const repo = makeGitRepo();
     await seedModule(repo, "auth", { leaf: false });
@@ -118,12 +162,13 @@ describe("map polish: marks, leaf, anchors", () => {
     await snowshoe(repo, ["map", "mark", "--slug", "auth", "--kind", "fix", "--json"]);
     const next = await snowshoe(repo, ["work", "next", "--json"]);
     const item = (next.json.items as Array<Record<string, unknown>>)[0]!;
+    expect(item.kind).toBe("fix");
     const done = await snowshoe(repo, ["work", "complete", "--json"], {
       stdin: completeEnvelope([
         {
           id: String(item.stepId),
           leaseToken: String(item.leaseToken),
-          kind: "detail",
+          kind: "fix",
           payload: detailPayload({
             parentSlug: "auth",
             nodes: [{ slug: "api", title: "API", type: "surface", op: "upsert", leaf: false }],
@@ -133,7 +178,7 @@ describe("map polish: marks, leaf, anchors", () => {
     });
     expect(done.exitCode).toBe(0);
 
-    await snowshoe(repo, ["map", "mark", "--slug", "api", "--kind", "detail", "--json"]);
+    await snowshoe(repo, ["map", "mark", "--slug", "api", "--kind", "expand", "--json"]);
     const surfaceNext = await snowshoe(repo, ["work", "next", "--json"]);
     const surfaceItem = (surfaceNext.json.items as Array<Record<string, unknown>>)[0]!;
     const surfaceDone = await snowshoe(repo, ["work", "complete", "--json"], {
@@ -141,7 +186,7 @@ describe("map polish: marks, leaf, anchors", () => {
         {
           id: String(surfaceItem.stepId),
           leaseToken: String(surfaceItem.leaseToken),
-          kind: "detail",
+          kind: "expand",
           payload: detailPayload({
             parentSlug: "api",
             nodes: [{ slug: "klass", title: "Class", type: "symbol", op: "upsert", leaf: false }],
@@ -151,7 +196,7 @@ describe("map polish: marks, leaf, anchors", () => {
     });
     expect(surfaceDone.exitCode).toBe(0);
 
-    await snowshoe(repo, ["map", "mark", "--slug", "klass", "--kind", "detail", "--json"]);
+    await snowshoe(repo, ["map", "mark", "--slug", "klass", "--kind", "expand", "--json"]);
     const hop = await snowshoe(repo, ["work", "next", "--json"]);
     const hopItem = (hop.json.items as Array<Record<string, unknown>>)[0]!;
     expect(hopItem.allowedChildTypes).toEqual(["symbol"]);
@@ -161,7 +206,7 @@ describe("map polish: marks, leaf, anchors", () => {
         {
           id: String(hopItem.stepId),
           leaseToken: String(hopItem.leaseToken),
-          kind: "detail",
+          kind: "expand",
           payload: detailPayload({
             parentSlug: "klass",
             nodes: [
@@ -173,14 +218,14 @@ describe("map polish: marks, leaf, anchors", () => {
     });
     expect(hopDone.exitCode).toBe(0);
 
-    await snowshoe(repo, ["map", "mark", "--slug", "klass-method", "--kind", "detail", "--json"]);
+    await snowshoe(repo, ["map", "mark", "--slug", "klass-method", "--kind", "expand", "--json"]);
     const unmark = await snowshoe(repo, [
       "map",
       "unmark",
       "--slug",
       "klass-method",
       "--kind",
-      "detail",
+      "expand",
       "--json",
     ]);
     expect(unmark.exitCode).toBe(0);

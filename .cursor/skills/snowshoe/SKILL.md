@@ -16,7 +16,7 @@ The install binary is **`snowshoe`**. A user-local shell alias such as `snoe` is
 
 Drive the CLI. Prefer `snowshoe help --json` over guessing flags. Do not write the ledger yourself. Do not start `map serve` unless the human asked.
 
-If **this turn** they asked to mark, expand, or cancel named node(s) (or “this node”): `snowshoe map mark --json --slug <slug> --kind detail` (or `map detail mark` / `map detail cancel`). Do not mark a tour of the tree. Then continue the drain/learn branch.
+If **this turn** they asked to mark, expand, enrich, fix, or cancel named node(s) (or “this node”): `snowshoe map mark --json --slug <slug> --kind expand` (or `enrich` / `fix`; `map detail mark` aliases expand; `map detail cancel`). Do not mark a tour of the tree. Then continue the drain/learn branch.
 
 Read **one** sibling in this folder after the checks below. Never read both `drain.md` and `learn.md` in the same invocation. Do not open `install.md` unless `snowshoe` is missing.
 

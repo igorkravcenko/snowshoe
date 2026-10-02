@@ -17,6 +17,7 @@ import {
   type MapNode,
   type MapReadModel,
   markNode,
+  previewForNode,
   putMapView,
   type SessionInfo,
   sameAnchor,
@@ -574,10 +575,7 @@ export function App(): ReactElement {
       return;
     }
     const anchors = selectedNode.anchors ?? [];
-    setPreview((cur) => {
-      if (!cur) return null;
-      return anchors.some((a) => sameAnchor(a, cur)) ? cur : null;
-    });
+    setPreview((cur) => previewForNode(anchors, cur));
   }, [selectedNode]);
 
   useEffect(() => {
@@ -612,7 +610,6 @@ export function App(): ReactElement {
   }, [model, selected]);
 
   function selectNode(slug: string, historyMode: "push" | "replace" | "none" = "push") {
-    if (slug !== selected) setPreview(null);
     setMarkMenu(false);
     setSelected(slug);
     setExpanded((cur) => {
@@ -896,7 +893,11 @@ export function App(): ReactElement {
                   className={sidebarTab === "code" ? "sidebar-panel" : "sidebar-panel hidden"}
                   role="tabpanel"
                 >
-                  <PreviewPanel anchor={preview} repoRoot={session?.repoRoot ?? null} />
+                  <PreviewPanel
+                    anchor={preview}
+                    repoRoot={session?.repoRoot ?? null}
+                    active={sidebarTab === "code"}
+                  />
                 </div>
                 <div
                   className={sidebarTab === "feedback" ? "sidebar-panel" : "sidebar-panel hidden"}

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { incomingRefs, sameAnchor } from "../ui/src/api.ts";
+import { incomingRefs, previewForNode, sameAnchor } from "../ui/src/api.ts";
 import { mapFingerprint } from "../ui/src/map-fingerprint.ts";
 import { prismLanguage } from "../ui/src/preview-lang.ts";
 
@@ -20,6 +20,15 @@ describe("map UI code preview", () => {
     expect(sameAnchor(a, { path: "src/cli.ts", startLine: 1 })).toBe(true);
     expect(sameAnchor(a, { path: "src/cli.ts", startLine: 10 })).toBe(false);
     expect(sameAnchor(a, { path: "src/index.ts", startLine: 1 })).toBe(false);
+  });
+
+  test("previewForNode defaults to the first anchor without requiring a click", () => {
+    const first = { path: "src/cli.ts", startLine: 1 };
+    const second = { path: "src/index.ts", startLine: 8 };
+    expect(previewForNode([first, second], null)).toEqual(first);
+    expect(previewForNode([first, second], second)).toEqual(second);
+    expect(previewForNode([first], second)).toEqual(first);
+    expect(previewForNode([], first)).toBeNull();
   });
 
   test("incomingRefs is the reverse of outgoing to", () => {

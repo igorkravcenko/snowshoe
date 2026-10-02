@@ -42,28 +42,36 @@ function PlainCode(props: {
 export function PreviewPanel(props: {
   anchor: Anchor | null;
   repoRoot: string | null;
+  active?: boolean;
 }): ReactElement | null {
-  const { anchor, repoRoot } = props;
+  const { anchor, repoRoot, active = true } = props;
   const [data, setData] = useState<FilePreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const hlRef = useRef<HTMLDivElement | null>(null);
+  const path = anchor?.path;
+  const startLine = anchor?.startLine;
+  const endLine = anchor?.endLine;
+  const span = anchor?.span;
+  const lineText = anchor?.lineText;
+  const symbol = anchor?.symbol;
 
   useEffect(() => {
-    if (!anchor) {
+    if (!path) {
       setData(null);
       setError(null);
       setLoading(false);
       return;
     }
     let cancelled = false;
+    setData(null);
     setLoading(true);
     setError(null);
-    void fetchFile(anchor.path, {
-      start: anchor.startLine,
-      end: anchor.endLine,
-      lineText: anchor.lineText,
-      span: anchor.span,
+    void fetchFile(path, {
+      start: startLine,
+      end: endLine,
+      lineText,
+      span,
     })
       .then((body) => {
         if (!cancelled) {
@@ -81,17 +89,17 @@ export function PreviewPanel(props: {
     return () => {
       cancelled = true;
     };
-  }, [anchor]);
+  }, [path, startLine, endLine, span, lineText]);
 
   useEffect(() => {
-    if (!data || !anchor?.startLine) return;
+    if (!active || !data || startLine === undefined) return;
     const id = requestAnimationFrame(() => {
       hlRef.current?.scrollIntoView({ block: "start", inline: "nearest" });
     });
     return () => cancelAnimationFrame(id);
-  }, [data, anchor?.startLine]);
+  }, [active, data, startLine]);
 
-  if (!anchor) {
+  if (!anchor || !path) {
     return (
       <section className="preview-panel" aria-label="Code preview">
         <h2>Code</h2>
@@ -100,13 +108,16 @@ export function PreviewPanel(props: {
     );
   }
 
-  const href = repoRoot ? editorHref(repoRoot, anchor) : undefined;
-  const start = data?.startLine ?? anchor.startLine;
-  const end = data?.endLine ?? anchor.endLine ?? start;
+  const fresh = data && data.path === path;
+  const start = fresh ? (data.startLine ?? startLine) : undefined;
+  const end = fresh ? (data.endLine ?? endLine ?? start) : undefined;
+  const href = repoRoot
+    ? editorHref(repoRoot, { ...anchor, startLine: start ?? startLine })
+    : undefined;
   const loc = [start ? `L${start}` : null, end && end !== start ? `L${end}` : null]
     .filter(Boolean)
     .join("–");
-  const lang = data ? prismLanguage(data.path) : null;
+  const lang = fresh ? prismLanguage(data.path) : null;
 
   return (
     <section className="preview-panel" aria-label="Code preview">
@@ -114,9 +125,9 @@ export function PreviewPanel(props: {
         <div>
           <h2>Code preview</h2>
           <p className="mono">
-            {anchor.path}
+            {path}
             {loc ? ` · ${loc}` : ""}
-            {anchor.symbol ? ` · ${anchor.symbol}` : ""}
+            {symbol ? ` · ${symbol}` : ""}
           </p>
         </div>
         {href ? (
@@ -133,7 +144,7 @@ export function PreviewPanel(props: {
       </div>
       {loading ? <p className="hint">Loading preview…</p> : null}
       {error ? <p className="error">{error}</p> : null}
-      {data && lang ? (
+      {fresh && lang ? (
         <Highlight theme={themes.nightOwl} code={data.text.replace(/\n$/, "")} language={lang}>
           {({ className, style, tokens, getLineProps, getTokenProps }) => (
             <pre className={`preview-code ${className}`} style={style}>
@@ -166,7 +177,7 @@ export function PreviewPanel(props: {
           )}
         </Highlight>
       ) : null}
-      {data && !lang ? <PlainCode text={data.text} start={start} end={end} hlRef={hlRef} /> : null}
+      {fresh && !lang ? <PlainCode text={data.text} start={start} end={end} hlRef={hlRef} /> : null}
     </section>
   );
 }

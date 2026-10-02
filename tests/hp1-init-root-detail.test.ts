@@ -25,7 +25,7 @@ describe("HP1 cold init → root detail seed", () => {
     expect(next.json.batchSize).toBe(5);
     const items = next.json.items as Array<Record<string, unknown>>;
     expect(items).toHaveLength(1);
-    expect(items[0]?.kind).toBe("detail");
+    expect(items[0]?.kind).toBe("expand");
     expect(items[0]?.parentSlug).toBe("root");
     expect(items[0]?.allowedChildTypes).toEqual(["module", "external"]);
     expect(items[0]?.children).toEqual([]);

@@ -7,7 +7,7 @@ date: 2026-09-27
 
 ## Status
 
-Accepted. Amends init / detail complete / map read-model / map UI from [ADR-2026-09-27-map-ui-and-skill](./ADR-2026-09-27-map-ui-and-skill.md) and [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md). Does **not** promote proposed routine ADRs A/B. Does **not** add learning.
+Accepted. Amends init / detail complete / map read-model / map UI from [ADR-2026-09-27-map-ui-and-skill](./ADR-2026-09-27-map-ui-and-skill.md) and [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md). Does **not** promote proposed routine ADRs A/B. Does **not** add learning. 2026-10-02: selecting a node with `anchors[]` sets Code preview to the first (or current, if still on the node). That does **not** steal the sidebar tab; clicking an anchor still opens the Code tab.
 
 ## Context
 
@@ -34,7 +34,7 @@ After detail, the map inspector showed metrics and anchors but not human-readabl
 ### In-UI code preview (restore PR #11)
 
 - Restore `GET /api/file?path=&start=&end=` as a read-only repoRoot sandbox: reject `..`, absolute paths, and symlink escape; no ledger writes.
-- Map UI Code preview panel (Prism). Anchor click opens preview for **any node with anchors** (including non-leaf modules). `vscode://` remains secondary “Open in editor”.
+- Map UI Code preview panel (Prism). Selecting a node with `anchors[]` preloads the first anchor (keeps the current one if it still belongs to the node). That does not switch the sidebar tab. Clicking an anchor still focuses the Code tab. `vscode://` remains secondary “Open in editor”.
 - Util still does not launch an editor.
 
 ## Alternatives considered
