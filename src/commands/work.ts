@@ -1,14 +1,15 @@
 import { existsSync, watch } from "node:fs";
 import { isSqliteBusyError, type StepRow } from "../db/ledger.ts";
 import { descendantSlugs } from "../domain/graph.ts";
-import { isWorkMarkKind } from "../domain/marks.ts";
 import { allowedChildTypes, childAllowed } from "../domain/matrix.ts";
 import { requiredLevels, severityCap } from "../domain/metrics.ts";
 import {
   type BlastSeverity,
+  canonicalMapHop,
   DEFAULT_WORK_BATCH_SIZE,
   type EntityType,
   isEntityType,
+  isMapHopKind,
   isSlug,
   LEASE_TTL_MS,
   type MetricLevel,
@@ -47,7 +48,10 @@ const KIND_PRIORITY: Record<StepKind, number> = {
   structure_sync: 0,
   blast_radius: 1,
   metric_decay: 2,
+  expand: 3,
   detail: 3,
+  enrich: 4,
+  fix: 5,
 };
 
 function claimable(step: StepRow, now: number): boolean {
@@ -88,7 +92,7 @@ function dependenciesMet(session: Session, step: StepRow): boolean {
   if (step.kind === "metric_decay" && step.epoch_id) {
     return blastAccepted(session, step.epoch_id);
   }
-  if (step.kind === "detail") {
+  if (isMapHopKind(step.kind)) {
     return !requiredRoutinePending(session);
   }
   return true;
@@ -309,6 +313,13 @@ export function runWorkNext(
   };
 }
 
+function stepKindsMatch(envelope: string, step: string): boolean {
+  if (envelope === step) return true;
+  const a = canonicalMapHop(envelope);
+  const b = canonicalMapHop(step);
+  return a !== null && a === b;
+}
+
 function persistAnchors(
   session: Session,
   anchors: Array<{
@@ -348,17 +359,18 @@ function formatWorkItem(session: Session, step: StepRow, epochId: string | null)
     leaseToken: step.lease_token,
     prior: step.prior_artifact_ref ? { artifactRef: step.prior_artifact_ref } : null,
   };
-  if (step.kind === "detail") {
+  if (isMapHopKind(step.kind)) {
+    const hop = canonicalMapHop(step.kind) ?? "expand";
     const parent = step.parent_slug ? session.ledger.getNode(step.parent_slug) : null;
-    const types = parent ? allowedChildTypes(parent.type, false) : [];
+    const types = hop === "expand" && parent ? allowedChildTypes(parent.type, false) : [];
     return {
       ...base,
+      kind: hop,
       parentSlug: step.parent_slug,
       allowedChildTypes: types,
       children: step.parent_slug ? session.ledger.childrenOf(step.parent_slug) : [],
-      marks: step.parent_slug
-        ? session.ledger.marksOf(step.parent_slug).filter((k) => isWorkMarkKind(k))
-        : [],
+      intent: hop,
+      marks: [hop],
     };
   }
   return {
@@ -417,7 +429,7 @@ function completeOne(
   if (!step) {
     return { id: item.id, status: "rejected", reasons: ["unknown_step"] };
   }
-  if (item.kind && item.kind !== step.kind) {
+  if (item.kind && !stepKindsMatch(item.kind, step.kind)) {
     return { id: item.id, status: "rejected", reasons: ["kind_mismatch"] };
   }
   if (step.status === "accepted" || step.status === "done" || step.status === "cancelled") {
@@ -437,6 +449,9 @@ function completeOne(
 
   try {
     switch (step.kind) {
+      case "expand":
+      case "enrich":
+      case "fix":
       case "detail":
         return acceptDetail(session, step, item.payload);
       case "structure_sync":
@@ -491,6 +506,8 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
     payload.retire.length === 0 &&
     payload.clearEdges.length === 0;
 
+  const hop = canonicalMapHop(step.kind) ?? "expand";
+
   if (payload.unchanged) {
     if (!mutateEmpty) {
       return { id: step.id, status: "rejected", reasons: ["unchanged_with_mutate"] };
@@ -500,11 +517,23 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
       leaseToken: null,
       leaseExpiresAt: null,
     });
-    session.ledger.clearWorkMarks(payload.parentSlug);
+    session.ledger.removeMark(payload.parentSlug, hop);
+    if (hop === "expand") session.ledger.removeMark(payload.parentSlug, "detail");
     return { id: step.id, status: "accepted" };
   }
 
   const reasons: string[] = [];
+  if (hop === "enrich") {
+    if (payload.children.length) reasons.push("enrich_forbids_children");
+    if (payload.refs.length) reasons.push("enrich_forbids_refs");
+    if (payload.retire.length) reasons.push("enrich_forbids_retire");
+    if (payload.clearEdges.length) reasons.push("enrich_forbids_clear_edges");
+    for (const node of payload.nodes) {
+      if (node.slug !== payload.parentSlug) reasons.push(`enrich_only_parent:${node.slug}`);
+    }
+    if (payload.nodes.length === 0) reasons.push("enrich_requires_parent_upsert");
+  }
+
   const hopSet = descendantSlugs(session.ledger, payload.parentSlug);
   const retireSet = new Set(payload.retire);
   for (const slug of payload.retire) {
@@ -658,7 +687,8 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
       leaseToken: null,
       leaseExpiresAt: null,
     });
-    session.ledger.clearWorkMarks(payload.parentSlug);
+    session.ledger.removeMark(payload.parentSlug, hop);
+    if (hop === "expand") session.ledger.removeMark(payload.parentSlug, "detail");
   });
 
   return { id: step.id, status: "accepted" };
@@ -997,11 +1027,11 @@ export function runWorkFail(
       results.push({ id: item.id, status: "rejected", reasons: ["unknown_step"] });
       continue;
     }
-    if (step.kind === "detail") {
+    if (isMapHopKind(step.kind)) {
       results.push({
         id: item.id,
         status: "rejected",
-        reasons: ["detail_has_no_work_fail"],
+        reasons: ["map_hop_has_no_work_fail"],
       });
       continue;
     }

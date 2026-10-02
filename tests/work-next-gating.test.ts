@@ -138,6 +138,6 @@ describe("work next gating (init / refresh / advance)", () => {
     expect(next.json.action).toBe("work");
     expect(next.json.todo).toBeNull();
     const items = next.json.items as Array<Record<string, unknown>>;
-    expect(items[0]?.kind).toBe("detail");
+    expect(items[0]?.kind).toBe("expand");
   });
 });

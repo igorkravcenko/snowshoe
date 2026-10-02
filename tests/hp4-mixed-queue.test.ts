@@ -24,7 +24,7 @@ describe("HP4 mixed queue: routine-first; detail never gates advance", () => {
     const batch = await snowshoe(repo, ["work", "next", "--json", "--batch-size", "10"]);
     const kinds = (batch.json.items as Array<Record<string, unknown>>).map((i) => i.kind);
     expect(kinds[0]).toBe("structure_sync");
-    expect(kinds).not.toContain("detail");
+    expect(kinds).not.toContain("expand");
 
     const structureItem = (batch.json.items as Array<Record<string, unknown>>)[0]!;
     const sDone = await snowshoe(repo, ["work", "complete", "--json"], {
@@ -73,7 +73,7 @@ describe("HP4 mixed queue: routine-first; detail never gates advance", () => {
 
     const failDetailLease = await snowshoe(repo, ["work", "next", "--json"]);
     const detail = (failDetailLease.json.items as Array<Record<string, unknown>>)[0]!;
-    expect(detail.kind).toBe("detail");
+    expect(detail.kind).toBe("expand");
     const fail = await snowshoe(repo, ["work", "fail", "--json"], {
       stdin: JSON.stringify({
         schemaVersion: 1,
@@ -88,7 +88,7 @@ describe("HP4 mixed queue: routine-first; detail never gates advance", () => {
     });
     expect(fail.exitCode).toBe(1);
     const failResults = fail.json.results as Array<Record<string, unknown>>;
-    expect(failResults[0]?.reasons).toContain("detail_has_no_work_fail");
+    expect(failResults[0]?.reasons).toContain("map_hop_has_no_work_fail");
 
     const still = await snowshoe(repo, ["work", "complete", "--json"], {
       stdin: completeEnvelope([

@@ -18,6 +18,12 @@ export function sameAnchor(a: Anchor, b: Anchor): boolean {
   );
 }
 
+/** Keep the current preview if it still belongs to the node; else the first anchor. */
+export function previewForNode(anchors: Anchor[], current: Anchor | null): Anchor | null {
+  if (current && anchors.some((a) => sameAnchor(a, current))) return current;
+  return anchors[0] ?? null;
+}
+
 export type MapNode = {
   slug: string;
   title?: string;

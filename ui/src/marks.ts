@@ -1,8 +1,8 @@
-export const MARK_KINDS = ["detail", "enrich", "fix", "learn", "quiz"] as const;
+export const MARK_KINDS = ["expand", "enrich", "fix", "learn", "quiz"] as const;
 export type MarkKind = (typeof MARK_KINDS)[number];
 
 export const MARK_LABELS: Record<MarkKind, string> = {
-  detail: "Detail",
+  expand: "Expand",
   enrich: "Enrich",
   fix: "Fix",
   learn: "Learn",

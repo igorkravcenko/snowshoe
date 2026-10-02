@@ -34,7 +34,7 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
     const next1 = await snowshoe(repo, ["work", "next", "--json", "--batch-size", "8"]);
     const items1 = next1.json.items as Array<Record<string, unknown>>;
     expect(items1.map((i) => i.kind)).toEqual(["structure_sync"]);
-    expect(items1[0]?.kind).not.toBe("detail");
+    expect(items1[0]?.kind).not.toBe("expand");
 
     const structure = await snowshoe(repo, ["work", "complete", "--json"], {
       stdin: completeEnvelope([
@@ -84,7 +84,7 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
     expect(items3.map((i) => i.kind)).not.toContain("metric_decay");
     // Required routine is accepted, so detail is claimable before advance.
     const detail = items3[0]!;
-    expect(detail?.kind).toBe("detail");
+    expect(detail?.kind).toBe("expand");
 
     const advance = await snowshoe(repo, ["routine", "advance", "--json"]);
     expect(advance.exitCode).toBe(0);

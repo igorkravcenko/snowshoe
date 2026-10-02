@@ -53,7 +53,7 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
       "work complete --json",
       "routine advance --json",
       "map status --json",
-      "map mark --json --slug <slug> --kind detail",
+      "map mark --json --slug <slug> --kind expand",
       "map detail mark --json --slug <slug>",
       "help --json",
     ]) {
@@ -75,8 +75,11 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(drain).not.toContain("--fields tree");
     expect(drain).not.toContain("--fields full");
     expect(drain).toContain("retire");
+    expect(drain).toContain("### `kind=enrich`");
+    expect(drain).toContain("### `kind=fix`");
     expect(drain).toContain("intermediate grouping");
     expect(drain).not.toContain("symbol is always a leaf");
+    expect(drain).not.toContain("1–3");
   });
 
   test("learn.md is a map-conversation stub (no quiz, no complete)", () => {
@@ -95,7 +98,7 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     const next = await snowshoe(repo, ["work", "next", "--json"]);
     expect(next.json.action).toBe("work");
     const item = (next.json.items as Array<Record<string, unknown>>)[0]!;
-    expect(item.kind).toBe("detail");
+    expect(item.kind).toBe("expand");
     expect(item.parentSlug).toBe("root");
     const complete = await snowshoe(repo, ["work", "complete", "--json"], {
       stdin: completeEnvelope([

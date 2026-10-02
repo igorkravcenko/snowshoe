@@ -77,7 +77,7 @@ describe("work next --wait", () => {
     };
     expect(json.waitTimedOut).toBeUndefined();
     expect(json.action).toBe("work");
-    expect(json.items[0]?.kind).toBe("detail");
+    expect(json.items[0]?.kind).toBe("expand");
     expect(json.items[0]?.parentSlug).toBe("auth");
   });
 });

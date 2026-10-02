@@ -44,4 +44,4 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-09-29-map-pty-channel](./ADR-2026-09-29-map-pty-channel.md) | accepted | Loopback-peer PTY in map UI + `map view`; not chat/HITL/learning |
 | [ADR-2026-09-30-agent-feedback-inbox](./ADR-2026-09-30-agent-feedback-inbox.md) | accepted | Optional agent JSONL inbox in `.snowshoe/feedback/`; sidebar tab; not v1 |
 | [ADR-2026-09-30-user-asked-mark-and-help](./ADR-2026-09-30-user-asked-mark-and-help.md) | accepted | Agent mark if user asked this turn; `snowshoe help --json` |
-| [ADR-2026-10-01-map-polish](./ADR-2026-10-01-map-polish.md) | accepted | Leaf stop-flag; mark kinds; durable anchors; narrower split |
+| [ADR-2026-10-01-map-polish](./ADR-2026-10-01-map-polish.md) | accepted | Leaf stop-flag; expand/enrich/fix hops; durable anchors; narrower split |

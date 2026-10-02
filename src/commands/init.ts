@@ -46,10 +46,11 @@ export function runInit(
       const existing = ledger.activeDetailFor(ROOT_SLUG);
       if (!existing) {
         ledger.insertStep({
-          id: `detail:${ROOT_SLUG}`,
-          kind: "detail",
+          id: `expand:${ROOT_SLUG}`,
+          kind: "expand",
           parentSlug: ROOT_SLUG,
         });
+        ledger.addMark(ROOT_SLUG, "expand");
         seededDetail = true;
       }
     }

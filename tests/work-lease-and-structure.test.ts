@@ -74,7 +74,7 @@ describe("work next lease TTL", () => {
 
     const first = await snowshoe(repo, ["work", "next", "--json"]);
     const a = (first.json.items as Array<Record<string, unknown>>)[0]!;
-    expect(a.kind).toBe("detail");
+    expect(a.kind).toBe("expand");
     const stepId = String(a.stepId);
     const tokenA = String(a.leaseToken);
 
