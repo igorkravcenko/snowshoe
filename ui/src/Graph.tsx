@@ -59,10 +59,12 @@ export function GraphPanel(props: {
 }): ReactElement {
   const { focus, nodes, prevSlug, nextSlug, busy, onNavigate, onMark } = props;
   const panelRef = useRef<HTMLDivElement>(null);
+  const filterBtnRef = useRef<HTMLButtonElement>(null);
   const tipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [tip, setTip] = useState<TipState | null>(null);
   const [ctx, setCtx] = useState<CtxMenu | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [filterPos, setFilterPos] = useState<{ top: number; left: number } | null>(null);
   const [display, setDisplay] = useState<GraphDisplayOptions>(loadDisplay);
 
   const ego = useMemo(() => {
@@ -90,6 +92,25 @@ export function GraphPanel(props: {
   }, [display]);
 
   useEffect(() => {
+    if (!filterOpen) {
+      setFilterPos(null);
+      return;
+    }
+    const place = () => {
+      const btn = filterBtnRef.current;
+      if (!btn) return;
+      const box = btn.getBoundingClientRect();
+      const menuW = 140;
+      let left = box.right - menuW;
+      left = Math.max(8, Math.min(left, window.innerWidth - menuW - 8));
+      setFilterPos({ top: box.bottom + 4, left });
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [filterOpen]);
+
+  useEffect(() => {
     if (!ctx && !filterOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -105,7 +126,7 @@ export function GraphPanel(props: {
         return;
       }
       if (ctx && !t.closest(".graph-ctx-menu")) setCtx(null);
-      if (filterOpen && !t.closest(".graph-filter")) setFilterOpen(false);
+      if (filterOpen && !t.closest(".graph-filter, .graph-filter-menu")) setFilterOpen(false);
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("mousedown", onPointer);
@@ -164,6 +185,7 @@ export function GraphPanel(props: {
         <div className="graph-filter">
           <button
             type="button"
+            ref={filterBtnRef}
             className="graph-filter-btn"
             aria-label="Graph display filters"
             aria-expanded={filterOpen}
@@ -176,18 +198,26 @@ export function GraphPanel(props: {
           >
             Filter
           </button>
-          {filterOpen ? (
-            <div className="graph-filter-menu mark-menu" role="menu" aria-label="Graph display">
-              <label className="graph-filter-row">
-                <input
-                  type="checkbox"
-                  checked={display.showRefs}
-                  onChange={(e) => setShowRefs(e.target.checked)}
-                />
-                Refs
-              </label>
-            </div>
-          ) : null}
+          {filterOpen && filterPos
+            ? createPortal(
+                <div
+                  className="graph-filter-menu mark-menu"
+                  style={{ top: filterPos.top, left: filterPos.left }}
+                  role="menu"
+                  aria-label="Graph display"
+                >
+                  <label className="graph-filter-row">
+                    <input
+                      type="checkbox"
+                      checked={display.showRefs}
+                      onChange={(e) => setShowRefs(e.target.checked)}
+                    />
+                    Refs
+                  </label>
+                </div>,
+                document.body,
+              )
+            : null}
         </div>
       </div>
       {!ready || !focus || !ego || !layout ? (

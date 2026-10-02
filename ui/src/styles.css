@@ -184,11 +184,14 @@ header .header-sidebar-toggle {
   font-size: 12px;
 }
 
-.graph-filter-menu {
-  right: 0;
-  left: auto;
-  top: 100%;
+.graph-filter-menu.mark-menu {
+  position: fixed;
+  z-index: 1000;
   min-width: 8rem;
+  margin-top: 0;
+  top: auto;
+  left: auto;
+  right: auto;
 }
 
 .graph-filter-row {
