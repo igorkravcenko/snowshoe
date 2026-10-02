@@ -84,7 +84,7 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
 
   test("learn.md is a map-conversation stub (no quiz, no complete)", () => {
     expect(learn).toContain("map view --json");
-    expect(learn).toContain("--fields title,type,leaf,children,refs");
+    expect(learn).toContain("--fields title,type,leaf,children,refs,bodyOverview");
     expect(learn).toContain("SNOWSHOE_MAP_URL");
     expect(learn).toContain("SNOWSHOE_VIEW");
     expect(learn).not.toContain("work complete");

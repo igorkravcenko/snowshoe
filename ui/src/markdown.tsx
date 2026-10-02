@@ -1,4 +1,11 @@
 import { createElement, type ReactElement, type ReactNode } from "react";
+import { parseWikiLink, resolveWikiLink } from "./wiki.ts";
+
+export type WikiResolve = {
+  /** Display title when the slug exists; omit/undefined when missing. */
+  titleForSlug?: (slug: string) => string | undefined;
+  onGoTo?: (slug: string) => void;
+};
 
 function safeHref(raw: string): string | null {
   const t = raw.trim();
@@ -8,9 +15,38 @@ function safeHref(raw: string): string | null {
   return null;
 }
 
-function inline(text: string, keyPrefix: string): ReactNode[] {
+function wikiNode(slug: string, label: string, key: string, wiki?: WikiResolve): ReactNode {
+  const resolved = resolveWikiLink(slug, label, wiki?.titleForSlug);
+  if (resolved.missing) {
+    return (
+      <span key={key} className="wiki-missing" title={`Missing node: ${slug}`}>
+        {resolved.text}
+      </span>
+    );
+  }
+  if (!wiki?.onGoTo) {
+    return (
+      <span key={key} className="wiki-link">
+        {resolved.text}
+      </span>
+    );
+  }
+  return (
+    <button
+      key={key}
+      type="button"
+      className="wiki-link linkish"
+      title={`Go to ${slug}`}
+      onClick={() => wiki.onGoTo?.(slug)}
+    >
+      {resolved.text}
+    </button>
+  );
+}
+
+function inline(text: string, keyPrefix: string, wiki?: WikiResolve): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const re = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|\[([^\]]+)\]\(([^)]+)\))/g;
+  const re = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\))/g;
   let last = 0;
   let i = 0;
   let m = re.exec(text);
@@ -21,19 +57,28 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
       nodes.push(<code key={`${keyPrefix}-c-${i}`}>{token.slice(1, -1)}</code>);
     } else if (token.startsWith("**")) {
       nodes.push(<strong key={`${keyPrefix}-b-${i}`}>{token.slice(2, -2)}</strong>);
-    } else if (token.startsWith("*")) {
+    } else if (token.startsWith("[[") && m[2] !== undefined) {
+      const parsed = parseWikiLink(m[2]);
+      if (parsed) {
+        nodes.push(wikiNode(parsed.slug, parsed.label, `${keyPrefix}-w-${i}`, wiki));
+      } else {
+        nodes.push(token);
+      }
+    } else if (token.startsWith("*") && !token.startsWith("**") && !token.startsWith("[[")) {
       nodes.push(<em key={`${keyPrefix}-i-${i}`}>{token.slice(1, -1)}</em>);
-    } else if (m[2] !== undefined) {
-      const href = safeHref(m[3] ?? "");
+    } else if (m[3] !== undefined) {
+      const href = safeHref(m[4] ?? "");
       if (href) {
         nodes.push(
           <a key={`${keyPrefix}-a-${i}`} href={href} rel="noreferrer">
-            {m[2]}
+            {m[3]}
           </a>,
         );
       } else {
-        nodes.push(m[2]);
+        nodes.push(m[3]);
       }
+    } else {
+      nodes.push(token);
     }
     last = m.index + token.length;
     i++;
@@ -44,7 +89,15 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
 }
 
 /** Dumb, HTML-escaping markdown subset for inspector bodies (no editor). */
-export function MarkdownBody(props: { text: string }): ReactElement {
+export function MarkdownBody(props: {
+  text: string;
+  titleForSlug?: (slug: string) => string | undefined;
+  onGoTo?: (slug: string) => void;
+}): ReactElement {
+  const wiki: WikiResolve | undefined =
+    props.titleForSlug || props.onGoTo
+      ? { titleForSlug: props.titleForSlug, onGoTo: props.onGoTo }
+      : undefined;
   const blocks: ReactElement[] = [];
   const lines = props.text.replaceAll("\r\n", "\n").split("\n");
   let i = 0;
@@ -73,7 +126,7 @@ export function MarkdownBody(props: { text: string }): ReactElement {
     const heading = /^(#{1,3})\s+(.*)$/.exec(line);
     if (heading) {
       const tag = heading[1]!.length === 3 ? "h4" : "h3";
-      blocks.push(createElement(tag, { key: `h-${k++}` }, inline(heading[2]!, `h${k}`)));
+      blocks.push(createElement(tag, { key: `h-${k++}` }, inline(heading[2]!, `h${k}`, wiki)));
       i++;
       continue;
     }
@@ -81,7 +134,7 @@ export function MarkdownBody(props: { text: string }): ReactElement {
       const items: ReactElement[] = [];
       while (i < lines.length && /^[-*]\s+/.test(lines[i]!)) {
         items.push(
-          <li key={`li-${k}-${i}`}>{inline(lines[i]!.replace(/^[-*]\s+/, ""), `li${i}`)}</li>,
+          <li key={`li-${k}-${i}`}>{inline(lines[i]!.replace(/^[-*]\s+/, ""), `li${i}`, wiki)}</li>,
         );
         i++;
       }
@@ -99,7 +152,7 @@ export function MarkdownBody(props: { text: string }): ReactElement {
       para.push(lines[i]!);
       i++;
     }
-    blocks.push(<p key={`p-${k++}`}>{inline(para.join(" "), `p${k}`)}</p>);
+    blocks.push(<p key={`p-${k++}`}>{inline(para.join(" "), `p${k}`, wiki)}</p>);
   }
   return <div className="body-md">{blocks}</div>;
 }

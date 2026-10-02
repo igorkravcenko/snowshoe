@@ -24,5 +24,7 @@ The tree / local graph (default columns are `slug` + `children`; `--all-fields` 
 ```bash
 snowshoe map status --json --slug <focus>
 snowshoe map status --json --neighborhood --slug <focus>
-snowshoe map status --json --fields title,type,leaf,children,refs --slug <focus>
+snowshoe map status --json --fields title,type,leaf,children,refs,bodyOverview --slug <focus>
 ```
+
+Prefer `bodyOverview` when scanning many nodes; use `bodyMd` / `--all-fields` when the human needs full prose. Wiki links `[[slug]]` in bodies navigate in the map UI only (not auto-refs).

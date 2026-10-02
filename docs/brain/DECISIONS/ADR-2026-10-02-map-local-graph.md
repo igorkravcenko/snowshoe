@@ -23,7 +23,7 @@ The left-column Graph tab needed navigable local (ego) graph UX inspired by Obsi
 
 4. **Visit history** — one stack: browser History (URL hash + `pushState` / `popstate`), same as tree/breadcrumb Back/Forward. A React mirror exposes previous/next slugs for chrome. Neighbor (and other non-history) clicks `pushState`. Clicking the **previous** node calls `history.back()`; **next** calls `history.forward()` — so A→B→back to A does not append A-B-A.
 
-5. **Prev/next chrome** — color-coded **node border** only (not edges). If previous/next is not a structural neighbor, still show the node off-ring with no fabricated history edge.
+5. **Prev/next chrome** — compact **↺ / ↻ badges** at the top-left of the visit previous/next disks (not colored borders). Layout: previous always **left** of focus, next **right** (on-ring when a neighbor; otherwise bottom-left / bottom-right orphans). Free ring neighbors **reflow evenly** on the upper/lower arcs around those pins (not yanked after a uniform circle). Node tips use a fast in-pane tooltip (~40ms), not native SVG `<title>`. Right-click a node for a context menu of all mark kinds (same set as the inspector Mark control).
 
 ## Alternatives considered
 
@@ -31,11 +31,12 @@ The left-column Graph tab needed navigable local (ego) graph UX inspired by Obsi
 - Separate visit stack beside History — rejected; would diverge from browser Back/Forward.
 - Fetch `map status --neighborhood` per focus — rejected; data already in the loaded read-model.
 - Second graph object as SoT — rejected; duplicates nodes/edges and drifts on Reload/mark.
+- Color-coded prev/next borders — rejected; unreadable on metric bullseyes.
+- Undo/redo toolbar buttons — rejected; history mark belongs on the nodes.
 
 ## Consequences
 
 CURRENT and the Graph tab describe a working radial ego graph. Nav-tabs ADR Graph row is no longer a stub. Multi-hop, pan/zoom, physics, and edge labels remain out of scope.
-
 ## Evidence
 
 None beyond this change’s tests.

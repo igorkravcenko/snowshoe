@@ -69,19 +69,48 @@ describe("edge stroke families", () => {
 });
 
 describe("radialLayout", () => {
-  test("focus at center; orphans for non-neighbor prev/next", () => {
+  test("focus at center; orphan prev/next on bottom left/right", () => {
     const layout = radialLayout("focus", ["n1", "n2"], "prev", "next");
     expect(layout.positions.get("focus")).toEqual({ x: 0.5, y: 0.5 });
     expect(layout.ring).toEqual(["n1", "n2"]);
     expect(layout.orphans).toEqual(["prev", "next"]);
-    expect(layout.positions.get("prev")?.y).toBeLessThan(0.3);
-    expect(layout.positions.get("next")?.x).toBeGreaterThan(0.7);
+    const prev = layout.positions.get("prev")!;
+    const next = layout.positions.get("next")!;
+    expect(prev.x).toBeLessThan(0.5);
+    expect(next.x).toBeGreaterThan(0.5);
+    expect(prev.y).toBeGreaterThan(0.7);
+    expect(next.y).toBeGreaterThan(0.7);
+  });
+
+  test("neighbor prev pins left; next pins right", () => {
+    const layout = radialLayout("focus", ["prev", "other", "next"], "prev", "next");
+    expect(layout.orphans).toEqual([]);
+    const prev = layout.positions.get("prev")!;
+    const next = layout.positions.get("next")!;
+    expect(prev.x).toBeLessThan(0.5);
+    expect(Math.abs(prev.y - 0.5)).toBeLessThan(0.02);
+    expect(next.x).toBeGreaterThan(0.5);
+    expect(Math.abs(next.y - 0.5)).toBeLessThan(0.02);
+    // Sole free neighbor sits on top arc midpoint (even reflow, not a yanked hole).
+    const other = layout.positions.get("other")!;
+    expect(Math.abs(other.x - 0.5)).toBeLessThan(0.02);
+    expect(other.y).toBeLessThan(0.5);
+  });
+
+  test("two free neighbors split to top and bottom when both pins set", () => {
+    const layout = radialLayout("focus", ["prev", "a", "b", "next"], "prev", "next");
+    const a = layout.positions.get("a")!;
+    const b = layout.positions.get("b")!;
+    const ys = [a.y, b.y].sort((x, y) => x - y);
+    expect(ys[0]!).toBeLessThan(0.5);
+    expect(ys[1]!).toBeGreaterThan(0.5);
   });
 
   test("neighbor prev stays on ring, not orphaned", () => {
     const layout = radialLayout("focus", ["prev", "other"], "prev", null);
     expect(layout.orphans).toEqual([]);
     expect(layout.positions.has("prev")).toBe(true);
+    expect(layout.positions.get("prev")!.x).toBeLessThan(0.5);
   });
 });
 

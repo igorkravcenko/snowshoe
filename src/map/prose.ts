@@ -12,6 +12,28 @@ export function inlineBody(node: { body?: string; bodyMd?: string }): string | u
   return undefined;
 }
 
+/**
+ * First non-empty paragraph of markdown: stop at a blank line or an ATX heading.
+ * Used as the agent-facing overview slice of entity prose.
+ */
+export function firstParagraph(md: string): string {
+  const lines = md.replaceAll("\r\n", "\n").split("\n");
+  const para: string[] = [];
+  let started = false;
+  for (const line of lines) {
+    if (!started) {
+      if (line.trim() === "") continue;
+      if (/^#{1,6}\s/.test(line)) break;
+      started = true;
+      para.push(line);
+      continue;
+    }
+    if (line.trim() === "" || /^#{1,6}\s/.test(line)) break;
+    para.push(line);
+  }
+  return para.join("\n").trim();
+}
+
 export function readProseFile(repoRoot: string, proseRef: string): string | null {
   try {
     assertAllowedProseRef(repoRoot, proseRef);

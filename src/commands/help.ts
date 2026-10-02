@@ -11,7 +11,7 @@ export const AGENT_HELP = {
     "Do not write .snowshoe/ yourself.",
     "Entry for drain is work next.",
   ],
-  mark: "map mark|unmark or map detail mark|cancel only if this turn the human asked (named slug / this node / cancel that mark). Work kinds: expand (grow), enrich (fields/body), fix (repair). Do not crawl unmarked nodes.",
+  mark: "map mark|unmark or map detail mark|cancel only if this turn the human asked (named slug / this node / cancel that mark). Work kinds: detail (grow and/or rewrite), expand (grow), enrich (fields/body), fix (repair). Do not crawl unmarked nodes.",
   commands: [
     {
       run: "snowshoe help --json",
@@ -27,7 +27,7 @@ export const AGENT_HELP = {
     },
     {
       run: "snowshoe work complete --json",
-      when: "After a claimed step. Envelope on stdin or --input. See drain.md for payloads. Match item.kind (expand|enrich|fix).",
+      when: "After a claimed step. Envelope on stdin or --input. See drain.md for payloads. Match item.kind (detail|expand|enrich|fix).",
     },
     {
       run: "snowshoe init --json",
@@ -43,19 +43,19 @@ export const AGENT_HELP = {
     },
     {
       run: "snowshoe map status --json",
-      when: "Read the map. Default columns slug,children. --slug is one node; --depth subtree; --neighborhood ego graph; --all-fields full row. See map status --help.",
+      when: "Read the map. Default columns slug,children. --slug is one node; --depth subtree; --neighborhood ego graph; --all-fields full row. Prefer bodyOverview when scanning many nodes. See map status --help.",
     },
     {
-      run: "snowshoe map mark --json --slug <slug> --kind expand",
-      when: "Queue expand (grow/fill). Other work kinds: enrich (fields/body only), fix (repair). learn/quiz are not work next. Only if this turn they asked.",
+      run: "snowshoe map mark --json --slug <slug> --kind detail",
+      when: "Queue detail (grow and/or rewrite body). Narrow: expand (grow only), enrich (fields/body only), fix (repair). learn/quiz are not work next. Only if this turn they asked.",
     },
     {
       run: "snowshoe map detail mark --json --slug <slug>",
-      when: "Alias of map mark kind=expand. Only if this turn they asked to mark/expand that node.",
+      when: "Queue kind=detail (grow and/or rewrite). Only if this turn they asked to mark that node.",
     },
     {
       run: "snowshoe map detail cancel --json --slug <slug>",
-      when: "Drop pending expand/enrich/fix on that slug. Only if this turn they asked to cancel.",
+      when: "Drop pending detail/expand/enrich/fix on that slug. Only if this turn they asked to cancel.",
     },
     {
       run: "snowshoe map metric --json --slug <slug> --overview 0.8",

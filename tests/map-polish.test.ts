@@ -46,7 +46,15 @@ describe("map polish: marks, leaf, anchors", () => {
     expect(idle.json.action).toBe("idle");
     expect(idle.json.items).toEqual([]);
 
-    const leafMark = await snowshoe(repo, ["map", "detail", "mark", "--slug", "auth", "--json"]);
+    const leafMark = await snowshoe(repo, [
+      "map",
+      "mark",
+      "--slug",
+      "auth",
+      "--kind",
+      "expand",
+      "--json",
+    ]);
     expect(leafMark.exitCode).toBe(0);
     const enrich = await snowshoe(repo, [
       "map",

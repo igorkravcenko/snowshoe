@@ -164,6 +164,7 @@ header .header-sidebar-toggle {
   flex-direction: column;
   padding: 8px;
   gap: 6px;
+  position: relative;
 }
 
 .graph-svg {
@@ -202,7 +203,7 @@ header .header-sidebar-toggle {
 
 .graph-node-disk {
   stroke: transparent;
-  stroke-width: 0.7;
+  stroke-width: 0.55;
 }
 
 .graph-node:focus {
@@ -210,34 +211,60 @@ header .header-sidebar-toggle {
 }
 
 .graph-node:focus .graph-node-disk {
-  stroke: var(--text);
-  stroke-width: 0.55;
+  stroke: var(--muted);
+  stroke-width: 0.45;
 }
 
-.graph-node.focus .graph-node-disk {
-  stroke: var(--text);
-  stroke-width: 0.85;
+.graph-visit-badge {
+  font-size: 4.2px;
+  font-weight: 600;
+  pointer-events: none;
+  fill: var(--graph-prev);
 }
 
-.graph-node.prev .graph-node-disk {
-  stroke: var(--graph-prev);
-  stroke-width: 0.9;
-}
-
-.graph-node.next .graph-node-disk {
-  stroke: var(--graph-next);
-  stroke-width: 0.9;
-}
-
-.graph-node.prev.focus .graph-node-disk,
-.graph-node.next.focus .graph-node-disk {
-  stroke-width: 1;
+.graph-visit-badge.next {
+  fill: var(--graph-next);
 }
 
 .graph-node-label {
   fill: var(--text);
   font-size: 3.2px;
   pointer-events: none;
+}
+
+.graph-tip {
+  position: absolute;
+  z-index: 5;
+  max-width: 220px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #1b232c;
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.35;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  white-space: pre-wrap;
+}
+
+.graph-ctx-menu {
+  position: absolute;
+  z-index: 6;
+  top: auto;
+  left: auto;
+  margin-top: 0;
+}
+
+.graph-ctx-heading {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 4px 8px 6px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 12rem;
 }
 
 .graph-legend {
@@ -268,17 +295,14 @@ header .header-sidebar-toggle {
   border-top-color: var(--muted);
 }
 
-.graph-legend-swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 2px solid var(--graph-prev);
-  background: #243040;
+.graph-legend-badge {
+  color: var(--graph-prev);
+  font-size: 13px;
+  line-height: 1;
 }
 
-.graph-legend-swatch.next {
-  border-color: var(--graph-next);
+.graph-legend span:last-child .graph-legend-badge {
+  color: var(--graph-next);
 }
 
 .nav-panel.hidden {
@@ -815,4 +839,22 @@ button.linkish.active {
 
 .body-md a {
   color: var(--accent);
+}
+
+.body-md .wiki-link {
+  color: var(--accent);
+  font: inherit;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.body-md .wiki-missing {
+  color: var(--warn, #e6c84a);
+  text-decoration: underline wavy;
+  text-underline-offset: 2px;
 }

@@ -315,6 +315,8 @@ export function runWorkNext(
 
 function stepKindsMatch(envelope: string, step: string): boolean {
   if (envelope === step) return true;
+  // Legacy agents sent kind:detail for expand hops (detail used to alias expand).
+  if (envelope === "detail" && step === "expand") return true;
   const a = canonicalMapHop(envelope);
   const b = canonicalMapHop(step);
   return a !== null && a === b;
@@ -362,7 +364,8 @@ function formatWorkItem(session: Session, step: StepRow, epochId: string | null)
   if (isMapHopKind(step.kind)) {
     const hop = canonicalMapHop(step.kind) ?? "expand";
     const parent = step.parent_slug ? session.ledger.getNode(step.parent_slug) : null;
-    const types = hop === "expand" && parent ? allowedChildTypes(parent.type, false) : [];
+    const types =
+      (hop === "expand" || hop === "detail") && parent ? allowedChildTypes(parent.type, false) : [];
     return {
       ...base,
       kind: hop,
@@ -518,7 +521,6 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
       leaseExpiresAt: null,
     });
     session.ledger.removeMark(payload.parentSlug, hop);
-    if (hop === "expand") session.ledger.removeMark(payload.parentSlug, "detail");
     return { id: step.id, status: "accepted" };
   }
 
@@ -688,7 +690,6 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
       leaseExpiresAt: null,
     });
     session.ledger.removeMark(payload.parentSlug, hop);
-    if (hop === "expand") session.ledger.removeMark(payload.parentSlug, "detail");
   });
 
   return { id: step.id, status: "accepted" };
