@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { MapNode } from "../ui/src/api.ts";
 import {
+  applyGraphDisplay,
   buildEgoGraph,
   edgeStrokeClass,
   edgeStrokeFamily,
@@ -55,6 +56,28 @@ describe("buildEgoGraph", () => {
       neighbors: [],
       edges: [],
     });
+  });
+});
+
+describe("applyGraphDisplay", () => {
+  test("hiding refs drops ref edges and ref-only neighbors", () => {
+    const nodes = asMap([
+      node({ slug: "root", children: ["a", "b"], leaf: false }),
+      node({
+        slug: "a",
+        children: ["a1"],
+        leaf: false,
+        refs: [{ to: "b", kind: "uses" }],
+      }),
+      node({ slug: "b" }),
+      node({ slug: "a1" }),
+    ]);
+    const ego = buildEgoGraph("a", nodes);
+    const filtered = applyGraphDisplay(ego, { showRefs: false });
+    expect(filtered.neighbors).toEqual(["a1", "root"]);
+    expect(filtered.edges.every((e) => e.kind === "parent")).toBe(true);
+    expect(filtered.edges).not.toContainEqual({ from: "a", to: "b", kind: "uses" });
+    expect(applyGraphDisplay(ego, { showRefs: true })).toEqual(ego);
   });
 });
 

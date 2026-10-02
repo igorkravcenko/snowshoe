@@ -33,6 +33,30 @@ export function edgeStrokeClass(kind: string): string {
   return edgeStrokeFamily(kind) === "parent" ? "graph-edge-parent" : "graph-edge-ref";
 }
 
+/** Client-only draw filters for the ego graph (extensible). */
+export type GraphDisplayOptions = {
+  showRefs: boolean;
+};
+
+export const DEFAULT_GRAPH_DISPLAY: GraphDisplayOptions = {
+  showRefs: true,
+};
+
+/**
+ * Apply display filters to an ego cut.
+ * Hiding refs drops non-parent edges and neighbors that only appear via refs.
+ */
+export function applyGraphDisplay(ego: EgoGraph, opts: GraphDisplayOptions): EgoGraph {
+  if (opts.showRefs) return ego;
+  const edges = ego.edges.filter((e) => edgeStrokeFamily(e.kind) === "parent");
+  const neighborSet = new Set<string>();
+  for (const e of edges) {
+    if (e.from !== ego.focus) neighborSet.add(e.from);
+    if (e.to !== ego.focus) neighborSet.add(e.to);
+  }
+  return { focus: ego.focus, neighbors: [...neighborSet].sort(), edges };
+}
+
 /**
  * 1-hop ego cut from the shared MapNode index (same SoT as the tree).
  * Edges: parent→focus, focus→child, outgoing refs, incoming refs.

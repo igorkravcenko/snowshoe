@@ -168,6 +168,43 @@ header .header-sidebar-toggle {
   position: relative;
 }
 
+.graph-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  min-height: 1.5rem;
+}
+
+.graph-filter {
+  position: relative;
+}
+
+.graph-filter-btn {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.graph-filter-menu {
+  right: 0;
+  left: auto;
+  top: 100%;
+  min-width: 8rem;
+}
+
+.graph-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.graph-filter-row input {
+  margin: 0;
+}
+
 .graph-svg {
   flex: 1;
   min-height: 0;
@@ -241,9 +278,9 @@ header .header-sidebar-toggle {
 }
 
 .graph-tip {
-  position: absolute;
-  z-index: 5;
-  max-width: 220px;
+  position: fixed;
+  z-index: 1000;
+  max-width: 280px;
   padding: 4px 8px;
   border-radius: 4px;
   background: #1b232c;
