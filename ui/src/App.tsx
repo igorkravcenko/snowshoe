@@ -38,7 +38,7 @@ import {
 import { MetricTarget } from "./MetricTarget.tsx";
 import { mapFingerprint } from "./map-fingerprint.ts";
 import { MarkdownBody } from "./markdown.tsx";
-import { humanTodoRows, MARK_KINDS, MARK_LABELS, type MarkKind } from "./marks.ts";
+import { formatNodeTip, humanTodoRows, MARK_KINDS, MARK_LABELS, type MarkKind } from "./marks.ts";
 import { isExpandable } from "./matrix.ts";
 import { PreviewPanel } from "./Preview.tsx";
 import { applySplitDrag, DEFAULT_SPLIT, parseSplitWeights, type SplitWeights } from "./split.ts";
@@ -147,6 +147,8 @@ function mapViewHref(viewId: string, slug: string): string {
   return `${window.location.pathname}?${q.toString()}#${encodeURIComponent(slug)}`;
 }
 
+type MarkCtxMenu = { slug: string; x: number; y: number };
+
 function TreeNode(props: {
   slug: string;
   nodes: Map<string, MapNode>;
@@ -154,6 +156,7 @@ function TreeNode(props: {
   expanded: Set<string>;
   onSelect: (slug: string) => void;
   onToggle: (slug: string) => void;
+  onMarkContext: (slug: string, clientX: number, clientY: number) => void;
   onKeyDown: (e: KeyboardEvent, slug: string) => void;
   seen: Set<string>;
 }): ReactElement | null {
@@ -167,12 +170,21 @@ function TreeNode(props: {
   const pending = node.detailStatus;
   const hasKids = node.children.length > 0;
   const open = hasKids && props.expanded.has(node.slug);
+  const marks = node.marks ?? [];
+  const hasMarks = marks.length > 0;
+  const tip = formatNodeTip(node.title ?? node.slug, node.slug, marks);
   return (
     <div>
       <div
         className={`node${props.selected === node.slug ? " selected" : ""}`}
         data-slug={node.slug}
+        title={tip}
         onClick={() => props.onSelect(node.slug)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          props.onMarkContext(node.slug, e.clientX, e.clientY);
+        }}
         onDoubleClick={(e) => {
           if ((e.target as HTMLElement).closest("button.twirl")) return;
           if (hasKids) {
@@ -206,6 +218,7 @@ function TreeNode(props: {
         )}
         <MetricTarget metrics={node.metrics} />
         <span className="node-title">{node.title ?? node.slug}</span>
+        {hasMarks ? <span className="tree-mark-dot" aria-hidden /> : null}
         <span className="hint">{node.type}</span>
         {pending ? (
           <span className={`badge${pending === "leased" ? " leased" : ""}`}>{pending}</span>
@@ -225,6 +238,7 @@ function TreeNode(props: {
               expanded={props.expanded}
               onSelect={props.onSelect}
               onToggle={props.onToggle}
+              onMarkContext={props.onMarkContext}
               onKeyDown={props.onKeyDown}
               seen={seen}
             />
@@ -496,8 +510,10 @@ export function App(): ReactElement {
   const [navTab, setNavTab] = useState<NavTab>(loadNavTab);
   const [split, setSplit] = useState(loadSplit);
   const [markMenu, setMarkMenu] = useState(false);
+  const [treeCtx, setTreeCtx] = useState<MarkCtxMenu | null>(null);
   const [visit, setVisit] = useState<VisitMirror>(() => emptyVisitMirror());
   const layoutRef = useRef<HTMLDivElement | null>(null);
+  const treePanelRef = useRef<HTMLDivElement | null>(null);
   const viewBootstrapped = useRef(false);
   const skipHistoryPush = useRef(true);
 
@@ -634,6 +650,7 @@ export function App(): ReactElement {
     } catch {
       /* ignore */
     }
+    if (navTab !== "tree") setTreeCtx(null);
   }, [navTab]);
 
   useEffect(() => {
@@ -643,6 +660,24 @@ export function App(): ReactElement {
       /* ignore */
     }
   }, [split]);
+
+  useEffect(() => {
+    if (!treeCtx) return;
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") setTreeCtx(null);
+    };
+    const onPointer = (e: MouseEvent) => {
+      const t = e.target;
+      if (t instanceof Element && t.closest(".tree-ctx-menu")) return;
+      setTreeCtx(null);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onPointer);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onPointer);
+    };
+  }, [treeCtx]);
 
   useLayoutEffect(() => {
     if (!selected || !model) return;
@@ -661,6 +696,7 @@ export function App(): ReactElement {
 
   function selectNode(slug: string, historyMode: "push" | "replace" | "none" = "push") {
     setMarkMenu(false);
+    setTreeCtx(null);
     setSelected(slug);
     setExpanded((cur) => {
       const next = new Set(cur);
@@ -767,6 +803,7 @@ export function App(): ReactElement {
   async function onMark(slug: string, kind: MarkKind) {
     setBusy(true);
     setError(null);
+    setTreeCtx(null);
     try {
       await markNode(slug, kind);
       await reload();
@@ -774,6 +811,18 @@ export function App(): ReactElement {
       setError(err instanceof Error ? err.message : String(err));
       setBusy(false);
     }
+  }
+
+  function openTreeMarkCtx(slug: string, clientX: number, clientY: number) {
+    const box = treePanelRef.current?.getBoundingClientRect();
+    if (!box) return;
+    const menuW = 160;
+    const menuH = 220;
+    let x = clientX - box.left;
+    let y = clientY - box.top;
+    x = Math.max(4, Math.min(x, box.width - menuW - 4));
+    y = Math.max(4, Math.min(y, box.height - menuH - 4));
+    setTreeCtx({ slug, x, y });
   }
 
   async function onUnmark(slug: string, kind: string) {
@@ -903,6 +952,7 @@ export function App(): ReactElement {
               className={navTab === "tree" ? "nav-panel tree" : "nav-panel tree hidden"}
               role="tabpanel"
               aria-label="Map tree"
+              ref={treePanelRef}
             >
               {model ? (
                 <div role="tree" aria-label="Map tree">
@@ -913,6 +963,7 @@ export function App(): ReactElement {
                     expanded={expanded}
                     onSelect={selectNode}
                     onToggle={toggleExpand}
+                    onMarkContext={openTreeMarkCtx}
                     onKeyDown={onTreeKeyDown}
                     seen={new Set()}
                   />
@@ -920,6 +971,35 @@ export function App(): ReactElement {
               ) : (
                 <p className="hint">Loading read-model…</p>
               )}
+              {treeCtx ? (
+                <div
+                  className="tree-ctx-menu mark-menu"
+                  style={{ left: treeCtx.x, top: treeCtx.y }}
+                  role="menu"
+                  aria-label={`Mark ${treeCtx.slug}`}
+                >
+                  <div className="graph-ctx-heading">
+                    {nodes.get(treeCtx.slug)?.title ?? treeCtx.slug}
+                  </div>
+                  {MARK_KINDS.map((kind) => {
+                    const marked = new Set(nodes.get(treeCtx.slug)?.marks ?? []);
+                    return (
+                      <button
+                        key={kind}
+                        type="button"
+                        role="menuitem"
+                        disabled={busy || marked.has(kind)}
+                        onClick={() => {
+                          setTreeCtx(null);
+                          void onMark(treeCtx.slug, kind);
+                        }}
+                      >
+                        {MARK_LABELS[kind]}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
             <div
               className={navTab === "graph" ? "nav-panel graph-tab" : "nav-panel graph-tab hidden"}

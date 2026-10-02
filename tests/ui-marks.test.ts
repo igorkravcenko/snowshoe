@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { MapNode } from "../ui/src/api.ts";
-import { humanTodoRows, isHumanTodoKind } from "../ui/src/marks.ts";
+import { formatNodeTip, humanTodoRows, isHumanTodoKind } from "../ui/src/marks.ts";
 
 function node(partial: Partial<MapNode> & Pick<MapNode, "slug">): MapNode {
   return {
@@ -10,6 +10,14 @@ function node(partial: Partial<MapNode> & Pick<MapNode, "slug">): MapNode {
     ...partial,
   };
 }
+
+describe("formatNodeTip", () => {
+  test("marks go on a second line", () => {
+    expect(formatNodeTip("Auth", "auth", [])).toBe("Auth · auth");
+    expect(formatNodeTip("auth", "auth", [])).toBe("auth");
+    expect(formatNodeTip("Auth", "auth", ["detail", "learn"])).toBe("Auth · auth\nDetail, Learn");
+  });
+});
 
 describe("human todo marks", () => {
   test("learn and quiz are human todo kinds; work marks are not", () => {
