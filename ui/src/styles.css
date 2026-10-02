@@ -542,11 +542,21 @@ span.twirl {
   outline-offset: -1px;
 }
 
-.swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.metric-bars {
+  display: inline-flex;
   flex-shrink: 0;
+  align-items: stretch;
+  gap: 1px;
+  height: 12px;
+  width: 15px;
+  line-height: 0;
+}
+
+.metric-bars > i {
+  flex: 1;
+  display: block;
+  min-width: 0;
+  border-radius: 1px;
 }
 
 .badge {

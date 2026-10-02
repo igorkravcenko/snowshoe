@@ -5,9 +5,11 @@ import { runInit } from "./commands/init.ts";
 import {
   parseLeafFlag,
   parseMapStatusOpts,
+  parseMetricUpdates,
   runMapDetailCancel,
   runMapDetailMark,
   runMapMark,
+  runMapMetric,
   runMapSetLeaf,
   runMapStatus,
   runMapUnmark,
@@ -302,6 +304,37 @@ const mapLeafCmd = defineCommand({
   },
 });
 
+const mapMetricCmd = defineCommand({
+  meta: {
+    name: "metric",
+    description:
+      "Set comprehension metric floats on a node (overview/contracts/internals in [0,1]; not work next)",
+  },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+    slug: { type: "string", description: "Node slug", required: true },
+    overview: { type: "string", description: "overview float in [0,1]" },
+    contracts: { type: "string", description: "contracts float in [0,1]" },
+    internals: { type: "string", description: "internals float in [0,1]" },
+  },
+  run({ args }) {
+    return withSession((s) =>
+      emit(
+        runMapMetric(
+          s,
+          String(args.slug),
+          parseMetricUpdates({
+            overview: args.overview,
+            contracts: args.contracts,
+            internals: args.internals,
+          }),
+        ),
+        args.json,
+      ),
+    );
+  },
+});
+
 const mapDetailMarkCmd = defineCommand({
   meta: { name: "mark", description: "Enqueue kind=detail for a slug" },
   args: {
@@ -391,6 +424,7 @@ const mapCmd = defineCommand({
     mark: mapMarkCmd,
     unmark: mapUnmarkCmd,
     leaf: mapLeafCmd,
+    metric: mapMetricCmd,
     detail: mapDetailCmd,
     view: mapViewCmd,
     serve: mapServeCmd,

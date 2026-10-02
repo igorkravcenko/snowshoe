@@ -47,3 +47,4 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-10-01-map-polish](./ADR-2026-10-01-map-polish.md) | accepted | Leaf stop-flag; expand/enrich/fix hops; durable anchors; narrower split |
 | [ADR-2026-10-02-map-nav-tabs](./ADR-2026-10-02-map-nav-tabs.md) | accepted | Left column tabs: Tree / Graph / human Todos (`learn`/`quiz`) |
 | [ADR-2026-10-02-map-local-graph](./ADR-2026-10-02-map-local-graph.md) | accepted | Radial ego Graph tab; one MapReadModel; History prev/next borders |
+| [ADR-2026-10-02-map-metric-cli](./ADR-2026-10-02-map-metric-cli.md) | accepted | `map metric` sets node floats; HTTP twin; not work next / not quiz |

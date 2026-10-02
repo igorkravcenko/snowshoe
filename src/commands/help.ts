@@ -58,6 +58,10 @@ export const AGENT_HELP = {
       when: "Drop pending expand/enrich/fix on that slug. Only if this turn they asked to cancel.",
     },
     {
+      run: "snowshoe map metric --json --slug <slug> --overview 0.8",
+      when: "Set node metric floats (overview/contracts/internals in [0,1]). Not work next. Only if they asked to set understanding.",
+    },
+    {
       run: "snowshoe map serve",
       when: "Local map UI. Only if they asked to start it.",
     },

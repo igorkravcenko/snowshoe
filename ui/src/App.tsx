@@ -24,7 +24,7 @@ import {
   setLeaf,
   unmarkNode,
 } from "./api.ts";
-import { bandFor, colorFor, nodeFloat } from "./bands.ts";
+import { bandFor, colorFor } from "./bands.ts";
 import { FeedbackPane } from "./Feedback.tsx";
 import { GraphPanel } from "./Graph.tsx";
 import {
@@ -35,6 +35,7 @@ import {
   visitPrevSlug,
   visitPush,
 } from "./graph.ts";
+import { MetricTarget } from "./MetricTarget.tsx";
 import { mapFingerprint } from "./map-fingerprint.ts";
 import { MarkdownBody } from "./markdown.tsx";
 import { humanTodoRows, MARK_KINDS, MARK_LABELS, type MarkKind } from "./marks.ts";
@@ -163,7 +164,6 @@ function TreeNode(props: {
   }
   const seen = new Set(props.seen);
   seen.add(props.slug);
-  const float = nodeFloat(node.metrics);
   const pending = node.detailStatus;
   const hasKids = node.children.length > 0;
   const open = hasKids && props.expanded.has(node.slug);
@@ -204,7 +204,7 @@ function TreeNode(props: {
         ) : (
           <span className="twirl" aria-hidden />
         )}
-        <span className="swatch" style={{ background: colorFor(float) }} title={bandFor(float)} />
+        <MetricTarget metrics={node.metrics} />
         <span className="node-title">{node.title ?? node.slug}</span>
         <span className="hint">{node.type}</span>
         {pending ? (

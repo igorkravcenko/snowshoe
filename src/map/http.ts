@@ -2,11 +2,13 @@ import { existsSync, statSync } from "node:fs";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
 import { runFeedbackAdd, runFeedbackList, runFeedbackRemove } from "../commands/feedback.ts";
 import {
+  metricUpdatesFromBody,
   parseLeafFlag,
   parseMapStatusOpts,
   runMapDetailCancel,
   runMapDetailMark,
   runMapMark,
+  runMapMetric,
   runMapSetLeaf,
   runMapStatus,
   runMapUnmark,
@@ -114,7 +116,7 @@ async function readSlug(req: Request, url: URL): Promise<string> {
 }
 
 /**
- * HTTP twins of `snowshoe map status|mark|unmark|leaf` and `map detail mark|cancel`.
+ * HTTP twins of `snowshoe map status|mark|unmark|leaf|metric` and `map detail mark|cancel`.
  * GET /api/map/status returns the same JSON as `snowshoe map status --json`
  * (`fields`, `slug`, `depth`, `neighborhood`, `allFields` / `all-fields`).
  * GET /api/session is UI-only (repoRoot / gitHead / mapAnchor / locale); not part of the map read-model.
@@ -223,6 +225,15 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
       const leafRaw = url.searchParams.get("leaf") ?? body.leaf;
       return withSession((s) => {
         const result = runMapSetLeaf(s, slug, parseLeafFlag(leafRaw));
+        return jsonResponse(result.body, result.exitCode);
+      }, opts.cwd);
+    }
+
+    if (path === "/api/map/metric" && req.method === "POST") {
+      const body = await readJsonBody(req);
+      const slug = url.searchParams.get("slug") || (typeof body.slug === "string" ? body.slug : "");
+      return withSession((s) => {
+        const result = runMapMetric(s, slug, metricUpdatesFromBody(body));
         return jsonResponse(result.body, result.exitCode);
       }, opts.cwd);
     }
