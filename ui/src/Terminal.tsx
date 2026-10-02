@@ -9,16 +9,25 @@ function ptyWsUrl(viewId: string): string {
   return `${proto}//${window.location.host}/api/pty?${q.toString()}`;
 }
 
-export function TerminalPane(props: { viewId: string | null; active: boolean }): ReactElement {
+function TerminalSession(props: {
+  viewId: string;
+  active: boolean;
+  onSocketOpen: (open: boolean) => void;
+  onError: (message: string | null) => void;
+}): ReactElement {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const onSocketOpenRef = useRef(props.onSocketOpen);
+  const onErrorRef = useRef(props.onError);
+  onSocketOpenRef.current = props.onSocketOpen;
+  onErrorRef.current = props.onError;
 
   useEffect(() => {
-    if (!props.viewId) return;
     const el = hostRef.current;
     if (!el) return;
     let closed = false;
+    onErrorRef.current(null);
+    onSocketOpenRef.current(false);
     const term = new Terminal({
       cursorBlink: true,
       fontSize: 13,
@@ -41,17 +50,21 @@ export function TerminalPane(props: { viewId: string | null; active: boolean }):
     };
 
     ws.onopen = () => {
-      if (!closed) sendResize();
+      if (closed) return;
+      onSocketOpenRef.current(true);
+      sendResize();
     };
     ws.onmessage = (ev) => {
       if (typeof ev.data === "string") term.write(ev.data);
       else term.write(new Uint8Array(ev.data as ArrayBuffer));
     };
     ws.onerror = () => {
-      if (!closed) setError("PTY socket error (loopback peers only)");
+      if (!closed) onErrorRef.current("PTY socket error (loopback peers only)");
     };
     ws.onclose = () => {
-      if (!closed) term.writeln("\r\n[pty closed]");
+      if (closed) return;
+      onSocketOpenRef.current(false);
+      term.writeln("\r\n[pty closed]");
     };
     term.onData((data) => {
       if (ws.readyState === WebSocket.OPEN) ws.send(data);
@@ -73,14 +86,39 @@ export function TerminalPane(props: { viewId: string | null; active: boolean }):
     if (props.active) fitRef.current?.fit();
   }, [props.active]);
 
+  return <div ref={hostRef} className="xterm-host" />;
+}
+
+export function TerminalPane(props: { viewId: string | null; active: boolean }): ReactElement {
+  const [session, setSession] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [socketOpen, setSocketOpen] = useState(false);
+
   if (!props.viewId) {
     return <p className="hint">Waiting for view id…</p>;
   }
 
   return (
     <div className="sidebar-term">
+      <div className="term-toolbar">
+        <button
+          type="button"
+          className="term-restart"
+          onClick={() => setSession((n) => n + 1)}
+          title="Spawn a new PTY shell"
+        >
+          Restart
+        </button>
+        {!socketOpen ? <span className="hint">disconnected</span> : null}
+      </div>
       {error ? <p className="error">{error}</p> : null}
-      <div ref={hostRef} className="xterm-host" />
+      <TerminalSession
+        key={session}
+        viewId={props.viewId}
+        active={props.active}
+        onSocketOpen={setSocketOpen}
+        onError={setError}
+      />
     </div>
   );
 }

@@ -437,6 +437,19 @@ header .header-sidebar-toggle {
   display: flex;
   flex-direction: column;
   padding: 8px;
+  gap: 4px;
+}
+
+.term-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.term-restart {
+  padding: 2px 8px;
+  font-size: 12px;
 }
 
 .xterm-host {
