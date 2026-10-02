@@ -1,6 +1,6 @@
 import { existsSync, statSync } from "node:fs";
 import { extname, join, normalize, relative, resolve, sep } from "node:path";
-import { runFeedbackList } from "../commands/feedback.ts";
+import { runFeedbackAdd, runFeedbackList, runFeedbackRemove } from "../commands/feedback.ts";
 import {
   parseLeafFlag,
   parseMapStatusOpts,
@@ -120,6 +120,7 @@ async function readSlug(req: Request, url: URL): Promise<string> {
  * GET /api/session is UI-only (repoRoot / gitHead / mapAnchor / locale); not part of the map read-model.
  * GET /api/file is a read-only repo-root sandbox (no ledger writes).
  * GET /api/feedback is a twin of `snowshoe feedback list --json` (dev inbox; not the map).
+ * POST /api/feedback twins `feedback add`; DELETE /api/feedback?id= twins `feedback remove`.
  */
 export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise<Response> {
   const url = new URL(req.url);
@@ -162,6 +163,18 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
 
     if (path === "/api/feedback" && req.method === "GET") {
       const result = runFeedbackList(opts.cwd);
+      return jsonResponse(result.body, result.exitCode);
+    }
+
+    if (path === "/api/feedback" && req.method === "POST") {
+      const body = await readJsonBody(req);
+      const result = runFeedbackAdd(opts.cwd, body);
+      return jsonResponse(result.body, result.exitCode);
+    }
+
+    if (path === "/api/feedback" && req.method === "DELETE") {
+      const id = url.searchParams.get("id") ?? "";
+      const result = runFeedbackRemove(opts.cwd, id);
       return jsonResponse(result.body, result.exitCode);
     }
 

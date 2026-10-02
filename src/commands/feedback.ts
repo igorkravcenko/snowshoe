@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { CliError, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { gitHead } from "../git.ts";
@@ -50,7 +50,8 @@ function parseAddBody(raw: unknown): { text: string; command?: string } {
   return command ? { text, command } : { text };
 }
 
-function readEntries(repoRoot: string): FeedbackEntry[] {
+/** File order (oldest first). */
+function readEntriesChronological(repoRoot: string): FeedbackEntry[] {
   const path = feedbackLogPath(repoRoot);
   if (!existsSync(path)) return [];
   const lines = readFileSync(path, "utf8").split("\n");
@@ -74,8 +75,21 @@ function readEntries(repoRoot: string): FeedbackEntry[] {
       /* skip corrupt line */
     }
   }
-  out.reverse();
   return out;
+}
+
+function readEntries(repoRoot: string): FeedbackEntry[] {
+  return readEntriesChronological(repoRoot).reverse();
+}
+
+function writeEntriesChronological(repoRoot: string, entries: FeedbackEntry[]): void {
+  mkdirSync(feedbackDir(repoRoot), { recursive: true });
+  const path = feedbackLogPath(repoRoot);
+  if (entries.length === 0) {
+    writeFileSync(path, "");
+    return;
+  }
+  writeFileSync(path, `${entries.map((e) => JSON.stringify(e)).join("\n")}\n`);
 }
 
 export function runFeedbackAdd(
@@ -94,6 +108,27 @@ export function runFeedbackAdd(
   return {
     exitCode: EXIT_OK,
     body: envelope("feedback.add", repoRoot, gitHead(repoRoot), { entry }),
+  };
+}
+
+export function runFeedbackRemove(
+  cwd: string,
+  idRaw: string,
+): { exitCode: number; body: Record<string, unknown> } {
+  const repoRoot = findRepoRoot(cwd);
+  const id = idRaw.trim();
+  if (!id) {
+    throw new CliError("feedback remove requires --id", EXIT_USAGE);
+  }
+  const chrono = readEntriesChronological(repoRoot);
+  const next = chrono.filter((e) => e.id !== id);
+  if (next.length === chrono.length) {
+    throw new CliError(`Unknown feedback id: ${id}`, EXIT_USAGE);
+  }
+  writeEntriesChronological(repoRoot, next);
+  return {
+    exitCode: EXIT_OK,
+    body: envelope("feedback.remove", repoRoot, gitHead(repoRoot), { removedId: id }),
   };
 }
 

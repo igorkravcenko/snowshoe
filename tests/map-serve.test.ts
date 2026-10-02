@@ -72,6 +72,41 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect((cli.json.entries as Array<{ text: string }>)[0]?.text).toBe(httpJson.entries[0]?.text);
   });
 
+  test("POST/DELETE /api/feedback twin add and remove", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+
+    const added = await fetch(`${server.url}api/feedback`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: "from ui" }),
+    });
+    expect(added.ok).toBe(true);
+    const addJson = (await added.json()) as { entry: { id: string; text: string } };
+    expect(addJson.entry.text).toBe("from ui");
+
+    const listed = await fetch(`${server.url}api/feedback`);
+    const listJson = (await listed.json()) as { entries: Array<{ id: string }> };
+    expect(listJson.entries.some((e) => e.id === addJson.entry.id)).toBe(true);
+
+    const deleted = await fetch(
+      `${server.url}api/feedback?id=${encodeURIComponent(addJson.entry.id)}`,
+      { method: "DELETE" },
+    );
+    expect(deleted.ok).toBe(true);
+    const after = await fetch(`${server.url}api/feedback`);
+    const afterJson = (await after.json()) as { entries: Array<{ id: string }> };
+    expect(afterJson.entries.some((e) => e.id === addJson.entry.id)).toBe(false);
+  });
+
   test("GET /api/map/status matches CLI map status shape; mark/cancel via POST", async () => {
     const repo = makeGitRepo();
     await seedAuth(repo);

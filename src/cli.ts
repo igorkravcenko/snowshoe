@@ -1,5 +1,5 @@
 import { defineCommand } from "citty";
-import { runFeedbackAdd, runFeedbackList } from "./commands/feedback.ts";
+import { runFeedbackAdd, runFeedbackList, runFeedbackRemove } from "./commands/feedback.ts";
 import { runHelp } from "./commands/help.ts";
 import { runInit } from "./commands/init.ts";
 import {
@@ -412,6 +412,17 @@ const feedbackAddCmd = defineCommand({
   },
 });
 
+const feedbackRemoveCmd = defineCommand({
+  meta: { name: "remove", description: "Delete one local feedback note by id" },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+    id: { type: "string", description: "Feedback entry id", required: true },
+  },
+  run({ args }) {
+    return emit(runFeedbackRemove(process.cwd(), String(args.id)), args.json);
+  },
+});
+
 const feedbackListCmd = defineCommand({
   meta: { name: "list", description: "List local Snowshoe feedback (newest first)" },
   args: {
@@ -426,6 +437,7 @@ const feedbackCmd = defineCommand({
   meta: { name: "feedback", description: "Optional local inbox for notes about Snowshoe" },
   subCommands: {
     add: feedbackAddCmd,
+    remove: feedbackRemoveCmd,
     list: feedbackListCmd,
   },
 });

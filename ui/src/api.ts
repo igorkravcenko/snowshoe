@@ -104,6 +104,25 @@ export async function fetchFeedback(): Promise<FeedbackEntry[]> {
   return body.entries ?? [];
 }
 
+export async function addFeedback(text: string, command?: string): Promise<FeedbackEntry> {
+  const payload: { text: string; command?: string } = { text };
+  if (command?.trim()) payload.command = command.trim();
+  const res = await fetch("/api/feedback", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const body = await readJson<{ entry?: FeedbackEntry; error?: string }>(res);
+  if (!res.ok || !body.entry) throw new Error(body.error ?? `feedback add HTTP ${res.status}`);
+  return body.entry;
+}
+
+export async function removeFeedback(id: string): Promise<void> {
+  const res = await fetch(`/api/feedback?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+  const body = await readJson<{ ok?: boolean; error?: string; removedId?: string }>(res);
+  if (!res.ok) throw new Error(body.error ?? `feedback remove HTTP ${res.status}`);
+}
+
 export async function fetchSession(): Promise<SessionInfo> {
   const res = await fetch("/api/session");
   const body = await readJson<SessionInfo & { error?: string }>(res);
