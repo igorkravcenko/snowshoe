@@ -39,6 +39,13 @@ Day-1 hygiene, all free:
 Drop “indie private repo” phrasing. Hygiene and reporting rules do not depend
 on GitHub visibility. Flip to public is a separate ops step, not this ADR.
 
+## Amendment 2026-10-04: both workflows + Bun pin
+
+- Pin `actions/checkout` by full SHA in **both** `ci.yml` and `brain-docs.yml`
+  (same pin + human tag comment).
+- Top-level `permissions: contents: read` on both workflows.
+- Pin `bun-version: "1.4.2"` in app CI (no floating `latest`).
+
 Docs-only `.github/workflows/brain-docs.yml` is unchanged here (no job widen).
 
 ## Alternatives considered

@@ -39,7 +39,7 @@ Thin framework. **Default recommendation: citty.** **commander** is an acceptabl
 
 ### Map UI path (later, not day-1 code)
 
-`snowshoe map` (provisional binary spelling) opens a tiny local HTTP server and the system browser. UI: **React + Vite**; **tree-first**. Understanding **bands are display-only** over float metrics (see proposed epoch ADR for the float domain; do not store bands as the source of truth).
+`snowshoe map` (provisional binary spelling) opens a tiny local HTTP server and the system browser. UI: **React + Vite**; **tree-first**. Understanding **bands are display-only** over float metrics (see proposed epoch ADR for the float domain; do not store bands as the source of truth). Amendment 2026-10-04: `map serve` binds **loopback only**; PTY and `/api/file` require a loopback `Host` header ([map-ui ADR](./ADR-2026-09-27-map-ui-and-skill.md)).
 
 ### Binary name
 

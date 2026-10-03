@@ -18,6 +18,7 @@ import { DEFAULT_MAP_EXPAND_DEPTH } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_INTERNAL, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { findRepoRoot, requireInitialized } from "../paths.ts";
 import { FileReadError, readRepoFile } from "./file-read.ts";
+import { loopbackHostHeaderOrError } from "./loopback.ts";
 import type { MapViewStore } from "./views.ts";
 
 const MIME: Record<string, string> = {
@@ -130,6 +131,12 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
 
   try {
     if (path === "/api/file" && req.method === "GET") {
+      if (!loopbackHostHeaderOrError(req)) {
+        return jsonHttp(
+          { schemaVersion: 1, ok: false, error: "File API requires a loopback Host header" },
+          403,
+        );
+      }
       const repoRoot = findRepoRoot(opts.cwd);
       requireInitialized(repoRoot);
       const result = readRepoFile(repoRoot, url.searchParams.get("path") ?? "", {

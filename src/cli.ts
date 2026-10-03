@@ -389,7 +389,11 @@ const mapServeCmd = defineCommand({
   },
   args: {
     port: { type: "string", description: "Port (default 8787; 0 = ephemeral)", default: "8787" },
-    host: { type: "string", description: "Bind address (default 127.0.0.1)", default: "127.0.0.1" },
+    host: {
+      type: "string",
+      description: "Loopback bind only (default 127.0.0.1; localhost / ::1 also ok)",
+      default: "127.0.0.1",
+    },
     open: { type: "boolean", description: "Open the system browser", default: false },
     "expand-depth": {
       type: "string",

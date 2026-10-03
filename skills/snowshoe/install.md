@@ -18,14 +18,15 @@ Requires **Bun** (`>=1.1`). From the package root:
 ```bash
 bun install --frozen-lockfile
 bun link
+# ensure ~/.bun/bin is on PATH (bun link alone does not edit your shell PATH)
 ```
 
-Put Bun’s global bin on PATH (often `~/.bun/bin`). Then:
+Then:
 
 ```bash
 command -v snowshoe
 command -v snoe
-snowshoe --help
+snowshoe --help   # exit 0; command index (does not mutate the ledger)
 ```
 
 `bun link` is **one global** symlink. It does not follow git worktrees. If you
