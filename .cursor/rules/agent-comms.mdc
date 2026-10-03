@@ -7,10 +7,14 @@ alwaysApply: true
 
 ## Language
 
-- **User-facing chat:** Russian.
-- **English:** code, comments, `docs/**`, brain files, skills, rules, `AGENTS.md`, commit messages, and PRs.
+- **User-facing chat:** English by default; match the human if they write in
+  another language.
+- **English required** for code, comments, `docs/**`, brain files, skills, rules,
+  `AGENTS.md`, commit messages, and PRs.
 
-Do not mix: a Russian user reply is fine; the files you write into the repo stay English.
+Maintainer-only chat preference (Russian) lives in the private overlay rule
+`maintainer-chat.mdc` after `./scripts/link-private-overlay.sh` — not in public
+canon.
 
 ## Trust boundary (docs ≠ instructions)
 

@@ -7,7 +7,7 @@ date: 2026-09-27
 
 Manual try of [e2e-happy-path-no-learning.md](./e2e-happy-path-no-learning.md). Put **`snowshoe` on PATH** (see `skills/snowshoe/install.md`: `bun link` / `npm link` from the package root). Then, in the repo you are mapping:
 
-1. `snowshoe init --json --locale ru` (or `en`; or start with `snowshoe work next --json` and follow `todo`, adding `--locale` on init)
+1. `snowshoe init --json --locale en` (any BCP-47 tag; or start with `snowshoe work next --json` and follow `todo`, adding `--locale` on init)
 2. Load skill `skills/snowshoe/` (gate; Cursor uses `.cursor/skills/snowshoe` symlink). Ask it to drain Snowshoe work (`drain.md`).
 3. Agent starts at `snowshoe work next --json` → follows `todo` / `items` → `work complete` (detail upserts include a `body` in that locale).
 4. `snowshoe map serve --open` → walk the tree (default `--expand-depth 1`: root open, deeper collapsed; click selects, double-click expands/collapses; arrows ↑/↓ and ←/→ expand/collapse; drag the column gutters to resize tree / inspector / sidebar; breadcrumbs; browser Back/Forward via `#slug`). Header SHA is the epoch target (red if HEAD moved). Header toggles a right sidebar (Terminal PTY first, Code preview second; loopback peers only). From that shell, `snowshoe map view --json` re-reads the focused slug. Inspector shows entity body markdown. UI assets come from the `snowshoe` on PATH (`bun link` clone), not from cwd if those differ.

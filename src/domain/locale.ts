@@ -7,7 +7,7 @@ export function normalizeLocale(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed || !BCP47.test(trimmed)) {
     throw new CliError(
-      `Invalid locale (BCP-47 language tag expected, e.g. ru or en): ${raw}`,
+      `Invalid locale (BCP-47 language tag expected, e.g. en or en-US): ${raw}`,
       EXIT_USAGE,
     );
   }

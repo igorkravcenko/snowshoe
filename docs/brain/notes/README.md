@@ -8,9 +8,6 @@ Use [../templates/NOTE_TEMPLATE.md](../templates/NOTE_TEMPLATE.md).
 |---|---|
 | [process_controls.md](./process_controls.md) | note |
 | [product-form-detail.md](./product-form-detail.md) | note |
-| [vision-open-questions.md](./vision-open-questions.md) | note |
-| [naming-history-rejected.md](./naming-history-rejected.md) | note |
-| [composite-skill-gaps.md](./composite-skill-gaps.md) | note |
 | [routine-epoch-metrics.md](./routine-epoch-metrics.md) | note / working lock, 2026-09-25 |
 | [routine-cli-and-fsm.md](./routine-cli-and-fsm.md) | note / working lock, 2026-09-25 |
 | [routine-cli-adr-gaps.md](./routine-cli-adr-gaps.md) | note |
@@ -23,3 +20,7 @@ Use [../templates/NOTE_TEMPLATE.md](../templates/NOTE_TEMPLATE.md).
 | [how-to-try-e2e.md](./how-to-try-e2e.md) | note / short manual try of map UI + skill |
 | [ui-ledger-split.md](./ui-ledger-split.md) | note / Tech Lead — UI dumb client of util |
 | [gaps-vs-adr-b-work-bus.md](./gaps-vs-adr-b-work-bus.md) | note / carve-outs vs proposed ADR-B (do not rewrite ADR) |
+
+Naming history, vision open questions, composite-skill gaps, GTM sketch, and
+pre-repo provenance live in private maintainers docs (`docs/private` after
+overlay link).

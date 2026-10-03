@@ -37,4 +37,5 @@ See [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md).
 
 ## See also
 
-Rejected naming angles (history, not canon): [../notes/naming-history-rejected.md](../notes/naming-history-rejected.md).
+Rejected naming angles (history, not canon): private maintainers note
+`docs/private/notes/naming-history-rejected.md` after overlay link.

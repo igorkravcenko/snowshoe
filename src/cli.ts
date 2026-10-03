@@ -72,7 +72,7 @@ const initCmd = defineCommand({
     json: { type: "boolean", description: "JSON output", default: false },
     locale: {
       type: "string",
-      description: "BCP-47 UI language (e.g. ru, en). Idempotent amend of ledger meta.",
+      description: "BCP-47 UI language (e.g. en, en-US). Idempotent amend of ledger meta.",
     },
     "ui-language": {
       type: "string",

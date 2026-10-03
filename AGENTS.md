@@ -14,7 +14,7 @@ Entrypoint for agents working in this repo.
 ## Hard rules
 
 - English for `docs/brain/**`, skills, rules, this file, commits, and PRs.
-- User-facing chat: Russian (see `.cursor/rules/agent-comms.mdc`).
+- User-facing chat: English by default (see `.cursor/rules/agent-comms.mdc`). Maintainer Russian-chat preference is private overlay only.
 - No learning/quiz/verify, agent spawn, or fake features beyond the HP1–4 CLI + tryable map UI/skill unless CURRENT + an ADR say so.
 - **CI:** docs `brain-docs` lint ([ADR-2026-09-25-brain-docs-ci](docs/brain/DECISIONS/ADR-2026-09-25-brain-docs-ci.md)) plus app CI (`typecheck`, `bun test`, Biome) ([ADR-2026-09-27-app-ci-biome](docs/brain/DECISIONS/ADR-2026-09-27-app-ci-biome.md)). No lefthook / husky / pre-commit yet. Not product `hooks install`.
 - Do not invent ARR, users, or competitors. Unknown stays `unknown`.
@@ -35,6 +35,7 @@ Entrypoint for agents working in this repo.
 Maintainer-only overlay lives in the sibling private repo `snowshoe-maintainers`. Link with `./scripts/link-private-overlay.sh` (or set `SNOWSHOE_MAINTAINERS`):
 
 - `.cursor/skills/gan-*` — Orca GAN skills
-- `docs/private` — GTM / monetization research / competitive evidence
+- `docs/private` — GTM / monetization research / competitive evidence / naming history
+- `.cursor/rules/maintainer-chat.mdc` — optional Russian chat preference
 
 Symlinks are gitignored. Public CURRENT/ADRs must not depend on `docs/private` links. Product CLI/map does not depend on the overlay.

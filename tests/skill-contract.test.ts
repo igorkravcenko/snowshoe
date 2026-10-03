@@ -47,7 +47,7 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
       "work next --json",
       "work next --json --wait",
       "init --json",
-      "init --json --locale ru",
+      "init --json --locale en",
       "routine refresh --json",
       "routine status --json",
       "work complete --json",

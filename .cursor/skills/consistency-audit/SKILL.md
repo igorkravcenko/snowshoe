@@ -73,4 +73,4 @@ Output exactly:
 - Do not invent product direction
 - Do not open a smell-only rewrite epic
 - If GAN already ran: do not re-litigate Closed items; only raise new consistency misses
-- User-facing chat is Russian (see `.cursor/rules/agent-comms.mdc`). File patches and proposed docs stay English unless the artifact itself is Russian user-facing prose.
+- User-facing chat defaults to English (see `.cursor/rules/agent-comms.mdc`). File patches and proposed docs stay English unless the artifact itself is user-facing prose in another language.

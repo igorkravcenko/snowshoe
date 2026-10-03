@@ -11,7 +11,7 @@ This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable loc
 ```bash
 bun install --frozen-lockfile
 bun link                  # puts `snowshoe` on PATH (see skills/snowshoe/install.md)
-snowshoe init --json --locale ru
+snowshoe init --json --locale en
 bun test
 bun run typecheck
 bun run check
@@ -22,7 +22,7 @@ bun run check
 ## How to try (E2E)
 
 1. `bun install --frozen-lockfile` then put `snowshoe` on PATH (`bun link`).
-2. `snowshoe init --json --locale ru` (or `en`; or `snowshoe work next --json` and follow `todo`).
+2. `snowshoe init --json --locale en` (any BCP-47 tag; or `snowshoe work next --json` and follow `todo`).
 3. Load `skills/snowshoe/` (Cursor: `.cursor/skills/snowshoe` symlink) and ask the agent to drain Snowshoe work.
 4. Agent: `snowshoe work next --json` then `work complete` (detail payload uses `children` + `refs` + `body` in that locale).
 5. `snowshoe map serve --open` — walk the tree; inspector shows entity body.
