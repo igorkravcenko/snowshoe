@@ -9,7 +9,7 @@ One page. Matches CURRENT. Brand is provisional.
 
 ## Name and subtitle
 
-- **Working name:** Snowshoe (not final). **Backup:** Catchmark. Informal *snow* in discussion is not a locked short form.
+- **Working title:** Snowshoe. **Backup:** Catchmark. Informal *snow* in discussion is not a locked short form. npm package: `@igorkravcenko/snowshoe`.
 - **Subtitle:** Catch up after pull.
 
 ## Wedge

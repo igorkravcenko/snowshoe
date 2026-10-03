@@ -1,5 +1,5 @@
 {
-  "name": "snowshoe",
+  "name": "@igorkravcenko/snowshoe",
   "version": "0.0.1",
   "private": true,
   "license": "Apache-2.0",
@@ -7,6 +7,14 @@
   "type": "module",
   "bin": {
     "snowshoe": "./src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igorkravcenko/snowshoe.git"
+  },
+  "homepage": "https://github.com/igorkravcenko/snowshoe#readme",
+  "bugs": {
+    "url": "https://github.com/igorkravcenko/snowshoe/issues"
   },
   "scripts": {
     "snowshoe": "bun src/index.ts",

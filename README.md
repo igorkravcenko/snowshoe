@@ -4,9 +4,11 @@
 
 A git-native, ideally OSS layer for a *personal* repo comprehension map. After commits or `git pull`, show what went stale; the human chooses what to catch up on.
 
-Working name is **Snowshoe** (not final). Backup: **Catchmark**.
+Working title: **Snowshoe** (backup **Catchmark**). Subtitle: *Catch up after pull.*
 
 This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable local map UI** and drain skill. The spec-driven “brain” remains the source of claims. Routine epoch ADRs are still **proposed**.
+
+**Install (day-1):** requires [Bun](https://bun.sh) (`>=1.1`). No Homebrew formula. Do **not** use bare npm `snowshoe` (unrelated SnowShoe Stamp client). Registry package name is `@igorkravcenko/snowshoe`; PATH binary stays **`snowshoe`**.
 
 ```bash
 bun install --frozen-lockfile
@@ -17,7 +19,9 @@ bun run typecheck
 bun run check
 ```
 
-`.snowshoe/` is personal/local and gitignored. `init` does not install git hooks. Install binary is **`snowshoe`** (not `snow`).
+When published: `bun add -g @igorkravcenko/snowshoe` (or `npm i -g @igorkravcenko/snowshoe`).
+
+`.snowshoe/` is personal/local and gitignored. `init` does not install git hooks.
 
 ## How to try (E2E)
 

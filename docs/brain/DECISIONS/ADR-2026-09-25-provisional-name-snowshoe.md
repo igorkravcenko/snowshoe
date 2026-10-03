@@ -35,6 +35,13 @@ Optional user-local shell alias (e.g. `alias snoe=snowshoe`) is convenience only
 
 See [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md).
 
+## Amendment 2026-10-04: npm package scope
+
+Bare npm name `snowshoe` is taken by an unrelated SnowShoe Stamp API client
+(`snowshoestamp/snowshoe_node`). The registry package for this product is
+**`@igorkravcenko/snowshoe`**. PATH / install binary remains **`snowshoe`**.
+Do not document bare `npx snowshoe` or `npm i -g snowshoe` for this project.
+
 ## See also
 
 Rejected naming angles (history, not canon): private maintainers note

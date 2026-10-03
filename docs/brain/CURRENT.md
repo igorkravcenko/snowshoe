@@ -37,7 +37,7 @@ No Snowshoe ARR or user counts exist to cite. Do not invent them.
 
 ## Name
 
-[ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md). PATH / install binary is **`snowshoe`**. Informal discussion shorthand *snow* is not CLI and not PATH. Optional user-local alias `snoe` is convenience only. Rejected naming angles stay in private maintainers docs (after overlay), not public canon.
+[ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md). PATH / install binary is **`snowshoe`**. npm package name is **`@igorkravcenko/snowshoe`** (bare `snowshoe` on npm is unrelated). Informal discussion shorthand *snow* is not CLI and not PATH. Optional user-local alias `snoe` is convenience only. Rejected naming angles stay in private maintainers docs (after overlay), not public canon.
 
 ## Now
 
