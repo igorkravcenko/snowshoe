@@ -1,6 +1,12 @@
 import { existsSync } from "node:fs";
-import { join, normalize, relative, resolve, sep } from "node:path";
+import { dirname, join, normalize, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import { CliError, EXIT_USAGE } from "./errors.ts";
+
+/** Install / source root of the snowshoe package (skills/, ui/, package.json). */
+export function snowshoePackageRoot(): string {
+  return resolve(dirname(fileURLToPath(import.meta.url)), "..");
+}
 
 export const SNOWSHOE_DIR = ".snowshoe";
 export const LEDGER_FILE = "ledger.sqlite";

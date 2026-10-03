@@ -26,7 +26,7 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | ADR | Status | One line |
 |---|---|---|
 | [ADR-2026-09-25-provisional-name-snowshoe](./ADR-2026-09-25-provisional-name-snowshoe.md) | accepted | Working name Snowshoe; backup Catchmark; PATH bin `snowshoe` (not `snow`) |
-| [ADR-2026-09-25-monetization-ladder](./ADR-2026-09-25-monetization-ladder.md) | accepted | OSS core free → paid convenience → team seats later |
+| [ADR-2026-09-25-monetization-ladder](./ADR-2026-09-25-monetization-ladder.md) | accepted | OSS core free forever; billing off; WTP/paid sketches private |
 | [ADR-2026-09-25-personal-state-gitignore](./ADR-2026-09-25-personal-state-gitignore.md) | accepted | Personal ledger gitignored / local by default |
 | [ADR-2026-09-25-product-form-orchestrator](./ADR-2026-09-25-product-form-orchestrator.md) | accepted | CLI-first orchestrator; agents are pluggable workers |
 | [ADR-2026-09-25-v1-surfaces](./ADR-2026-09-25-v1-surfaces.md) | accepted | Accepted (intent); UX/copy still open; hooks opt-in (not default init) |
@@ -38,7 +38,7 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-09-27-app-ci-biome](./ADR-2026-09-27-app-ci-biome.md) | accepted | App CI: typecheck, bun test, Biome; keep brain-docs; no lefthook |
 | [ADR-2026-09-27-map-ui-and-skill](./ADR-2026-09-27-map-ui-and-skill.md) | accepted | Tryable local map UI (`map serve`) + drain skill; A/B stay proposed |
 | [ADR-2026-09-27-ci-supply-chain-hygiene](./ADR-2026-09-27-ci-supply-chain-hygiene.md) | accepted | Pin Actions SHA + frozen-lockfile CI + SECURITY.md; no paid scanners |
-| [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md) | accepted | Skill gate + `drain.md`/`learn.md`; `work next` gates drain; PATH `snowshoe`; batch 5 |
+| [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md) | accepted | Skill at `skills/snowshoe/` (+ Cursor symlink); `work next` gates; PATH `snowshoe`; batch 5 |
 | [ADR-2026-09-27-detail-children-refs](./ADR-2026-09-27-detail-children-refs.md) | accepted | Detail `children`/`refs`; parent enrich; retire/clearEdges in subtree |
 | [ADR-2026-09-27-work-next-wait](./ADR-2026-09-27-work-next-wait.md) | accepted | `work next --wait` blocks idle; not a daemon; skill opt-in |
 | [ADR-2026-09-29-map-pty-channel](./ADR-2026-09-29-map-pty-channel.md) | accepted | Loopback-peer PTY in map UI + `map view`; not chat/HITL/learning |
@@ -49,3 +49,5 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-10-02-map-local-graph](./ADR-2026-10-02-map-local-graph.md) | accepted | Radial ego Graph tab; one MapReadModel; History prev/next borders |
 | [ADR-2026-10-02-map-metric-cli](./ADR-2026-10-02-map-metric-cli.md) | accepted | `map metric` sets node floats; HTTP twin; not work next / not quiz |
 | [ADR-2026-10-02-detail-body-wiki](./ADR-2026-10-02-detail-body-wiki.md) | accepted | `detail` hop = expand∪enrich; `bodyOverview`; UI wiki `[[slug]]` |
+| [ADR-2026-10-02-apache-2-0-license](./ADR-2026-10-02-apache-2-0-license.md) | accepted | Product repo licensed Apache-2.0 (`LICENSE` + `NOTICE`) |
+| [ADR-2026-10-03-skill-cli-install](./ADR-2026-10-03-skill-cli-install.md) | accepted | `skill list|cat|install --skills-path`; opt-in; no harness enum |

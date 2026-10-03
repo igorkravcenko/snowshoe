@@ -1,6 +1,6 @@
 ---
 status: canonical
-updated: 2026-09-25
+updated: 2026-10-03
 ---
 
 # Positioning
@@ -27,7 +27,7 @@ Form: CLI-first **orchestrator** — owns freshness + verify; agents are pluggab
 ## Not (v1)
 
 - Chat hell / “ask the repo” as the product  
-- AI code review (wrong buyer, wrong price shelf, wrong expectations)  
+- AI code review  
 - Multiplayer knowledge graph as the first wedge  
 - Agent HITL / control plane  
 - Nested full agent harness  
@@ -35,15 +35,7 @@ Form: CLI-first **orchestrator** — owns freshness + verify; agents are pluggab
 
 ## Monetization (summary)
 
-Not implementing billing. Full decision: [ADR-2026-09-25-monetization-ladder](../brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md).
-
-- **Core:** OSS / local map + catch-up signal — free forever  
-- **Paid:** sync / hosted freshness / multi-device convenience (and maybe a commercial binary later)  
-- **Team seats:** only when shared surfaces exist; not a solo seat tax  
-- **Solo WTP test:** $5–20/mo (hypothesis; no public anchor for this exact wedge)  
-- **Avoid:** core paywall, CodeRabbit-class AI-review pricing/messaging, enterprise-only day 1, invented ARR/users  
-
-There is no proven public price for a personal post-pull comprehension map as of 25 Sep 2026. Do not pretend otherwise on a landing page.
+Not implementing billing. OSS / local core **free forever**. Policy: [ADR-2026-09-25-monetization-ladder](../brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md). No public price bands; later paid/team sketches stay in private maintainers docs after overlay.
 
 ## Differentiate vs platform “catch me up”
 

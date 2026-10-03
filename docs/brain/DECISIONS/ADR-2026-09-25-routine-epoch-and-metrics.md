@@ -93,7 +93,7 @@ Learning CLI, verify/green protocol, team sharing, snowshoe invoking agent backe
 
 ## Consequences
 
-- CURRENT should cite this once accepted (CoS/Igor promote — not this package).  
+- CURRENT should cite this once accepted (CoS / product owner promote — not this package).  
 - CLI/FSM, schemas, severity tables live in companion ADR.  
 - Implementation pre-code until accepted.  
 - Parent contracts aggregation may be refined later without changing float storage.

@@ -10,8 +10,6 @@ Frontmatter: `status: evidence` (or `superseded` if withdrawn).
 
 | File | Role |
 |---|---|
-| [2026-09-25-pre-repo-discussion-sources.md](./2026-09-25-pre-repo-discussion-sources.md) | Pointers to pre-repo box artifacts (provenance only) |
-| [2026-09-25-skills-overlap-brief.md](./2026-09-25-skills-overlap-brief.md) | Condensed skills-store scan vs the Snowshoe wedge |
-| [2026-09-25-solutions-ranking.md](./2026-09-25-solutions-ranking.md) | Condensed solutions ranking vs wedge; evidence ≠ truth |
+| [2026-09-25-pre-repo-discussion-sources.md](./2026-09-25-pre-repo-discussion-sources.md) | Pointers to pre-repo author working copies (provenance only) |
 
-Public analog prices used in the monetization ADR were taken from a 25 Sep 2026 research brief and cited there, not copied as living evidence files.
+Skills-overlap, solutions ranking, GTM sketch, and monetization analog research live in private maintainers docs (`docs/private` after `./scripts/link-private-overlay.sh`). Not linked from public canon.

@@ -19,7 +19,7 @@ Entrypoint for agents working in this repo.
 - **CI:** docs `brain-docs` lint ([ADR-2026-09-25-brain-docs-ci](docs/brain/DECISIONS/ADR-2026-09-25-brain-docs-ci.md)) plus app CI (`typecheck`, `bun test`, Biome) ([ADR-2026-09-27-app-ci-biome](docs/brain/DECISIONS/ADR-2026-09-27-app-ci-biome.md)). No lefthook / husky / pre-commit yet. Not product `hooks install`.
 - Do not invent ARR, users, or competitors. Unknown stays `unknown`.
 - Do not import trading / Nautilus / portfolio / bots from other repos.
-- **Quality:** Chief of Staff owns consistency audit on docs PRs before merge (`.github/agents/auditor.agent.md` / `grill-canon`). Agents draft packages on the shared box; do not race a shared local clone.
+- **Quality:** Chief of Staff owns consistency audit on docs PRs before merge (`.github/agents/auditor.agent.md` / `grill-canon`). Agents draft packages carefully; do not race a shared local clone.
 
 ## Skills
 
@@ -29,5 +29,12 @@ Entrypoint for agents working in this repo.
 | `grilling` | Stress-test a plan or decision (rounds + frontier) |
 | `grill-me` | User says "grill me" / wants to be interviewed |
 | `grill-canon` | Audit CURRENT/ADRs for staleness or contradiction |
-| `snowshoe` | Gate: PATH `snowshoe` (`install.md` only if missing), then `drain.md` (`work next`) or `learn.md` (map conversation; `SNOWSHOE_MODE=learn`) |
+| `snowshoe` | Product skill at `skills/snowshoe/` (Cursor: `.cursor/skills/snowshoe` symlink). Gate: PATH `snowshoe` (`install.md` only if missing), then `drain.md` (`work next`) or `learn.md`. Working repo without skill files: `snowshoe skill install --json --skills-path <harness-skills-dir>` |
 | `.github/agents/auditor.agent.md` | Read-only consistency audit (CoS before merge) |
+
+Maintainer-only overlay lives in the sibling private repo `snowshoe-maintainers`. Link with `./scripts/link-private-overlay.sh` (or set `SNOWSHOE_MAINTAINERS`):
+
+- `.cursor/skills/gan-*` — Orca GAN skills
+- `docs/private` — GTM / monetization research / competitive evidence
+
+Symlinks are gitignored. Public CURRENT/ADRs must not depend on `docs/private` links. Product CLI/map does not depend on the overlay.

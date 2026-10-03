@@ -1,6 +1,6 @@
 ---
 status: living
-updated: 2026-09-27
+updated: 2026-10-03
 ---
 
 # ROADMAP
@@ -27,15 +27,11 @@ Init, detail map, routine epoch, mixed queue, local `snowshoe map serve`, in-rep
 
 ## 3. Harness skills (parallel, after form lock)
 
-Publish skills into popular harness skill stores as an *entry* path (Orca-supported agents as a non-binding reference list). Skills teach the protocol; state stays with the CLI. See evidence: skills overlap brief.
+Publish skills into popular harness skill stores as an *entry* path (Orca-supported agents as a non-binding reference list). Skills teach the protocol; state stays with the CLI. Skills-overlap evidence is private maintainers (after overlay).
 
-## 4. Paid convenience (later)
+## 4. Later (not now)
 
-Only after a local core exists. Sync / hosted freshness / multi-device — see monetization ADR. Billing is not in scope now.
-
-## 5. Team seats (later still)
-
-Only on shared surfaces, when a second person is on the same map. Not a solo seat tax.
+Billing / paid layers / team seats are **out of scope** for the current slice. Intent sketches stay in private maintainers (`docs/private/notes/monetization-analogs-2026-09-25.md` after overlay). Public policy: OSS core free forever — [monetization ADR](./DECISIONS/ADR-2026-09-25-monetization-ladder.md).
 
 ## Explicitly not on this roadmap
 

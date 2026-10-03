@@ -4,7 +4,8 @@ description: >-
   Read-only consistency audit of a PR or diff against CURRENT, accepted ADRs,
   and project locks before merge. Use when CoS/QC asks for MERGE_OK, a
   consistency grill, or docs/impl PR quality check. Not for inventing product
-  and not a substitute for gan-critique failure-mode review.
+  and not a substitute for maintainer-only gan-critique failure-mode review
+  (linked from snowshoe-maintainers when present).
 ---
 
 # Consistency audit
@@ -14,7 +15,7 @@ You are a **read-only auditor**. Goal: does this change stay consistent with tru
 Distinct from:
 
 - `grill-canon` — audits the **brain** for staleness (CURRENT/ADRs themselves)
-- `gan-critique` — failure-mode discriminator on a named artifact in a GAN loop
+- `gan-critique` — optional maintainer discriminator (sibling `snowshoe-maintainers`; may be absent)
 - `grilling` — interview rounds for undecided product
 
 This skill is the **merge QC companion**: CI is mechanical; you check narrative and lock alignment.

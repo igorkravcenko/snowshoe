@@ -11,7 +11,7 @@ Accepted.
 
 ## Context
 
-Default workflow discussion (Igor × Brainstormer, 2026-09-25): data next to the repo (e.g. `.snowshoe`) is attractive for a git-native tool, but a *personal* comprehension / competence map in shared git creates merge noise, social leakage (“who doesn’t know what”), and PR pollution. Project model and personal ledger are different objects.
+Default workflow discussion (product owner × Brainstormer, 2026-09-25): data next to the repo (e.g. `.snowshoe`) is attractive for a git-native tool, but a *personal* comprehension / competence map in shared git creates merge noise, social leakage (“who doesn’t know what”), and PR pollution. Project model and personal ledger are different objects.
 
 ## Decision
 

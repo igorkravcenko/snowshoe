@@ -10,6 +10,7 @@ export const AGENT_HELP = {
     "Pass --json and parse stdout.",
     "Do not write .snowshoe/ yourself.",
     "Entry for drain is work next.",
+    "If this repo has no snowshoe skill yet: snowshoe skill install --json --skills-path <harness-skills-dir> (e.g. .cursor/skills). Not part of init.",
   ],
   mark: "map mark|unmark or map detail mark|cancel only if this turn the human asked (named slug / this node / cancel that mark). Work kinds: detail (grow and/or rewrite), expand (grow), enrich (fields/body), fix (repair). Do not crawl unmarked nodes.",
   commands: [
@@ -76,6 +77,18 @@ export const AGENT_HELP = {
     {
       run: "snowshoe feedback remove --json --id <id>",
       when: "Delete one local feedback note by id (from feedback list).",
+    },
+    {
+      run: "snowshoe skill list --json",
+      when: "List packaged product skill files (SKILL.md / drain / learn / install).",
+    },
+    {
+      run: "snowshoe skill cat --json SKILL.md",
+      when: "Print one packaged skill file (bootstrap without writing to the repo).",
+    },
+    {
+      run: "snowshoe skill install --json --skills-path .cursor/skills",
+      when: "Copy packaged skill into <skills-path>/snowshoe/. Opt-in; harness picks the path. --force to overwrite diffs.",
     },
   ],
 } as const;

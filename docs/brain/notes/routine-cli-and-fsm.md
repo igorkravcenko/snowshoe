@@ -5,7 +5,7 @@ date: 2026-09-25
 
 # Note: Routine CLI shape + FSM ownership (locked intent)
 
-**Status:** locked in discussion with Igor (2026-09-25). Not CURRENT. Candidate material for ADR after grill gaps below are closed.  
+**Status:** locked in discussion with the product owner (2026-09-25). Not CURRENT. Candidate material for ADR after grill gaps below are closed.  
 **Companion:** [routine-epoch-metrics.md](./routine-epoch-metrics.md) (epochs, routine vs learning, mandatory metrics).  
 **Proposed ADR (not CURRENT):** [ADR-2026-09-25-routine-cli-and-fsm.md](../DECISIONS/ADR-2026-09-25-routine-cli-and-fsm.md).  
 **Scope:** **routine only** (обучение deferred). Concrete command *families* are locked; exact JSON Schema bodies and flag spelling may still tighten in ADR.

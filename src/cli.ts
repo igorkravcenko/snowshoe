@@ -17,6 +17,7 @@ import {
 import { runMapView } from "./commands/map-view.ts";
 import { runRoutineAdvance, runRoutineRefresh, runRoutineStatus } from "./commands/routine.ts";
 import { withSession } from "./commands/session.ts";
+import { runSkillCat, runSkillInstall, runSkillList } from "./commands/skill.ts";
 import {
   readStdinOrFlag,
   runWorkComplete,
@@ -476,6 +477,81 @@ const feedbackCmd = defineCommand({
   },
 });
 
+const skillListCmd = defineCommand({
+  meta: { name: "list", description: "List packaged product skill files" },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+  },
+  run({ args }) {
+    return emit(runSkillList(process.cwd()), args.json);
+  },
+});
+
+const skillCatCmd = defineCommand({
+  meta: {
+    name: "cat",
+    description: "Print one packaged skill file (SKILL.md|drain.md|learn.md|install.md)",
+  },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+    file: {
+      type: "positional",
+      description: "Skill file name",
+      required: true,
+    },
+  },
+  run({ args }) {
+    return emit(runSkillCat(String(args.file), process.cwd()), args.json);
+  },
+});
+
+const skillInstallCmd = defineCommand({
+  meta: {
+    name: "install",
+    description: "Copy packaged skill into <skills-path>/snowshoe/ (opt-in; not part of init)",
+  },
+  args: {
+    json: { type: "boolean", description: "JSON output", default: false },
+    "skills-path": {
+      type: "string",
+      description: "Harness skills directory (e.g. .cursor/skills)",
+    },
+    skillsPath: {
+      type: "string",
+      description: "Camel alias of --skills-path",
+    },
+    force: {
+      type: "boolean",
+      description: "Overwrite files that differ from the packaged skill",
+      default: false,
+    },
+  },
+  run({ args }) {
+    return emit(
+      runSkillInstall(
+        {
+          skillsPath: args["skills-path"] ?? args.skillsPath,
+          force: Boolean(args.force),
+        },
+        process.cwd(),
+      ),
+      args.json,
+    );
+  },
+});
+
+const skillCmd = defineCommand({
+  meta: {
+    name: "skill",
+    description: "Packaged product skill (list / cat / install into a harness skills dir)",
+  },
+  subCommands: {
+    list: skillListCmd,
+    cat: skillCatCmd,
+    install: skillInstallCmd,
+  },
+});
+
 const helpCmd = defineCommand({
   meta: { name: "help", description: "Agent command index (JSON)" },
   args: {
@@ -499,5 +575,6 @@ export const main = defineCommand({
     work: workCmd,
     map: mapCmd,
     feedback: feedbackCmd,
+    skill: skillCmd,
   },
 });

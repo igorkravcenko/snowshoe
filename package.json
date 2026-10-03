@@ -2,6 +2,7 @@
   "name": "snowshoe",
   "version": "0.0.1",
   "private": true,
+  "license": "Apache-2.0",
   "description": "Snowshoe — catch up after pull. Git-native personal repo comprehension map (CLI).",
   "type": "module",
   "bin": {

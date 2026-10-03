@@ -25,7 +25,7 @@ Not v1: chat hell, AI code review, multiplayer knowledge graph, agent HITL/contr
 - Research docs carry YAML `status:` frontmatter
 - Behavior or product-claim changes require an ADR **and** a CURRENT update in the same change
 - Protocol: `.cursor/skills/brain-protocol/SKILL.md`
-- Supervised GAN: `.cursor/skills/gan-orchestrate` over Orca (`orca status --json`, `run-create` / `worker-start` / `check --wait`; workers: `gan-generate` / `gan-critique`). Fail-closed if not in Orca. Not a teammate-chat relay.
+- Maintainer overlay (optional): `./scripts/link-private-overlay.sh` from sibling `snowshoe-maintainers` → `.cursor/skills/gan-*` + `docs/private`. GAN fail-closed if not in Orca. Public canon must not link `docs/private`. Product does not depend on the overlay.
 - Docs PR quality: CoS merge QC uses `.cursor/skills/consistency-audit` before merge; CI is a tripwire only. Brain staleness stays `grill-canon`.
 
 Do not invent ARR, users, or competitors. Unknown stays `unknown`.

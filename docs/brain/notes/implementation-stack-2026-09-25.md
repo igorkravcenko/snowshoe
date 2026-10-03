@@ -3,7 +3,7 @@ status: note
 date: 2026-09-25
 ---
 
-# Note: Implementation stack + clarifications (Igor × Tech Lead, 2026-09-25)
+# Note: Implementation stack + clarifications (product owner × Tech Lead, 2026-09-25)
 
 Working memory. **Not truth.** Durable lock: [ADR-2026-09-25-implementation-stack.md](../DECISIONS/ADR-2026-09-25-implementation-stack.md). Hooks amendment: [ADR-2026-09-25-v1-surfaces.md](../DECISIONS/ADR-2026-09-25-v1-surfaces.md).
 

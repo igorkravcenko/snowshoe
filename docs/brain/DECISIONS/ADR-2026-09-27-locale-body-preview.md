@@ -11,7 +11,7 @@ Accepted. Amends init / detail complete / map read-model / map UI from [ADR-2026
 
 ## Context
 
-After detail, the map inspector showed metrics and anchors but not human-readable entity prose. Anchor clicks were `vscode://` only; the in-UI Code preview from PR #11 (`GET /api/file`) was missing on current `ui/src/App.tsx` after later merges. Igor: show entity bodies in the user's language; set language at init.
+After detail, the map inspector showed metrics and anchors but not human-readable entity prose. Anchor clicks were `vscode://` only; the in-UI Code preview from PR #11 (`GET /api/file`) was missing on current `ui/src/App.tsx` after later merges. Product owner: show entity bodies in the user's language; set language at init.
 
 ## Decision
 

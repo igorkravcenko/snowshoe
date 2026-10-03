@@ -17,7 +17,7 @@ Agents are a user sidestep: they exercise the CLI/skill while a human maps a rep
 
 - Optional `snowshoe feedback add --json` appends one JSONL row under gitignored `.snowshoe/feedback/log.jsonl` in **mapped cwd** (personal, not telemetry). `snowshoe feedback list --json` reads newest first. `snowshoe feedback remove --json --id <id>` deletes one row by rewriting the log. Write may mkdir that dir without a full ledger init.
 - HTTP twins: `GET /api/feedback` (list), `POST /api/feedback` (add body `{ text, command? }`), `DELETE /api/feedback?id=` (remove). The map UI Feedback tab can list, add, and delete (fetch on tab; light poll while open).
-- Gate [`SKILL.md`](../../../.cursor/skills/snowshoe/SKILL.md) may mention the add command in a few lines (when it might help; not required; no secrets; continue drain/learn). Not a third intent branch. `drain.md` / `learn.md` do not nag.
+- Gate [`SKILL.md`](../../../skills/snowshoe/SKILL.md) may mention the add command in a few lines (when it might help; not required; no secrets; continue drain/learn). Not a third intent branch. `drain.md` / `learn.md` do not nag.
 - Not SQLite, not FSM, no replies, no `work complete` from feedback.
 
 ## Alternatives considered

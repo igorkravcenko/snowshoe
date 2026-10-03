@@ -14,7 +14,11 @@ Assume **`snowshoe` is on PATH**. Always pass `--json` and parse the result.
 
 The install binary is **`snowshoe`**. A user-local shell alias such as `snoe` is optional convenience.
 
-Drive the CLI. Prefer `snowshoe help --json` over guessing flags. Do not write the ledger yourself. Do not start `map serve` unless the human asked.
+If this working repo is missing the skill files under the harness skills dir, run
+`snowshoe skill install --json --skills-path <harness-skills-dir>` (e.g. `.cursor/skills`
+for Cursor). Opt-in; not part of `init`. Prefer `snowshoe help --json` over guessing flags.
+
+Drive the CLI. Do not write the ledger yourself. Do not start `map serve` unless the human asked.
 
 If **this turn** they asked to mark, expand, enrich, fix, detail, or cancel named node(s) (or “this node”): `snowshoe map mark --json --slug <slug> --kind detail` (or `expand` / `enrich` / `fix`; `map detail mark` queues `detail`). Do not mark a tour of the tree. Then continue the drain/learn branch.
 
