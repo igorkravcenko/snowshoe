@@ -36,7 +36,7 @@ See [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md).
 
 ## Amendment 2026-10-04: short PATH bin `snoe`
 
-Package `bin` ships two names to the same entrypoint (Cursor-style multi-alias):
+Package `bin` ships two names to the same entrypoint:
 
 - **`snowshoe`** — canonical install / docs / skills / agents
 - **`snoe`** — short PATH alias (same binary)

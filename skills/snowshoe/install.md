@@ -7,10 +7,9 @@ description: >-
 # Install `snowshoe` on PATH
 
 The **canonical PATH binary** is `snowshoe`. A short PATH alias **`snoe`**
-points at the same entrypoint (declared in package `bin`, like Cursor’s
-multi-name CLI). Skills and agents should still invoke `snowshoe`. The npm
-package name is scoped `@igorkravcenko/snowshoe` (bare npm `snowshoe` is a
-different, unrelated package).
+points at the same entrypoint (package `bin`). Skills and agents should still
+invoke `snowshoe`. The npm package name is scoped `@igorkravcenko/snowshoe`
+(bare npm `snowshoe` is a different, unrelated package).
 
 ## From a clone (current day-1)
 
