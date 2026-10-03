@@ -4,9 +4,7 @@
 
 A git-native, ideally OSS layer for a *personal* repo comprehension map. After commits or `git pull`, show what went stale; the human chooses what to catch up on.
 
-Working title: **Snowshoe** (backup **Catchmark**).
-
-This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable local map UI** and drain skill. The spec-driven “brain” remains the source of claims. Routine epoch ADRs are still **proposed**.
+This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable local map UI** and drain skill. Routine epoch ADRs are still **proposed**.
 
 **Install (day-1):** requires [Bun](https://bun.sh) (`>=1.1`). No Homebrew formula. Do **not** use bare npm `snowshoe` (unrelated SnowShoe Stamp client). Registry package name is `@igorkravcenko/snowshoe`; PATH binary stays **`snowshoe`**.
 

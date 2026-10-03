@@ -23,7 +23,8 @@ Use Snowshoe in docs and agent language until a later ADR replaces it. Do not sp
 
 ## Consequences
 
-- CURRENT, README, and positioning say "provisional"
+- CURRENT and positioning keep **provisional** + backup **Catchmark** (internal product lock)
+- **User-facing** surfaces (README, CLI help, UI, packaged skills, npm `description`) ship **Snowshoe** + locked subtitle only — no Catchmark, no “working title / provisional / backup” hedges
 - A future rename is an ADR + CURRENT rewrite, not a silent find-replace in chat
 - Catchmark is reserved as backup only; do not ship dual branding
 
@@ -49,6 +50,10 @@ Locked subtitle is now:
 **Don't let your agents outrun your understanding. Keep your footing.**
 
 Former line *Catch up after pull* is retired as the positioning subtitle (may still appear as colloquial product-behavior language, not brand lock).
+
+## Amendment 2026-10-04: user-facing name surface
+
+Backup **Catchmark** and “provisional / working title” language stay in CURRENT, this ADR, positioning, and agent rules — not in README / CLI / UI / skills / package blurb. Dual branding on public install surfaces is a defect.
 
 ## See also
 
