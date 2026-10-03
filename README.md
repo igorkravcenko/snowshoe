@@ -54,6 +54,10 @@ Agents start at [AGENTS.md](AGENTS.md), then [docs/brain/START_HERE.md](docs/bra
 
 OSS / local core **free forever**. No billing in this repo. Policy: [docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md](docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md).
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md).
+
 ## License
 
 [Apache License 2.0](LICENSE). See [NOTICE](NOTICE) and [ADR-2026-10-02-apache-2-0-license](docs/brain/DECISIONS/ADR-2026-10-02-apache-2-0-license.md).

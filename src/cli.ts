@@ -565,8 +565,7 @@ const helpCmd = defineCommand({
 export const main = defineCommand({
   meta: {
     name: "snowshoe",
-    description:
-      "Don't let your agents outrun your understanding. Keep your footing.",
+    description: "Don't let your agents outrun your understanding. Keep your footing.",
     version: "0.0.1",
   },
   subCommands: {
