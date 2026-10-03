@@ -1,7 +1,7 @@
 ---
 name: snowshoe
 description: >-
-  Snowshoe personal repo map. After pull or catch-up: drain via work next
+  Snowshoe personal comprehension map of a repository. After pull or catch-up: drain via work next
   (init / routine refresh / routine advance, then complete claimed steps).
   In the map PTY or when studying the map (SNOWSHOE_MODE=learn): talk about
   the tree using map view / map status. PATH binary snowshoe; install.md
