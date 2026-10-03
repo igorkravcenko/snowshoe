@@ -1,5 +1,5 @@
 import type { Server, ServerWebSocket } from "bun";
-import { isLoopbackPeer } from "./loopback.ts";
+import { isLoopbackPeer, loopbackHostHeaderOrError } from "./loopback.ts";
 
 export type PtyWsData = {
   viewId: string;
@@ -33,6 +33,9 @@ export function tryUpgradeMapPty(
   const ip = server.requestIP(req)?.address ?? null;
   if (!isLoopbackPeer(ip)) {
     return jsonError("PTY is allowed only for loopback peers", 403);
+  }
+  if (!loopbackHostHeaderOrError(req)) {
+    return jsonError("PTY requires a loopback Host header", 403);
   }
   const viewId = url.searchParams.get("v") ?? "";
   const upgraded = server.upgrade(req, {

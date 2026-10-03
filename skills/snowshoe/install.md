@@ -1,7 +1,7 @@
 ---
 name: snowshoe-install
 description: >-
-  How to put the `snowshoe` binary on PATH (`bun link` / scoped registry).
+  How to put the `snowshoe` binary on PATH (`bun add -g` / `bun link`).
 ---
 
 # Install `snowshoe` on PATH
@@ -11,16 +11,32 @@ points at the same entrypoint (package `bin`). Skills and agents should still
 invoke `snowshoe`. The npm package name is scoped `@igorkravcenko/snowshoe`
 (bare npm `snowshoe` is a different, unrelated package).
 
-## From a clone (current day-1)
+<!-- TODO(OWNER): remove after @igorkravcenko/snowshoe is on npm — copy assumes published -->
 
-Requires **Bun** (`>=1.1`). From the package root:
+## Published package (normal path)
+
+Requires **Bun** (`>=1.1`):
+
+```bash
+bun add -g @igorkravcenko/snowshoe
+# or
+npm install -g @igorkravcenko/snowshoe
+command -v snowshoe
+command -v snoe
+snowshoe --help   # exit 0; command index (does not mutate the ledger)
+```
+
+## From a clone (contributors)
+
+From the package root:
 
 ```bash
 bun install --frozen-lockfile
 bun link
+# ensure ~/.bun/bin is on PATH (bun link alone does not edit your shell PATH)
 ```
 
-Put Bun’s global bin on PATH (often `~/.bun/bin`). Then:
+Then:
 
 ```bash
 command -v snowshoe
@@ -40,16 +56,6 @@ npm link
 ```
 
 There is no Homebrew formula and no promise of bare `npx snowshoe`.
-
-## When the scoped package is published
-
-```bash
-bun add -g @igorkravcenko/snowshoe
-# or
-npm install -g @igorkravcenko/snowshoe
-```
-
-That still installs **`snowshoe`** and **`snoe`** on PATH.
 
 ## Skill files into a working repo (opt-in)
 

@@ -24,11 +24,14 @@ function expectEscape(requested: string, repo: string): void {
   }
 }
 
-async function fileApi(repo: string, query: string): Promise<Response> {
-  return handleMapHttp(new Request(`http://127.0.0.1/api/file?${query}`), {
-    cwd: repo,
-    uiDist: join(repo, "no-ui"),
-  });
+async function fileApi(repo: string, query: string, host = "127.0.0.1"): Promise<Response> {
+  return handleMapHttp(
+    new Request(`http://127.0.0.1/api/file?${query}`, { headers: { Host: host } }),
+    {
+      cwd: repo,
+      uiDist: join(repo, "no-ui"),
+    },
+  );
 }
 
 describe("repo file sandbox (GET /api/file)", () => {

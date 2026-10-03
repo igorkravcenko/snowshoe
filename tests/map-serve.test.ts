@@ -414,4 +414,51 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(viaFlags.exitCode).toBe(0);
     expect(viaFlags.json.slug).toBe("root");
   });
+
+  test("rejects non-loopback --host", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const viaCli = await snowshoe(repo, [
+      "map",
+      "serve",
+      "--json",
+      "--host",
+      "0.0.0.0",
+      "--port",
+      "0",
+    ]);
+    expect(viaCli.exitCode).toBe(2);
+    expect(String(viaCli.json.error)).toMatch(/loopback/i);
+
+    await expect(
+      startMapServer({
+        cwd: repo,
+        port: 0,
+        hostname: "192.168.1.9",
+        open: false,
+        buildUi: false,
+      }),
+    ).rejects.toThrow(/loopback/i);
+  });
+
+  test("GET /api/file rejects non-loopback Host", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+    const bad = await fetch(`${server.url}api/file?path=README.md&start=1&end=1`, {
+      headers: { Host: "evil.example" },
+    });
+    expect(bad.status).toBe(403);
+    const ok = await fetch(`${server.url}api/file?path=README.md&start=1&end=1`, {
+      headers: { Host: `127.0.0.1:${server.port}` },
+    });
+    expect(ok.status).toBe(200);
+  });
 });

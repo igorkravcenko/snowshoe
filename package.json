@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "license": "Apache-2.0",
-  "description": "Snowshoe — don't let your agents outrun your understanding. Keep your footing. Git-native personal repo comprehension map (CLI).",
+  "description": "Snowshoe — don't let your agents outrun your understanding. Keep your footing. A git-native personal comprehension map of a repository — tracks what goes stale after pull.",
   "type": "module",
   "bin": {
     "snowshoe": "./src/index.ts",

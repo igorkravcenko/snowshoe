@@ -6,6 +6,7 @@ import { gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
 import { findRepoRoot, requireInitialized, snowshoePackageRoot } from "../paths.ts";
 import { handleMapHttp } from "./http.ts";
+import { isLoopbackHost } from "./loopback.ts";
 import { mapPtyWebsocket, type PtyWsData, tryUpgradeMapPty } from "./pty.ts";
 import { createMapViewStore } from "./views.ts";
 
@@ -113,6 +114,12 @@ export async function startMapServer(opts: {
   }
   const uiDist = mapUiDistDir(packageRoot);
   const hostname = opts.hostname ?? "127.0.0.1";
+  if (!isLoopbackHost(hostname)) {
+    throw new CliError(
+      `--host must be loopback (127.0.0.1, localhost, ::1); got ${hostname}`,
+      EXIT_USAGE,
+    );
+  }
   const requestedPort = opts.port ?? 8787;
   const expandDepth = opts.expandDepth ?? DEFAULT_MAP_EXPAND_DEPTH;
   const views = createMapViewStore();

@@ -40,6 +40,14 @@ Skill contract (gate + PATH `snowshoe`, `work next` gating, default `--batch-siz
 - Navigable map remains a **secondary** surface (surfaces ADR). This slice only makes that on-demand face runnable.
 - Test runner stays `bun test`. UI smoke does not replace HP1–4 CLI tests.
 
+## Amendment 2026-10-04: loopback-only bind + Host checks
+
+`snowshoe map serve --host` accepts **loopback only** (`127.0.0.1`, `localhost`,
+`::1`). No LAN / `0.0.0.0` hatch in this slice. PTY upgrade and `GET /api/file`
+also require a **loopback `Host` header** (DNS-rebinding mitigation: peer IP can
+still be loopback while `Host` is attacker-controlled). Documented in
+`SECURITY.md`.
+
 ## Evidence
 
 - [../notes/e2e-happy-path-no-learning.md](../notes/e2e-happy-path-no-learning.md)

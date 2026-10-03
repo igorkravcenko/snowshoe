@@ -16,24 +16,30 @@ changes aligned with shipped intent — do not invent product features in a PR.
 
 ## Dev setup
 
-Requires [Bun](https://bun.sh) (`>=1.1`).
+Requires [Bun](https://bun.sh) (`>=1.1`). From a clone:
 
 ```bash
 bun install --frozen-lockfile
-bun link                  # PATH: snowshoe (+ snoe)
-bun test
-bun run typecheck
-bun run check
+bun link                  # PATH: snowshoe (+ snoe); ensure ~/.bun/bin is on PATH
 ```
 
 Personal ledger lives under `.snowshoe/` (gitignored). `init` does not install
 git hooks.
 
+## Checks before review
+
+```bash
+bun test
+bun run typecheck
+bun run check
+```
+
+If you change brain docs: `python3 scripts/ops/lint_brain_docs.py`.
+
 ## Pull requests
 
 - Keep the diff scoped to one intent.
 - Include tests when changing CLI / map / skill behavior.
-- Run `bun test`, `bun run typecheck`, and `bun run check` before asking for review.
-- If you change brain docs, run `python3 scripts/ops/lint_brain_docs.py`.
+- Run the checks above before asking for review.
 
 License: Apache-2.0 (`LICENSE` + `NOTICE`).

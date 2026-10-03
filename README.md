@@ -1,63 +1,73 @@
 # Snowshoe
 
+[![License: Apache-2.0](https://img.shields.io/github/license/igorkravcenko/snowshoe)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/igorkravcenko/snowshoe/ci.yml?branch=main)](https://github.com/igorkravcenko/snowshoe/actions/workflows/ci.yml)
+
 **Don't let your agents outrun your understanding. Keep your footing.**
 
-A git-native, ideally OSS layer for a *personal* repo comprehension map. After commits or `git pull`, show what went stale; the human chooses what to catch up on.
+Do not `npm i -g snowshoe`. That package is an unrelated stamp client. This
+project is `@igorkravcenko/snowshoe`.
 
-This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable local map UI** and drain skill. Routine epoch ADRs are still **proposed**.
+After a pull or a big merge, Snowshoe shows what in your personal map went stale.
+You choose what to catch up on. Agents can help. They don't get to outrun you.
 
-**Install (day-1):** requires [Bun](https://bun.sh) (`>=1.1`). No Homebrew formula. Do **not** use bare npm `snowshoe` (unrelated SnowShoe Stamp client). Registry package name is `@igorkravcenko/snowshoe`; PATH bins are **`snowshoe`** (canonical) and **`snoe`** (short alias).
+Your map lives in `.snowshoe/` and stays gitignored. Local, git-native,
+Apache-2.0. Not a team wiki. Not an agent control panel.
+
+<!-- TODO(OWNER): replace with docs/assets/map-after-pull.png -->
+_Screenshot placeholder: map after pull (stale nodes + catch-up). See [docs/assets/](docs/assets/)._
+
+## Install
+
+<!-- TODO(OWNER): remove after @igorkravcenko/snowshoe is on npm — copy assumes published -->
+
+You need Bun 1.1+.
+
+```bash
+bun add -g @igorkravcenko/snowshoe
+# or: npm install -g @igorkravcenko/snowshoe
+snowshoe init --json --locale en
+```
+
+That puts **`snowshoe`** on PATH (short alias **`snoe`**, same binary).
+
+From a clone (contributors / working from source):
 
 ```bash
 bun install --frozen-lockfile
-bun link                  # puts `snowshoe` on PATH (see skills/snowshoe/install.md)
+bun link
+# ensure ~/.bun/bin is on PATH
 snowshoe init --json --locale en
-bun test
-bun run typecheck
-bun run check
 ```
 
-When published: `bun add -g @igorkravcenko/snowshoe` (or `npm i -g @igorkravcenko/snowshoe`).
+`snowshoe init` does not install git hooks. Opt-in hooks and the PR check are
+intent for later (CLI not shipped yet). Default signal is skill/human → CLI.
 
-`.snowshoe/` is personal/local and gitignored. `init` does not install git hooks.
+## How to try
 
-## How to try (E2E)
+1. `snowshoe init --json --locale en`
+2. `snowshoe map serve --open` and walk the tree
+3. Optional: load `skills/snowshoe/` and let an agent run `snowshoe work next`
 
-1. `bun install --frozen-lockfile` then put `snowshoe` on PATH (`bun link`).
-2. `snowshoe init --json --locale en` (any BCP-47 tag; or `snowshoe work next --json` and follow `todo`).
-3. Load `skills/snowshoe/` (Cursor: `.cursor/skills/snowshoe` symlink) and ask the agent to drain Snowshoe work.
-4. Agent: `snowshoe work next --json` then `work complete` (detail payload uses `children` + `refs` + `body` in that locale).
-5. `snowshoe map serve --open` — walk the tree; inspector shows entity body.
-6. Mark a child → pending badge → agent drains → click **Reload**.
-7. Click an anchor for in-UI Code preview (`vscode://` is secondary). Optional: commit/pull; `work next` gates refresh then advance.
-
-Longer pointer: [docs/brain/notes/how-to-try-e2e.md](docs/brain/notes/how-to-try-e2e.md).
+Longer path: [docs/brain/notes/how-to-try-e2e.md](docs/brain/notes/how-to-try-e2e.md).
+Contributor checks live in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What it is / is not
 
 | v1 intent | Not (v1) |
 |---|---|
-| Signal after pull (CLI default; hooks opt-in, not `init`) | Chat hell / "ask the repo" as the product |
+| After a pull: what went stale. You pick what to catch up. | A chat that “knows the repo” |
 | PR-check | AI code review |
 | Personal comprehension map | Multiplayer knowledge graph |
 | Human-chosen catch-up | Agent HITL / control plane |
 
 Positioning: [docs/product/positioning.md](docs/product/positioning.md).
 
-## Docs / brain
+## Docs
 
-Agents start at [AGENTS.md](AGENTS.md), then [docs/brain/START_HERE.md](docs/brain/START_HERE.md).
+Agents and contributors: start at [AGENTS.md](AGENTS.md).
+License: [Apache 2.0](LICENSE) ([NOTICE](NOTICE)).
+Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Security: [SECURITY.md](SECURITY.md).
 
-**Truth** is `docs/brain/CURRENT.md` plus accepted ADRs. Experiments and evidence are not truth. See [docs/README.md](docs/README.md).
-
-## Monetization (not implementing billing)
-
-OSS / local core **free forever**. No billing in this repo. Policy: [docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md](docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md).
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md).
-
-## License
-
-[Apache License 2.0](LICENSE). See [NOTICE](NOTICE) and [ADR-2026-10-02-apache-2-0-license](docs/brain/DECISIONS/ADR-2026-10-02-apache-2-0-license.md).
+OSS / local core **free forever**. No billing in this repo.
+Policy: [docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md](docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md).
