@@ -1,7 +1,7 @@
 ---
 name: snowshoe-install
 description: >-
-  How to put the `snowshoe` binary on PATH (`bun add -g` / `bun link`).
+  How to put the `snowshoe` binary on PATH (`bun link` today; scoped registry after publish).
 ---
 
 # Install `snowshoe` on PATH
@@ -11,22 +11,9 @@ points at the same entrypoint (package `bin`). Skills and agents should still
 invoke `snowshoe`. The npm package name is scoped `@igorkravcenko/snowshoe`
 (bare npm `snowshoe` is a different, unrelated package).
 
-<!-- TODO(OWNER): remove after @igorkravcenko/snowshoe is on npm — copy assumes published -->
+Requires **Bun** (`>=1.1`).
 
-## Published package (normal path)
-
-Requires **Bun** (`>=1.1`):
-
-```bash
-bun add -g @igorkravcenko/snowshoe
-# or
-npm install -g @igorkravcenko/snowshoe
-command -v snowshoe
-command -v snoe
-snowshoe --help   # exit 0; command index (does not mutate the ledger)
-```
-
-## From a clone (contributors)
+## From a clone (works today)
 
 From the package root:
 
@@ -41,7 +28,7 @@ Then:
 ```bash
 command -v snowshoe
 command -v snoe
-snowshoe --help
+snowshoe --help   # exit 0; command index (does not mutate the ledger)
 ```
 
 `bun link` is **one global** symlink. It does not follow git worktrees. If you
@@ -56,6 +43,21 @@ npm link
 ```
 
 There is no Homebrew formula and no promise of bare `npx snowshoe`.
+
+## After publish
+
+When `@igorkravcenko/snowshoe` is on the registry:
+
+```bash
+bun add -g @igorkravcenko/snowshoe
+# or
+npm install -g @igorkravcenko/snowshoe
+command -v snowshoe
+command -v snoe
+snowshoe --help
+```
+
+Still do **not** use bare npm `snowshoe` (unrelated Stamp client).
 
 ## Skill files into a working repo (opt-in)
 

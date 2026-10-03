@@ -441,7 +441,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     ).rejects.toThrow(/loopback/i);
   });
 
-  test("GET /api/file rejects non-loopback Host", async () => {
+  test("all /api/* reject non-loopback Host", async () => {
     const repo = makeGitRepo();
     await snowshoe(repo, ["init", "--json"]);
     const server = await startMapServer({
@@ -452,13 +452,30 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
       buildUi: false,
     });
     stop = server.stop;
-    const bad = await fetch(`${server.url}api/file?path=README.md&start=1&end=1`, {
-      headers: { Host: "evil.example" },
+    const loopback = `127.0.0.1:${server.port}`;
+    const evil = { headers: { Host: "evil.example" } };
+    const good = { headers: { Host: loopback } };
+
+    for (const path of ["api/map/status", "api/session", "api/file?path=README.md&start=1&end=1"]) {
+      const bad = await fetch(`${server.url}${path}`, evil);
+      expect(bad.status).toBe(403);
+    }
+    const badPost = await fetch(`${server.url}api/feedback`, {
+      method: "POST",
+      headers: { Host: "evil.example", "content-type": "application/json" },
+      body: JSON.stringify({ text: "should not land" }),
     });
-    expect(bad.status).toBe(403);
-    const ok = await fetch(`${server.url}api/file?path=README.md&start=1&end=1`, {
-      headers: { Host: `127.0.0.1:${server.port}` },
+    expect(badPost.status).toBe(403);
+
+    const statusOk = await fetch(`${server.url}api/map/status`, good);
+    expect(statusOk.status).toBe(200);
+    const fileOk = await fetch(`${server.url}api/file?path=README.md&start=1&end=1`, good);
+    expect(fileOk.status).toBe(200);
+    const feedbackOk = await fetch(`${server.url}api/feedback`, {
+      method: "POST",
+      headers: { Host: loopback, "content-type": "application/json" },
+      body: JSON.stringify({ text: "host ok" }),
     });
-    expect(ok.status).toBe(200);
+    expect(feedbackOk.status).toBe(200);
   });
 });
