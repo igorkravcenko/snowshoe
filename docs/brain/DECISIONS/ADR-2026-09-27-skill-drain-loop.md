@@ -48,7 +48,7 @@ Agent loop: outer cycle re-runs `work next`; if `todo` is set, run only that com
 
 ### PATH vs chat
 
-Install / PATH binary is **`snowshoe`**. Informal *snow* is not PATH. Optional user-local alias `snoe` is convenience only. See the provisional-name ADR amendment.
+Install / PATH bins: canonical **`snowshoe`**, short **`snoe`** (same entrypoint). Informal *snow* is not PATH. Skills/agents keep calling **`snowshoe`**. See the provisional-name ADR amendment.
 
 ## Alternatives considered
 

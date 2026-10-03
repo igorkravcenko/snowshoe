@@ -6,7 +6,7 @@ A git-native, ideally OSS layer for a *personal* repo comprehension map. After c
 
 This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable local map UI** and drain skill. Routine epoch ADRs are still **proposed**.
 
-**Install (day-1):** requires [Bun](https://bun.sh) (`>=1.1`). No Homebrew formula. Do **not** use bare npm `snowshoe` (unrelated SnowShoe Stamp client). Registry package name is `@igorkravcenko/snowshoe`; PATH binary stays **`snowshoe`**.
+**Install (day-1):** requires [Bun](https://bun.sh) (`>=1.1`). No Homebrew formula. Do **not** use bare npm `snowshoe` (unrelated SnowShoe Stamp client). Registry package name is `@igorkravcenko/snowshoe`; PATH bins are **`snowshoe`** (canonical) and **`snoe`** (short alias).
 
 ```bash
 bun install --frozen-lockfile

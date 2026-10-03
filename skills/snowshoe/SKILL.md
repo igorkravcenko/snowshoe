@@ -12,7 +12,7 @@ description: >-
 
 Assume **`snowshoe` is on PATH**. Always pass `--json` and parse the result.
 
-The install binary is **`snowshoe`**. A user-local shell alias such as `snoe` is optional convenience.
+The install binary is **`snowshoe`** (call this). Short PATH alias **`snoe`** is the same entrypoint — do not prefer it in agent steps.
 
 If this working repo is missing the skill files under the harness skills dir, run
 `snowshoe skill install --json --skills-path <harness-skills-dir>` (e.g. `.cursor/skills`

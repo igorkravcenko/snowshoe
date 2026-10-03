@@ -10,7 +10,7 @@ Subtitle: **Don't let your agents outrun your understanding. Keep your footing.*
 
 Git-native / ideally OSS *personal* repo comprehension map. Freshness after commits or pull; the human chooses what to catch up on.
 
-v1 surfaces (intent): signal after pull + PR-check. Default signal is skill/human → CLI (`snowshoe …`, provisional; informal *snow* is not CLI). Git hooks are opt-in (`hooks install` / `uninstall`); `init` does not install them.
+v1 surfaces (intent): signal after pull + PR-check. Default signal is skill/human → CLI (`snowshoe …`; short PATH alias `snoe`; informal *snow* is not CLI). Git hooks are opt-in (`hooks install` / `uninstall`); `init` does not install them.
 
 Not v1: chat hell, AI code review, multiplayer knowledge graph, agent HITL/control plane.
 

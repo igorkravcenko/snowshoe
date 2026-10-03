@@ -37,7 +37,7 @@ No Snowshoe ARR or user counts exist to cite. Do not invent them.
 
 ## Name
 
-[ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md). PATH / install binary is **`snowshoe`**. npm package name is **`@igorkravcenko/snowshoe`** (bare `snowshoe` on npm is unrelated). Informal discussion shorthand *snow* is not CLI and not PATH. Optional user-local alias `snoe` is convenience only. Backup **Catchmark** and “provisional” hedges are canon/agent-only — not README / CLI / UI / skills. Rejected naming angles stay in private maintainers docs (after overlay), not public canon.
+[ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md). PATH bins: canonical **`snowshoe`**, short alias **`snoe`** (same entrypoint; package `bin`). npm package name is **`@igorkravcenko/snowshoe`** (bare `snowshoe` on npm is unrelated). Informal *snow* is not CLI and not PATH. Skills/agents keep calling **`snowshoe`**. Backup **Catchmark** and “provisional” hedges are canon/agent-only — not README / CLI / UI / skills. Rejected naming angles stay in private maintainers docs (after overlay), not public canon.
 
 ## Now
 

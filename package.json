@@ -6,7 +6,8 @@
   "description": "Snowshoe — don't let your agents outrun your understanding. Keep your footing. Git-native personal repo comprehension map (CLI).",
   "type": "module",
   "bin": {
-    "snowshoe": "./src/index.ts"
+    "snowshoe": "./src/index.ts",
+    "snoe": "./src/index.ts"
   },
   "repository": {
     "type": "git",
@@ -18,6 +19,7 @@
   },
   "scripts": {
     "snowshoe": "bun src/index.ts",
+    "snoe": "bun src/index.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",

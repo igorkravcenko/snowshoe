@@ -32,9 +32,16 @@ Use Snowshoe in docs and agent language until a later ADR replaces it. Do not sp
 
 Install / PATH command is **`snowshoe`**. Informal discussion *snow* is **not** a PATH name and must not be documented as one (global `snow` is owned by Snowflake). Chat shorthand ≠ install bin.
 
-Optional user-local shell alias (e.g. `alias snoe=snowshoe`) is convenience only — not an install name, not claimed on PATH.
-
 See [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md).
+
+## Amendment 2026-10-04: short PATH bin `snoe`
+
+Package `bin` ships two names to the same entrypoint (Cursor-style multi-alias):
+
+- **`snowshoe`** — canonical install / docs / skills / agents
+- **`snoe`** — short PATH alias (same binary)
+
+Do **not** edit shell rc files. Do **not** claim `snow`. Skills and agent instructions keep calling **`snowshoe`**. If another tool already owns `snoe` on the user's PATH, the package manager / user resolves the conflict — we do not probe-and-skip at install time (`bin` is declarative).
 
 ## Amendment 2026-10-04: npm package scope
 
