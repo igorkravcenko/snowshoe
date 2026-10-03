@@ -17,10 +17,13 @@ describe("locale at init (idempotent amend)", () => {
     const next = await snowshoe(repo, ["work", "next", "--json"]);
     expect(next.json.locale).toBe("ru");
 
-    const sess = await handleMapHttp(new Request("http://127.0.0.1/api/session"), {
-      cwd: repo,
-      uiDist: join(repo, "no-ui"),
-    });
+    const sess = await handleMapHttp(
+      new Request("http://127.0.0.1/api/session", { headers: { Host: "127.0.0.1" } }),
+      {
+        cwd: repo,
+        uiDist: join(repo, "no-ui"),
+      },
+    );
     expect(sess.ok).toBe(true);
     const sessJson = (await sess.json()) as {
       locale: string | null;
