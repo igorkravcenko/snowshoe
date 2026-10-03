@@ -14,7 +14,7 @@ One page. Matches CURRENT. Brand is provisional.
 
 ## Wedge
 
-Git-native / ideally OSS layer for a **personal** repo comprehension map. After commits or `git pull`, understanding goes stale in visible ways; the **human chooses** what to catch up on.
+Git-native **personal comprehension map of a repository** (any clone; the map/ledger is personal/local — not limited to “personal GitHub repos”). After commits or `git pull`, understanding goes stale in visible ways; the **human chooses** what to catch up on.
 
 Form: CLI-first **orchestrator** — owns freshness + verify; agents are pluggable workers. Personal ledger local/gitignored by default.
 

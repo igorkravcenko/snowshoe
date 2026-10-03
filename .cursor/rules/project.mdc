@@ -8,7 +8,7 @@ alwaysApply: true
 Working name (provisional): **Snowshoe**. Backup brand: **Catchmark**.
 Subtitle: **Don't let your agents outrun your understanding. Keep your footing.**
 
-Git-native / ideally OSS *personal* repo comprehension map. Freshness after commits or pull; the human chooses what to catch up on.
+Git-native personal comprehension map of a repository (ledger is personal/local). Freshness after commits or pull; the human chooses what to catch up on.
 
 v1 surfaces (intent): signal after pull + PR-check. Default signal is skill/human → CLI (`snowshoe …`; short PATH alias `snoe`; informal *snow* is not CLI). `init` does not install git hooks; opt-in hooks remain intent (CLI not shipped).
 
