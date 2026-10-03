@@ -7,11 +7,11 @@ date: 2026-09-25
 
 ## Status
 
-Accepted. Locked in chat, Tech Lead ↔ Igor (2026-09-25). Still **pre-code**: this ADR chooses tools; it does not authorize application scaffolding.
+Accepted. Locked in chat, Tech Lead ↔ product owner (2026-09-25). Still **pre-code**: this ADR chooses tools; it does not authorize application scaffolding.
 
 ## Context
 
-CURRENT and accepted form/surfaces/state ADRs lock *what* Snowshoe is, not *how* a tiny local util is built. Proposed routine ADRs ([routine-epoch-and-metrics](./ADR-2026-09-25-routine-epoch-and-metrics.md), [routine-cli-and-fsm](./ADR-2026-09-25-routine-cli-and-fsm.md)) stay **proposed**. Igor asked to record the stack and a few product facts that were **not obvious** from that prior canon.
+CURRENT and accepted form/surfaces/state ADRs lock *what* Snowshoe is, not *how* a tiny local util is built. Proposed routine ADRs ([routine-epoch-and-metrics](./ADR-2026-09-25-routine-epoch-and-metrics.md), [routine-cli-and-fsm](./ADR-2026-09-25-routine-cli-and-fsm.md)) stay **proposed**. Product owner asked to record the stack and a few product facts that were **not obvious** from that prior canon.
 
 Constraints in force: tiny budget; AI-agent-built; local-first; personal ledger gitignored; boring and shippable.
 
@@ -51,11 +51,11 @@ CLI spelling is **`snowshoe …`**. The **install / PATH binary is `snowshoe`**.
 - Next.js
 - Electron
 - Obsidian-plugin-as-home
-- Rust / Python / Go for the util (Go was considered; Igor chose TypeScript)
+- Rust / Python / Go for the util (Go was considered; product owner chose TypeScript)
 
 ## Clarifications vs prior canon
 
-These were decided with Igor in the same 1:1 and were **not obvious** from CURRENT or the surfaces ADR as written.
+These were decided with the product owner in the same 1:1 and were **not obvious** from CURRENT or the surfaces ADR as written.
 
 ### 1. Hooks are opt-in, not part of default `init`
 
@@ -110,7 +110,7 @@ Bun / TS / SQLite / files **align** with those drafts as follows (still proposed
 
 ## Alternatives considered
 
-- **Go (or Rust / Python) util** — considered; Igor chose TypeScript on Bun for agent-built speed and one-language CLI+map later.
+- **Go (or Rust / Python) util** — considered; product owner chose TypeScript on Bun for agent-built speed and one-language CLI+map later.
 - **NestJS / Next.js as the product shell** — rejected for v1; the util is a local CLI, not a server framework product.
 - **Electron as map home** — rejected for day-1; local HTTP + system browser is enough.
 - **Obsidian plugin as home** — rejected (surfaces ADR already: not v1 center).
@@ -128,4 +128,4 @@ Bun / TS / SQLite / files **align** with those drafts as follows (still proposed
 
 ## Evidence
 
-Working 1:1 Tech Lead ↔ Igor, 2026-09-25. Distilled (not truth): [../notes/implementation-stack-igor-2026-09-25.md](../notes/implementation-stack-igor-2026-09-25.md).
+Working 1:1 Tech Lead ↔ product owner, 2026-09-25. Distilled (not truth): [../notes/implementation-stack-2026-09-25.md](../notes/implementation-stack-2026-09-25.md).

@@ -15,5 +15,6 @@ Snowshoe's spec-driven docs. No application code lives here.
 | [evidence/](evidence/) | Supporting material; evidence ≠ truth |
 | [archive/](archive/) | Superseded canon |
 | [product/](product/) | Positioning for humans |
+| `private/` | Gitignored symlink to sibling `snowshoe-maintainers/docs` (GTM / monetization research / competitive evidence). Create with `./scripts/link-private-overlay.sh`. |
 
 Agent entry: [../AGENTS.md](../AGENTS.md).

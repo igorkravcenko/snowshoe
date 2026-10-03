@@ -11,7 +11,7 @@ Accepted. Amends the agent-facing detail complete contract used by [ADR-2026-09-
 
 ## Context
 
-Day-1 detail complete mashed parent→child structure and any other links into one `edges` list (`kind: parent`). Missing or moved anchor files were **accepted** with `anchorsUnresolved` (warn, keep going). Igor: split hierarchy from relevance; **reject** `work complete` until missing/moved anchors are fixed (decision A). The skill must not teach `anchorsUnresolved` or forbidden payload bits (util validates silently).
+Day-1 detail complete mashed parent→child structure and any other links into one `edges` list (`kind: parent`). Missing or moved anchor files were **accepted** with `anchorsUnresolved` (warn, keep going). Product owner: split hierarchy from relevance; **reject** `work complete` until missing/moved anchors are fixed (decision A). The skill must not teach `anchorsUnresolved` or forbidden payload bits (util validates silently).
 
 ## Decision
 
@@ -40,7 +40,7 @@ Forbidden node types and similar constraints stay util-side; the skill does not 
 ## Alternatives considered
 
 - Keep `edges` with mixed `kind` — rejected; hierarchy vs relevance must not be mashed.
-- Accept + warn on missing anchors — rejected (Igor A).
+- Accept + warn on missing anchors — rejected (product owner A).
 - Soft-accept `edges` forever — rejected; hard deprecation message is enough.
 
 ## Consequences

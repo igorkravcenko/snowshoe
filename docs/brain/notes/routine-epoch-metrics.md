@@ -5,7 +5,7 @@ date: 2026-09-25
 
 # Note: Routine, learning, epochs, metrics (locked intent)
 
-**Status:** working note locked in discussion with Igor (2026-09-25). Not CURRENT. Not ADR yet — grill before promoting claims into CURRENT.  
+**Status:** working note locked in discussion with the product owner (2026-09-25). Not CURRENT. Not ADR yet — grill before promoting claims into CURRENT.  
 **Scope:** product semantics only. **No concrete CLI command shapes** in this note.  
 **Companion (CLI families / FSM):** [routine-cli-and-fsm.md](./routine-cli-and-fsm.md).  
 **Proposed ADR (not CURRENT):** [ADR-2026-09-25-routine-epoch-and-metrics.md](../DECISIONS/ADR-2026-09-25-routine-epoch-and-metrics.md).

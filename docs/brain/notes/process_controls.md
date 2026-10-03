@@ -1,6 +1,6 @@
 ---
 status: note
-updated: 2026-09-27
+updated: 2026-10-03
 ---
 
 # Process controls
@@ -24,12 +24,27 @@ Operating constraints for agents and humans. If these conflict with CURRENT, CUR
 - No invented ARR, users, or competitors.
 - No trading / Nautilus / portfolio / bots imports.
 
-## Quality ownership
+## Quality
 
-- Docs PRs land via Chief of Staff + cloud agent (agents draft on box; no shared
-  local clone races).
-- **CoS owns consistency audit** before merge (auditor agent / grill-canon).
-- CI (`brain-docs` + app typecheck/test/Biome) is a mechanical tripwire only.
+- Docs PRs: consistency audit before merge
+  (`.github/agents/auditor.agent.md` / `grill-canon`). CI is a tripwire only.
+- Do not race a shared local clone.
+
+## Maintainer overlay (optional)
+
+Sibling private repo **snowshoe-maintainers** (GTM / research docs, Orca GAN
+skills). Link with `./scripts/link-private-overlay.sh`. Detail after link:
+`docs/private/notes/maintainer-overlay.md` (gitignored; absent without the
+overlay).
+
+**Private pointers (allowed vs forbidden):**
+
+- **OK:** plain language (“sibling snowshoe-maintainers”, “after overlay link”)
+  or a backtick path such as `` docs/private/notes/<file>.md `` — not a
+  clickable markdown link.
+- **Forbidden in public CURRENT / ADRs / EXPERIMENTS / ROADMAP:** any markdown
+  link whose target path is under `docs/private` — brain-docs link lint and
+  public clones break.
 
 ## Grilling
 

@@ -12,7 +12,7 @@ Working memory from Naming Lab (2026-09-24). **Not** brand-lock. Provisional can
 - **Snowshoe** — working name (outdoor metaphor needs explanation in GTM).  
 - **Catchmark** — backup if brand/domain forces a change.  
 - **Subtitle:** Catch up after pull (positioning lock).  
-- Naming Lab: on hold until Igor asks for a new angle.
+- Naming Lab: on hold until the product owner asks for a new angle.
 
 ## Rejected or killed directions (do not revive casually)
 

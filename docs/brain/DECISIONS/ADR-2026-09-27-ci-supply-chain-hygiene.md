@@ -7,7 +7,7 @@ date: 2026-09-27
 
 ## Status
 
-Accepted. Igor asked for this after the map-UI / app-CI merges. Tightens
+Accepted. Product owner asked for this after the map-UI / app-CI merges. Tightens
 [ADR-2026-09-27-app-ci-biome](./ADR-2026-09-27-app-ci-biome.md) install + Actions
 pins. Does **not** add Dependabot, Snyk, husky, product hooks, or scanners.
 

@@ -34,7 +34,7 @@ Without a familiar place where “red” arrives by itself, the platform-agnosti
 
 ### Amendment (2026-09-25): hooks are opt-in
 
-Locked with Igor (Tech Lead 1:1). Full stack/clarifications ADR: [ADR-2026-09-25-implementation-stack.md](./ADR-2026-09-25-implementation-stack.md).
+Locked with the product owner (Tech Lead 1:1). Full stack/clarifications ADR: [ADR-2026-09-25-implementation-stack.md](./ADR-2026-09-25-implementation-stack.md).
 
 - `snowshoe init` creates `.snowshoe/` + config (and personal-state ignore rules) — **does not** install git hooks.
 - **Default signal = skill → CLI:** `snowshoe routine refresh` / `snowshoe routine status` / `snowshoe work …` (families still proposed).
@@ -47,7 +47,7 @@ Do not read the original “primary signal = hook” list as “init installs ho
 
 - Dashboard-first product — rejected for habit and “orca” failure mode.
 - TUI-only — rejected for map agency needs.
-- Skill-store-first discovery without delta signal — rejected as primary acquisition (see notes/discoverability).
+- Skill-store-first discovery without delta signal — rejected as primary acquisition (see private maintainers GTM sketch).
 
 ## Consequences
 
@@ -58,4 +58,4 @@ Do not read the original “primary signal = hook” list as “init installs ho
 
 ## Evidence
 
-Vision discussion (`cognitive-model-erosion/06-vision-discussion.md`); form note; Marketing Lead discoverability sketch (notes, not truth).
+Vision discussion (`cognitive-model-erosion/06-vision-discussion.md`); form note; Marketing Lead discoverability sketch (private maintainers `docs/private/notes/`, not truth).

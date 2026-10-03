@@ -26,3 +26,10 @@ build/
 
 # Snowshoe personal ledger (local; never commit)
 .snowshoe/
+
+# Maintainer-only overlay (symlinks from snowshoe-maintainers)
+# Populate with: ./scripts/link-private-overlay.sh
+.cursor/skills/gan-orchestrate
+.cursor/skills/gan-generate
+.cursor/skills/gan-critique
+docs/private

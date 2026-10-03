@@ -9,7 +9,7 @@ Working memory. Not truth. Decisions live in ADRs; this holds layout/CLI sketche
 
 ## Topic
 
-Default workflow and delivery shape agreed in discussion (2026-09-25), distilled from Igor × Brainstormer and written earlier as `07-product-form.md` on the shared box.
+Default workflow and delivery shape agreed in discussion (2026-09-25), distilled from product owner × Brainstormer and written earlier as `07-product-form.md` (author working copy, not in-repo).
 
 ## Agreed direction (see ADRs)
 

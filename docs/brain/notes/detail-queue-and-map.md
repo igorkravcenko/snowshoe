@@ -7,7 +7,7 @@ date: 2026-09-26
 
 Status: **draft note for plant** (not ADR, not CURRENT).  
 Date: 2026-09-26  
-Locks: Igor + Brainstormer; CoS resolve 2026-09-26; storage Tech Lead.
+Locks: product owner + Brainstormer; CoS resolve 2026-09-26; storage Tech Lead.
 
 ## Intent
 

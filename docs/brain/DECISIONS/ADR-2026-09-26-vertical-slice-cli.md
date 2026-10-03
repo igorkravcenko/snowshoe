@@ -11,7 +11,7 @@ Accepted. Authorizes the first application code. Does **not** promote proposed r
 
 ## Context
 
-CURRENT and the stack ADR described a pre-code scaffold. Happy-path notes (HP1–4), the skill-worker contract, detail-queue, and map read-model schemas specify a no-learning vertical slice. CoS/Igor day-1 locks (root slug `root`, `map status` / `map detail mark|cancel`, one work bus, routine-first, no hooks on `init`) asked for working Bun/TypeScript CLI + tests without rewriting proposed ADR-A/B bodies.
+CURRENT and the stack ADR described a pre-code scaffold. Happy-path notes (HP1–4), the skill-worker contract, detail-queue, and map read-model schemas specify a no-learning vertical slice. CoS / product owner day-1 locks (root slug `root`, `map status` / `map detail mark|cancel`, one work bus, routine-first, no hooks on `init`) asked for working Bun/TypeScript CLI + tests without rewriting proposed ADR-A/B bodies.
 
 ## Decision
 

@@ -6,7 +6,7 @@ date: 2026-09-25
 # Note: What a glued “composite skill” still lacks
 
 **Status:** working note (not CURRENT, not ADR). Grill before promoting.  
-**Trigger:** After ranking (evidence `2026-09-25-solutions-ranking.md`), question: if we compose mentor + learn-codebase + Code-Atlas-style delta + quiz into one skill, what is still missing?
+**Trigger:** After ranking (private maintainers evidence `docs/private/evidence/2026-09-25-solutions-ranking.md` when linked), question: if we compose mentor + learn-codebase + Code-Atlas-style delta + quiz into one skill, what is still missing?
 
 ## Short answer
 
@@ -36,5 +36,5 @@ v0 **pedagogy workers** (explain / quiz) **beside** an existing `snow` state + r
 
 ## Suggested promotion path
 
-- If Igor agrees: thin ADR “skills are adapters; snow owns protocol” (may already be covered by product-form orchestrator ADR — avoid duplicate; link instead).  
+- If the product owner agrees: thin ADR “skills are adapters; snow owns protocol” (may already be covered by product-form orchestrator ADR — avoid duplicate; link instead).  
 - Keep this file as note until CURRENT explicitly states the “glue ≠ product” boundary.

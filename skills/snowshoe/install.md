@@ -34,3 +34,23 @@ npm install -g snowshoe
 # or
 bun add -g snowshoe
 ```
+
+## Skill files into a working repo (opt-in)
+
+With `snowshoe` on PATH, copy the packaged product skill into the harness skills
+directory the agent uses (path is harness-specific — not guessed by the CLI):
+
+```bash
+# Cursor example
+snowshoe skill install --json --skills-path .cursor/skills
+```
+
+Other harnesses: pass their skills directory as `--skills-path`. Idempotent;
+`--force` overwrites files that differ. Not part of `snowshoe init`.
+
+List / read without writing:
+
+```bash
+snowshoe skill list --json
+snowshoe skill cat --json SKILL.md
+```

@@ -10,7 +10,7 @@ This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable loc
 
 ```bash
 bun install --frozen-lockfile
-bun link                  # puts `snowshoe` on PATH (see .cursor/skills/snowshoe/install.md)
+bun link                  # puts `snowshoe` on PATH (see skills/snowshoe/install.md)
 snowshoe init --json --locale ru
 bun test
 bun run typecheck
@@ -23,7 +23,7 @@ bun run check
 
 1. `bun install --frozen-lockfile` then put `snowshoe` on PATH (`bun link`).
 2. `snowshoe init --json --locale ru` (or `en`; or `snowshoe work next --json` and follow `todo`).
-3. Load `.cursor/skills/snowshoe/` and ask the agent to drain Snowshoe work.
+3. Load `skills/snowshoe/` (Cursor: `.cursor/skills/snowshoe` symlink) and ask the agent to drain Snowshoe work.
 4. Agent: `snowshoe work next --json` then `work complete` (detail payload uses `children` + `refs` + `body` in that locale).
 5. `snowshoe map serve --open` — walk the tree; inspector shows entity body.
 6. Mark a child → pending badge → agent drains → click **Reload**.
@@ -50,4 +50,8 @@ Agents start at [AGENTS.md](AGENTS.md), then [docs/brain/START_HERE.md](docs/bra
 
 ## Monetization (not implementing billing)
 
-OSS / local core free forever → paid sync / hosted convenience → team seats only on shared surfaces later. Details in [docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md](docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md).
+OSS / local core **free forever**. No billing in this repo. Policy: [docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md](docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md).
+
+## License
+
+[Apache License 2.0](LICENSE). See [NOTICE](NOTICE) and [ADR-2026-10-02-apache-2-0-license](docs/brain/DECISIONS/ADR-2026-10-02-apache-2-0-license.md).

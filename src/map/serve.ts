@@ -1,18 +1,15 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { DEFAULT_MAP_EXPAND_DEPTH } from "../domain/types.ts";
 import { CliError, EXIT_INTERNAL, EXIT_USAGE } from "../errors.ts";
 import { gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
-import { findRepoRoot, requireInitialized } from "../paths.ts";
+import { findRepoRoot, requireInitialized, snowshoePackageRoot } from "../paths.ts";
 import { handleMapHttp } from "./http.ts";
 import { mapPtyWebsocket, type PtyWsData, tryUpgradeMapPty } from "./pty.ts";
 import { createMapViewStore } from "./views.ts";
 
-export function snowshoePackageRoot(): string {
-  return resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-}
+export { snowshoePackageRoot };
 
 export function mapUiDistDir(packageRoot = snowshoePackageRoot()): string {
   return join(packageRoot, "ui", "dist");

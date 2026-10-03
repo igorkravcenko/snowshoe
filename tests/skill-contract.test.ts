@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { completeEnvelope, detailPayload, makeGitRepo, snowshoe } from "./helpers.ts";
 
-const SKILL_DIR = join(import.meta.dir, "../.cursor/skills/snowshoe");
+const SKILL_DIR = join(import.meta.dir, "../skills/snowshoe");
 const SKILL = join(SKILL_DIR, "SKILL.md");
 const DRAIN = join(SKILL_DIR, "drain.md");
 const LEARN = join(SKILL_DIR, "learn.md");

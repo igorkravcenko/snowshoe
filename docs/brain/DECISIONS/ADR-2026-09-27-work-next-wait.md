@@ -13,7 +13,7 @@ Accepted. Amends the `work next` envelope from [ADR-2026-09-27-skill-drain-loop]
 
 Mark detail (UI HTTP or `snowshoe map detail mark`) writes SQLite immediately. The agent only sees it on the next `work next`. Default drain **stops** on `action: idle`, so a human who marks the map after the skill went idle must start another drain.
 
-Igor: if the human asks to keep updating the map interactively, the CLI should **block** until work appears (e.g. a new pending detail), then return the same `work next` JSON (claimed items / gates). Not a background watcher.
+Product owner: if the human asks to keep updating the map interactively, the CLI should **block** until work appears (e.g. a new pending detail), then return the same `work next` JSON (claimed items / gates). Not a background watcher.
 
 Notes that say epoch detect is only on skill→CLI hit (no util daemon) stay true: `--wait` is still a foreground CLI process the skill is running.
 
