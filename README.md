@@ -1,6 +1,12 @@
 # Snowshoe
 
+[![License: Apache-2.0](https://img.shields.io/github/license/igorkravcenko/snowshoe)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/igorkravcenko/snowshoe/ci.yml?branch=main)](https://github.com/igorkravcenko/snowshoe/actions/workflows/ci.yml)
+
 **Don't let your agents outrun your understanding. Keep your footing.**
+
+Do not `npm i -g snowshoe`. That package is an unrelated stamp client. This
+project is `@igorkravcenko/snowshoe`.
 
 After a pull or a big merge, Snowshoe shows what in your personal map went stale.
 You choose what to catch up on. Agents can help. They don't get to outrun you.
@@ -8,11 +14,24 @@ You choose what to catch up on. Agents can help. They don't get to outrun you.
 Your map lives in `.snowshoe/` and stays gitignored. Local, git-native,
 Apache-2.0. Not a team wiki. Not an agent control panel.
 
+<!-- TODO(OWNER): replace with docs/assets/map-after-pull.png -->
+_Screenshot placeholder: map after pull (stale nodes + catch-up). See [docs/assets/](docs/assets/)._
+
 ## Install
+
+<!-- TODO(OWNER): remove after @igorkravcenko/snowshoe is on npm — copy assumes published -->
 
 You need Bun 1.1+.
 
-From a clone, today:
+```bash
+bun add -g @igorkravcenko/snowshoe
+# or: npm install -g @igorkravcenko/snowshoe
+snowshoe init --json --locale en
+```
+
+That puts **`snowshoe`** on PATH (short alias **`snoe`**, same binary).
+
+From a clone (contributors / working from source):
 
 ```bash
 bun install --frozen-lockfile
@@ -21,14 +40,8 @@ bun link
 snowshoe init --json --locale en
 ```
 
-That puts `snowshoe` on PATH once `~/.bun/bin` is on PATH. Short alias: `snoe`
-(same binary).
-
-Do not `npm i -g snowshoe`. That name is an unrelated stamp client. This project
-is `@igorkravcenko/snowshoe` once published: `bun add -g @igorkravcenko/snowshoe`.
-
-`snowshoe init` does not install git hooks. Hooks and the PR check are opt-in
-later (CLI not shipped yet). Default signal is skill/human → CLI.
+`snowshoe init` does not install git hooks. Opt-in hooks and the PR check are
+intent for later (CLI not shipped yet). Default signal is skill/human → CLI.
 
 ## How to try
 
@@ -36,8 +49,8 @@ later (CLI not shipped yet). Default signal is skill/human → CLI.
 2. `snowshoe map serve --open` and walk the tree
 3. Optional: load `skills/snowshoe/` and let an agent run `snowshoe work next`
 
-Contributor checks: `bun test`, `bun run typecheck`, `bun run check`.
 Longer path: [docs/brain/notes/how-to-try-e2e.md](docs/brain/notes/how-to-try-e2e.md).
+Contributor checks live in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What it is / is not
 
