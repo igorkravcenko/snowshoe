@@ -1,6 +1,6 @@
 ---
 status: canonical
-updated: 2026-10-03
+updated: 2026-10-04
 ---
 
 # CURRENT
@@ -10,7 +10,7 @@ updated: 2026-10-03
 ## Product
 
 - **Working name:** Snowshoe (provisional; not final brand). **Backup:** Catchmark.
-- **Subtitle:** Catch up after pull.
+- **Subtitle:** Don't let your agents outrun your understanding. Keep your footing.
 - **Wedge:** git-native / ideally OSS layer for a *personal* repo comprehension map. After commits or `git pull`, show what went stale; the human chooses what to catch up on (agency). Structure exists so the human can explore and rank misunderstanding — not only consume an agent “red queue.”
 - **Form (intent):** CLI-first **orchestrator** (not a passive ledger, not a full agent harness). Owns git-anchored state, freshness, and verify protocol; pluggable agent backends are workers for map / explain / quiz. Dual entry: harness skills call `snowshoe …` (PATH binary **`snowshoe`**; informal *snow* is not PATH), or the CLI invokes a configured backend (e.g. a catch-up flow). Details: [ADR-2026-09-25-product-form-orchestrator.md](./DECISIONS/ADR-2026-09-25-product-form-orchestrator.md), [ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md).
 - **State default:** project model may live under something like `.snowshoe/`; **personal ledger gitignored / local by default**. **SQLite is source of truth** for FSM / queue / leases / epoch meta / metrics (floats `0.0–1.0`); heavy payloads are files under `.snowshoe/epochs/<epochId>/…`; markdown map/notes are human-readable, **not** SoT for metrics or step statuses. [ADR-2026-09-25-personal-state-gitignore.md](./DECISIONS/ADR-2026-09-25-personal-state-gitignore.md), [ADR-2026-09-25-implementation-stack.md](./DECISIONS/ADR-2026-09-25-implementation-stack.md).

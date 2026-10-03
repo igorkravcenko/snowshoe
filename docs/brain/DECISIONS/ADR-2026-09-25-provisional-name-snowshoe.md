@@ -17,7 +17,7 @@ The product needs a working name in-repo (docs, agents, GitHub). The brand is no
 
 - **Working name:** Snowshoe
 - **Backup:** Catchmark
-- **Subtitle (locked for positioning):** Catch up after pull
+- **Subtitle (locked for positioning):** Don't let your agents outrun your understanding. Keep your footing.
 
 Use Snowshoe in docs and agent language until a later ADR replaces it. Do not spend scaffold energy on renaming, trademarks, or domain hunts.
 
@@ -41,6 +41,14 @@ Bare npm name `snowshoe` is taken by an unrelated SnowShoe Stamp API client
 (`snowshoestamp/snowshoe_node`). The registry package for this product is
 **`@igorkravcenko/snowshoe`**. PATH / install binary remains **`snowshoe`**.
 Do not document bare `npx snowshoe` or `npm i -g snowshoe` for this project.
+
+## Amendment 2026-10-04: subtitle
+
+Locked subtitle is now:
+
+**Don't let your agents outrun your understanding. Keep your footing.**
+
+Former line *Catch up after pull* is retired as the positioning subtitle (may still appear as colloquial product-behavior language, not brand lock).
 
 ## See also
 

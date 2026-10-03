@@ -1,10 +1,10 @@
 # Snowshoe
 
-**Catch up after pull.**
+**Don't let your agents outrun your understanding. Keep your footing.**
 
 A git-native, ideally OSS layer for a *personal* repo comprehension map. After commits or `git pull`, show what went stale; the human chooses what to catch up on.
 
-Working title: **Snowshoe** (backup **Catchmark**). Subtitle: *Catch up after pull.*
+Working title: **Snowshoe** (backup **Catchmark**).
 
 This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable local map UI** and drain skill. The spec-driven “brain” remains the source of claims. Routine epoch ADRs are still **proposed**.
 

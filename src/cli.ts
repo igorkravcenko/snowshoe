@@ -565,7 +565,8 @@ const helpCmd = defineCommand({
 export const main = defineCommand({
   meta: {
     name: "snowshoe",
-    description: "Catch up after pull — personal repo comprehension map",
+    description:
+      "Don't let your agents outrun your understanding. Keep your footing.",
     version: "0.0.1",
   },
   subCommands: {
