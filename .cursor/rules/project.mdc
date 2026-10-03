@@ -6,11 +6,11 @@ alwaysApply: true
 # Snowshoe
 
 Working name (provisional): **Snowshoe**. Backup brand: **Catchmark**.
-Subtitle: **Catch up after pull.**
+Subtitle: **Don't let your agents outrun your understanding. Keep your footing.**
 
 Git-native / ideally OSS *personal* repo comprehension map. Freshness after commits or pull; the human chooses what to catch up on.
 
-v1 surfaces (intent): signal after pull + PR-check. Default signal is skill/human → CLI (`snowshoe …`, provisional; informal *snow* is not CLI). Git hooks are opt-in (`hooks install` / `uninstall`); `init` does not install them.
+v1 surfaces (intent): signal after pull + PR-check. Default signal is skill/human → CLI (`snowshoe …`; short PATH alias `snoe`; informal *snow* is not CLI). Git hooks are opt-in (`hooks install` / `uninstall`); `init` does not install them.
 
 Not v1: chat hell, AI code review, multiplayer knowledge graph, agent HITL/control plane.
 
@@ -25,7 +25,7 @@ Not v1: chat hell, AI code review, multiplayer knowledge graph, agent HITL/contr
 - Research docs carry YAML `status:` frontmatter
 - Behavior or product-claim changes require an ADR **and** a CURRENT update in the same change
 - Protocol: `.cursor/skills/brain-protocol/SKILL.md`
-- Maintainer overlay (optional): `./scripts/link-private-overlay.sh` from sibling `snowshoe-maintainers` → `.cursor/skills/gan-*` + `docs/private`. GAN fail-closed if not in Orca. Public canon must not link `docs/private`. Product does not depend on the overlay.
+- Maintainer overlay (optional): `./scripts/link-private-overlay.sh` from sibling `snowshoe-maintainers` → `.cursor/skills/gan-*` + `docs/private` + optional `maintainer-chat.mdc`. GAN fail-closed if not in Orca. Public canon must not link `docs/private`. Product does not depend on the overlay.
 - Docs PR quality: CoS merge QC uses `.cursor/skills/consistency-audit` before merge; CI is a tripwire only. Brain staleness stays `grill-canon`.
 
 Do not invent ARR, users, or competitors. Unknown stays `unknown`.

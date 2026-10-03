@@ -72,7 +72,7 @@ const initCmd = defineCommand({
     json: { type: "boolean", description: "JSON output", default: false },
     locale: {
       type: "string",
-      description: "BCP-47 UI language (e.g. ru, en). Idempotent amend of ledger meta.",
+      description: "BCP-47 UI language (e.g. en, en-US). Idempotent amend of ledger meta.",
     },
     "ui-language": {
       type: "string",
@@ -565,7 +565,7 @@ const helpCmd = defineCommand({
 export const main = defineCommand({
   meta: {
     name: "snowshoe",
-    description: "Catch up after pull — personal repo comprehension map",
+    description: "Don't let your agents outrun your understanding. Keep your footing.",
     version: "0.0.1",
   },
   subCommands: {

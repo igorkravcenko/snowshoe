@@ -1,28 +1,30 @@
 # Snowshoe
 
-**Catch up after pull.**
+**Don't let your agents outrun your understanding. Keep your footing.**
 
 A git-native, ideally OSS layer for a *personal* repo comprehension map. After commits or `git pull`, show what went stale; the human chooses what to catch up on.
 
-Working name is **Snowshoe** (not final). Backup: **Catchmark**.
+This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable local map UI** and drain skill. Routine epoch ADRs are still **proposed**.
 
-This repository includes a **CLI vertical slice** (HP1–4) plus a **tryable local map UI** and drain skill. The spec-driven “brain” remains the source of claims. Routine epoch ADRs are still **proposed**.
+**Install (day-1):** requires [Bun](https://bun.sh) (`>=1.1`). No Homebrew formula. Do **not** use bare npm `snowshoe` (unrelated SnowShoe Stamp client). Registry package name is `@igorkravcenko/snowshoe`; PATH bins are **`snowshoe`** (canonical) and **`snoe`** (short alias).
 
 ```bash
 bun install --frozen-lockfile
 bun link                  # puts `snowshoe` on PATH (see skills/snowshoe/install.md)
-snowshoe init --json --locale ru
+snowshoe init --json --locale en
 bun test
 bun run typecheck
 bun run check
 ```
 
-`.snowshoe/` is personal/local and gitignored. `init` does not install git hooks. Install binary is **`snowshoe`** (not `snow`).
+When published: `bun add -g @igorkravcenko/snowshoe` (or `npm i -g @igorkravcenko/snowshoe`).
+
+`.snowshoe/` is personal/local and gitignored. `init` does not install git hooks.
 
 ## How to try (E2E)
 
 1. `bun install --frozen-lockfile` then put `snowshoe` on PATH (`bun link`).
-2. `snowshoe init --json --locale ru` (or `en`; or `snowshoe work next --json` and follow `todo`).
+2. `snowshoe init --json --locale en` (any BCP-47 tag; or `snowshoe work next --json` and follow `todo`).
 3. Load `skills/snowshoe/` (Cursor: `.cursor/skills/snowshoe` symlink) and ask the agent to drain Snowshoe work.
 4. Agent: `snowshoe work next --json` then `work complete` (detail payload uses `children` + `refs` + `body` in that locale).
 5. `snowshoe map serve --open` — walk the tree; inspector shows entity body.
@@ -51,6 +53,10 @@ Agents start at [AGENTS.md](AGENTS.md), then [docs/brain/START_HERE.md](docs/bra
 ## Monetization (not implementing billing)
 
 OSS / local core **free forever**. No billing in this repo. Policy: [docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md](docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md).
 
 ## License
 

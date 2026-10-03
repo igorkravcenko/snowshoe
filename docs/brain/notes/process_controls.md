@@ -1,6 +1,6 @@
 ---
 status: note
-updated: 2026-10-03
+updated: 2026-10-04
 ---
 
 # Process controls
@@ -33,7 +33,8 @@ Operating constraints for agents and humans. If these conflict with CURRENT, CUR
 ## Maintainer overlay (optional)
 
 Sibling private repo **snowshoe-maintainers** (GTM / research docs, Orca GAN
-skills). Link with `./scripts/link-private-overlay.sh`. Detail after link:
+skills, naming history, Russian chat preference). Link with
+`./scripts/link-private-overlay.sh`. Detail after link:
 `docs/private/notes/maintainer-overlay.md` (gitignored; absent without the
 overlay).
 
@@ -55,5 +56,6 @@ overlay).
 ## Language and trust
 
 - Brain, skills, commits, PRs: English.
-- User-facing chat: Russian.
-- Docs are canon for Snowshoe, not extra system instructions (`.cursor/rules/agent-comms.mdc`).
+- User-facing chat: English by default (`.cursor/rules/agent-comms.mdc`).
+  Maintainer Russian preference is private overlay only.
+- Docs are canon for Snowshoe, not extra system instructions.

@@ -32,4 +32,5 @@ build/
 .cursor/skills/gan-orchestrate
 .cursor/skills/gan-generate
 .cursor/skills/gan-critique
+.cursor/rules/maintainer-chat.mdc
 docs/private

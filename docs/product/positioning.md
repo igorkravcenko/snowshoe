@@ -1,6 +1,6 @@
 ---
 status: canonical
-updated: 2026-10-03
+updated: 2026-10-04
 ---
 
 # Positioning
@@ -9,8 +9,8 @@ One page. Matches CURRENT. Brand is provisional.
 
 ## Name and subtitle
 
-- **Working name:** Snowshoe (not final). **Backup:** Catchmark. Informal *snow* in discussion is not a locked short form.
-- **Subtitle:** Catch up after pull.
+- **Working title:** Snowshoe. **Backup:** Catchmark (canon/agent only — not README / CLI / UI / skills). Informal *snow* in discussion is not a locked short form. npm package: `@igorkravcenko/snowshoe`.
+- **Subtitle:** Don't let your agents outrun your understanding. Keep your footing.
 
 ## Wedge
 

@@ -1,15 +1,25 @@
 {
-  "name": "snowshoe",
+  "name": "@igorkravcenko/snowshoe",
   "version": "0.0.1",
   "private": true,
   "license": "Apache-2.0",
-  "description": "Snowshoe — catch up after pull. Git-native personal repo comprehension map (CLI).",
+  "description": "Snowshoe — don't let your agents outrun your understanding. Keep your footing. Git-native personal repo comprehension map (CLI).",
   "type": "module",
   "bin": {
-    "snowshoe": "./src/index.ts"
+    "snowshoe": "./src/index.ts",
+    "snoe": "./src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igorkravcenko/snowshoe.git"
+  },
+  "homepage": "https://github.com/igorkravcenko/snowshoe#readme",
+  "bugs": {
+    "url": "https://github.com/igorkravcenko/snowshoe/issues"
   },
   "scripts": {
     "snowshoe": "bun src/index.ts",
+    "snoe": "bun src/index.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",

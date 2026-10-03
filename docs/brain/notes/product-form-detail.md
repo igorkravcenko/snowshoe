@@ -23,7 +23,7 @@ Default workflow and delivery shape agreed in discussion (2026-09-25), distilled
 
 `init` · `refresh` / sync after delta · `status` · `map` · `learn` · `verify` · optional orchestrated catch-up that calls a worker.
 
-Install story: do **not** promise bare `npx snowshoe` — public exact name / domain slots conflict; plan scoped or suffixed package names.
+Install story: do **not** promise bare `npx snowshoe` — npm `snowshoe` is an unrelated Stamp client. Registry package is `@igorkravcenko/snowshoe`; PATH bin stays `snowshoe`.
 
 ## Draft default loop
 

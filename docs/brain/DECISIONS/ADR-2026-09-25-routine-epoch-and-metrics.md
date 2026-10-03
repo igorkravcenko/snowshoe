@@ -11,13 +11,13 @@ Proposed (draft for grill). Not CURRENT. Companion: [ADR-2026-09-25-routine-cli-
 
 ## Context
 
-Snowshoe must keep a project mental model honest relative to git without blocking on human study. Personal comprehension (“обучение”) is on-demand and must not gate sync. Understanding *metrics* must still be trustworthy after sync — otherwise the map lies. Retargeting HEAD while sync is half-finished must not keep stale checkmarks.
+Snowshoe must keep a project mental model honest relative to git without blocking on human study. Personal comprehension (learning) is on-demand and must not gate sync. Understanding *metrics* must still be trustworthy after sync — otherwise the map lies. Retargeting HEAD while sync is half-finished must not keep stale checkmarks.
 
 ## Decision
 
 ### Routine vs learning (variant B)
 
-| | **Рутина (routine)** | **Обучение (learning)** |
+| | **Routine** | **Learning** |
 |---|---|---|
 | Purpose | Align project model + understanding metrics to git | Human raises understanding (explain/quiz/green) |
 | Human required? | No | Yes (on request) |

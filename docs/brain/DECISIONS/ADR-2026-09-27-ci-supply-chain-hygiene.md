@@ -15,7 +15,7 @@ pins. Does **not** add Dependabot, Snyk, husky, product hooks, or scanners.
 
 Recent JavaScript ecosystem supply-chain incidents (compromised maintainer
 accounts, malicious install scripts, tag-moving Actions) are cheap to mitigate
-on a tiny budget. Snowshoe is an indie private repo: no paid scanner budget, no
+on a tiny budget. Snowshoe is a small indie project: no paid scanner budget, no
 SBOM theater. App CI already exists (`.github/workflows/ci.yml`) with floating
 `actions/checkout@v4` / `oven-sh/setup-bun@v2` and a mutable `bun install`.
 
@@ -30,8 +30,14 @@ Day-1 hygiene, all free:
 2. **Frozen lockfile in CI:** `bun install --frozen-lockfile` (Bun's equivalent
    of `npm ci`). Fail the job if `bun.lock` would change.
 3. **`SECURITY.md`** at repo root: private reporting (GitHub Security Advisory
-   or owner via GitHub — not public issues), what not to commit, and the
-   expectations above. `map serve` is localhost-dev, not a public auth surface.
+   preferred; owner via GitHub if Advisories unavailable — not public issues),
+   what not to commit, and the expectations above. `map serve` is
+   localhost-dev, not a public auth surface.
+
+## Amendment 2026-10-04: wording vs visibility
+
+Drop “indie private repo” phrasing. Hygiene and reporting rules do not depend
+on GitHub visibility. Flip to public is a separate ops step, not this ADR.
 
 Docs-only `.github/workflows/brain-docs.yml` is unchanged here (no job widen).
 

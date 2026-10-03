@@ -17,7 +17,7 @@ After detail, the map inspector showed metrics and anchors but not human-readabl
 
 ### Locale
 
-- `snowshoe init --json` accepts `--locale <tag>` (alias `--ui-language` / `--uiLanguage`). Tag is BCP-47 (`ru`, `en`, `en-US`).
+- `snowshoe init --json` accepts `--locale <tag>` (alias `--ui-language` / `--uiLanguage`). Tag is BCP-47 (`en`, `en-US`, …).
 - Stored as ledger meta key `locale` under `.snowshoe`.
 - Init is **idempotent** and may set or update locale on an existing ledger. No `snowshoe locale set` command.
 - Exposed as `locale` (string or `null`) on init JSON, `work next --json`, `map status --json`, and `GET /api/session`.

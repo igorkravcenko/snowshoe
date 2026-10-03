@@ -12,10 +12,10 @@ date: 2026-09-25
 
 ## Terminology
 
-| Term (RU) | Meaning |
+| Term | Meaning |
 |---|---|
-| **Рутина** | Model sync: bring the project mental model and understanding *metrics* in line with git. **No human required.** Blocks advancing `base` until required steps are done. |
-| **Обучение** | Human-driven comprehension work (explain, quiz, deepen understanding). On request, arbitrary volume. **Must not block** other workflow. **Not tied to commits** / base↔target. |
+| **Routine** | Model sync: bring the project mental model and understanding *metrics* in line with git. **No human required.** Blocks advancing `base` until required steps are done. |
+| **Learning** | Human-driven comprehension work (explain, quiz, deepen understanding). On request, arbitrary volume. **Must not block** other workflow. **Not tied to commits** / base↔target. |
 
 Variant **B** (decoupled): advancing model `base` does **not** wait on human learning or verified-green. Trustworthy *metrics after routine* ≠ “human is green again.”
 
@@ -64,12 +64,12 @@ Required routine includes at least:
 
 Without (3), metrics cannot be trusted after sync — so metric update is **required**, human-free, and **blocks** `base` advance.
 
-After a closed routine: metrics are consistent with `base == target` for that sync. Raising understanding again is **обучение**, not routine.
+After a closed routine: metrics are consistent with `base == target` for that sync. Raising understanding again is **learning**, not routine.
 
 ## Learning vs metrics
 
 - **Metric decay/update** = routine (automated honesty).
-- **Explain / quiz / “learn until green”** = обучение (human request).
+- **Explain / quiz / “learn until green”** = learning (human request).
 - Learning status can go stale when the world/model moves; routine is what applies that staleness to metrics. Human re-learning is optional and unbounded.
 
 ## Node ↔ understanding (intent, still soft)

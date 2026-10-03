@@ -15,7 +15,7 @@ snowshoe work next --json
 | `action` | `init` · `refresh` · `advance` · `work` · `idle` |
 | `todo` | Exact command to run when gated (`init` / `refresh` / `advance`). `null` otherwise. |
 | `items` | Claimed steps. Empty unless `action` is `work` and there is claimable work. |
-| `locale` | BCP-47 UI language from ledger meta (`ru`, `en`, …), or `null` if unset. |
+| `locale` | BCP-47 UI language from ledger meta (`en`, `en-US`, …), or `null` if unset. |
 
 Until `todo` is null, **run only that unlock command**, then call `work next` again. Do not look for other work, do not complete steps, do not skip the gate.
 
@@ -62,7 +62,7 @@ snowshoe work next --json --wait
 ```bash
 snowshoe work next --json
 snowshoe work next --json --wait
-snowshoe init --json --locale ru
+snowshoe init --json --locale en
 snowshoe routine refresh --json
 snowshoe routine status --json
 snowshoe routine advance --json
@@ -97,7 +97,7 @@ Work mark kinds (each queues **its own** step):
 
 `learn` and `quiz` are not `work next`.
 
-When `todo` is `snowshoe init --json`, you may add `--locale <tag>` (alias `--ui-language`) with a BCP-47 tag such as `ru` or `en`. Init is idempotent: the same command on an existing ledger sets or updates locale meta.
+When `todo` is `snowshoe init --json`, you may add `--locale <tag>` (alias `--ui-language`) with a BCP-47 tag such as `en` or `en-US`. Init is idempotent: the same command on an existing ledger sets or updates locale meta.
 
 ## Locale
 

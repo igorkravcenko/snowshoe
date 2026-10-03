@@ -10,9 +10,9 @@ Do **not** file a public GitHub issue for a security vulnerability.
 Preferred: open a **private GitHub Security Advisory** on this repository
 (Security → Advisories → New draft security advisory).
 
-If advisories are unavailable (private indie repo / missing permission): contact
-the owner via GitHub (do not paste tokens, keys, or `.env` contents in a public
-comment).
+If advisories are unavailable (missing permission or Advisories not enabled):
+contact the owner via GitHub (do not paste tokens, keys, or `.env` contents in a
+public comment).
 
 ## What not to commit
 
