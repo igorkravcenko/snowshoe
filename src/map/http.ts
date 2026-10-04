@@ -130,13 +130,14 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
   const path = url.pathname;
 
   try {
+    if (path.startsWith("/api/") && !loopbackHostHeaderOrError(req)) {
+      return jsonHttp(
+        { schemaVersion: 1, ok: false, error: "Map API requires a loopback Host header" },
+        403,
+      );
+    }
+
     if (path === "/api/file" && req.method === "GET") {
-      if (!loopbackHostHeaderOrError(req)) {
-        return jsonHttp(
-          { schemaVersion: 1, ok: false, error: "File API requires a loopback Host header" },
-          403,
-        );
-      }
       const repoRoot = findRepoRoot(opts.cwd);
       requireInitialized(repoRoot);
       const result = readRepoFile(repoRoot, url.searchParams.get("path") ?? "", {

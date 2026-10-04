@@ -43,10 +43,10 @@ Skill contract (gate + PATH `snowshoe`, `work next` gating, default `--batch-siz
 ## Amendment 2026-10-04: loopback-only bind + Host checks
 
 `snowshoe map serve --host` accepts **loopback only** (`127.0.0.1`, `localhost`,
-`::1`). No LAN / `0.0.0.0` hatch in this slice. PTY upgrade and `GET /api/file`
-also require a **loopback `Host` header** (DNS-rebinding mitigation: peer IP can
-still be loopback while `Host` is attacker-controlled). Documented in
-`SECURITY.md`.
+`::1`). No LAN / `0.0.0.0` hatch in this slice. PTY upgrade and **every** map
+HTTP `/api/*` route require a **loopback `Host` header** (DNS-rebinding
+mitigation: peer IP can still be loopback while `Host` is attacker-controlled).
+Documented in `SECURITY.md`.
 
 ## Evidence
 

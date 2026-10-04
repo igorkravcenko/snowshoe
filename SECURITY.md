@@ -21,8 +21,9 @@ There is no older release train yet.
 
 - Local CLI (`snowshoe` / `snoe`) and personal `.snowshoe/` ledger on disk
 - `snowshoe map serve` on **loopback bind only** (`127.0.0.1` / `localhost` / `::1`)
-- Map PTY and `GET /api/file`: loopback peer **and** loopback `Host` header
-  (mitigates DNS rebinding into shell / repo file read)
+- Map PTY: loopback peer **and** loopback `Host` header
+- All map HTTP `/api/*` routes: loopback `Host` header (mitigates DNS rebinding
+  into shell, repo file read, and ledger read/write)
 - Day-1 CI hygiene (frozen lockfile, SHA-pinned Actions)
 
 ## Out of scope (for now)

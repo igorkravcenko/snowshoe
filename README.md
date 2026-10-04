@@ -19,19 +19,9 @@ _Screenshot placeholder: map after pull (stale nodes + catch-up). See [docs/asse
 
 ## Install
 
-<!-- TODO(OWNER): remove after @igorkravcenko/snowshoe is on npm — copy assumes published -->
-
 You need Bun 1.1+.
 
-```bash
-bun add -g @igorkravcenko/snowshoe
-# or: npm install -g @igorkravcenko/snowshoe
-snowshoe init --json --locale en
-```
-
-That puts **`snowshoe`** on PATH (short alias **`snoe`**, same binary).
-
-From a clone (contributors / working from source):
+### From a clone (works today)
 
 ```bash
 bun install --frozen-lockfile
@@ -40,8 +30,23 @@ bun link
 snowshoe init --json --locale en
 ```
 
+That puts **`snowshoe`** on PATH once `~/.bun/bin` is on PATH. Short alias:
+**`snoe`** (same binary).
+
 `snowshoe init` does not install git hooks. Opt-in hooks and the PR check are
 intent for later (CLI not shipped yet). Default signal is skill/human → CLI.
+
+### After publish
+
+When `@igorkravcenko/snowshoe` is on the registry (not yet today):
+
+```bash
+bun add -g @igorkravcenko/snowshoe
+# or: npm install -g @igorkravcenko/snowshoe
+snowshoe init --json --locale en
+```
+
+Still do **not** use bare npm `snowshoe` (unrelated Stamp client).
 
 ## How to try
 
@@ -57,7 +62,7 @@ Contributor checks live in [CONTRIBUTING.md](CONTRIBUTING.md).
 | v1 intent | Not (v1) |
 |---|---|
 | After a pull: what went stale. You pick what to catch up. | A chat that “knows the repo” |
-| PR-check | AI code review |
+| PR-check (intent; not shipped) | AI code review |
 | Personal comprehension map | Multiplayer knowledge graph |
 | Human-chosen catch-up | Agent HITL / control plane |
 
@@ -68,6 +73,3 @@ Positioning: [docs/product/positioning.md](docs/product/positioning.md).
 Agents and contributors: start at [AGENTS.md](AGENTS.md).
 License: [Apache 2.0](LICENSE) ([NOTICE](NOTICE)).
 Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Security: [SECURITY.md](SECURITY.md).
-
-OSS / local core **free forever**. No billing in this repo.
-Policy: [docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md](docs/brain/DECISIONS/ADR-2026-09-25-monetization-ladder.md).
