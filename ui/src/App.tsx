@@ -852,7 +852,19 @@ export function App(): ReactElement {
   return (
     <div className="app">
       <header>
-        <h1>Snowshoe map</h1>
+        <div className="header-brand">
+          <h1>Snowshoe map</h1>
+          <a
+            className="header-star"
+            href="https://github.com/igorkravcenko/snowshoe"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Star on GitHub"
+            aria-label="Star on GitHub"
+          >
+            ★
+          </a>
+        </div>
         <span
           className={session?.refreshRequired ? "meta behind" : "meta"}
           title={
