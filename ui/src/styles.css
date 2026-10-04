@@ -39,11 +39,34 @@ header {
   background: var(--panel);
 }
 
+header .header-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 header h1 {
   font-size: 16px;
   font-weight: 600;
   margin: 0;
   letter-spacing: 0.02em;
+}
+
+header .header-star {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  text-decoration: none;
+  opacity: 0.75;
+}
+
+header .header-star:hover,
+header .header-star:focus-visible {
+  color: var(--text);
+  opacity: 1;
+  outline: none;
 }
 
 header .meta {
