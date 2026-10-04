@@ -88,6 +88,45 @@ function inline(text: string, keyPrefix: string, wiki?: WikiResolve): ReactNode[
   return nodes;
 }
 
+/** Split a GFM table row into cell texts (pipes optional at ends). */
+export function splitTableRow(line: string): string[] {
+  let t = line.trim();
+  if (t.startsWith("|")) t = t.slice(1);
+  if (t.endsWith("|")) t = t.slice(0, -1);
+  return t.split("|").map((c) => c.trim());
+}
+
+/** True when the line is a GFM table separator (`| --- | :---: |`). */
+export function isTableSeparator(line: string): boolean {
+  const cells = splitTableRow(line);
+  if (cells.length === 0) return false;
+  return cells.every((c) => /^:?-+:?$/.test(c));
+}
+
+function looksLikeTableRow(line: string): boolean {
+  const t = line.trim();
+  if (!t.includes("|")) return false;
+  return splitTableRow(t).length >= 1;
+}
+
+type CellAlign = "left" | "right" | "center" | undefined;
+
+function alignFromSep(cell: string): CellAlign {
+  const t = cell.trim();
+  const left = t.startsWith(":");
+  const right = t.endsWith(":");
+  if (left && right) return "center";
+  if (right) return "right";
+  if (left) return "left";
+  return undefined;
+}
+
+function isBlockBoundary(line: string): boolean {
+  return (
+    line.trim() === "" || line.startsWith("```") || /^#{1,3}\s+/.test(line) || /^[-*]\s+/.test(line)
+  );
+}
+
 /** Dumb, HTML-escaping markdown subset for inspector bodies (no editor). */
 export function MarkdownBody(props: {
   text: string;
@@ -141,14 +180,59 @@ export function MarkdownBody(props: {
       blocks.push(<ul key={`ul-${k++}`}>{items}</ul>);
       continue;
     }
+    // GFM table: header row + separator, then body rows.
+    if (looksLikeTableRow(line) && i + 1 < lines.length && isTableSeparator(lines[i + 1]!)) {
+      const header = splitTableRow(line);
+      const aligns = splitTableRow(lines[i + 1]!).map(alignFromSep);
+      i += 2;
+      const body: string[][] = [];
+      while (i < lines.length && looksLikeTableRow(lines[i]!) && !isBlockBoundary(lines[i]!)) {
+        if (isTableSeparator(lines[i]!)) break;
+        body.push(splitTableRow(lines[i]!));
+        i++;
+      }
+      const tableKey = k++;
+      const headCells = header.map((cell, ci) => ({ cell, align: aligns[ci], ci }));
+      blocks.push(
+        <div key={`table-wrap-${tableKey}`} className="md-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                {headCells.map(({ cell, align, ci }) => (
+                  <th key={`th-${tableKey}-${ci}-${cell}`} style={align ? { textAlign: align } : undefined}>
+                    {inline(cell, `th${tableKey}-${ci}`, wiki)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {body.map((row, ri) => {
+                const rowKey = `tr-${tableKey}-${ri}-${row.join("\u0001")}`;
+                return (
+                  <tr key={rowKey}>
+                    {headCells.map(({ align, ci }) => (
+                      <td
+                        key={`${rowKey}-c${ci}`}
+                        style={align ? { textAlign: align } : undefined}
+                      >
+                        {inline(row[ci] ?? "", `td${tableKey}-${ri}-${ci}`, wiki)}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>,
+      );
+      continue;
+    }
     const para: string[] = [];
-    while (
-      i < lines.length &&
-      lines[i]!.trim() !== "" &&
-      !lines[i]!.startsWith("```") &&
-      !/^#{1,3}\s+/.test(lines[i]!) &&
-      !/^[-*]\s+/.test(lines[i]!)
-    ) {
+    while (i < lines.length && !isBlockBoundary(lines[i]!)) {
+      // Don't swallow the start of a following table into the paragraph.
+      if (looksLikeTableRow(lines[i]!) && i + 1 < lines.length && isTableSeparator(lines[i + 1]!)) {
+        break;
+      }
       para.push(lines[i]!);
       i++;
     }
