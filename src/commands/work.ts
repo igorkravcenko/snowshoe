@@ -846,7 +846,13 @@ function applyStructureOps(
         leaf,
       });
       if (op.node.codeAnchors) {
-        session.ledger.replaceAnchors(slug, persistAnchors(session, op.node.codeAnchors));
+        session.ledger.replaceAnchors(
+          slug,
+          persistAnchors(
+            session,
+            op.node.codeAnchors.map((a) => ({ ...a, locatorOffset: 0 })),
+          ),
+        );
       }
       for (const parentId of op.node.parentIds ?? []) {
         if (session.ledger.getNode(parentId) || seenUpserts.has(parentId)) {
