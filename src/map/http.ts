@@ -146,6 +146,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
         start: queryInt(url, "start"),
         end: queryInt(url, "end"),
         span: queryInt(url, "span"),
+        locatorOffset: queryInt(url, "locatorOffset"),
         lineText: url.searchParams.get("lineText") ?? undefined,
       });
       return jsonHttp({ schemaVersion: 1, ...result }, 200);

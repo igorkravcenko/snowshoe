@@ -1,13 +1,19 @@
-/** Rebase stored startLine using exact trimmed line text. Closest match wins. */
+/** Rebase stored window using identity lineText. Closest locator match wins. */
 export function rebaseAnchor(opts: {
   fileText: string;
   storedStart?: number;
+  locatorOffset?: number | null;
   lineText?: string | null;
   span?: number | null;
 }): { startLine?: number; endLine?: number } {
+  const offset =
+    opts.locatorOffset !== undefined && opts.locatorOffset !== null && opts.locatorOffset >= 0
+      ? opts.locatorOffset
+      : 0;
   const stored = opts.storedStart;
+  const storedLocator = stored !== undefined ? stored + offset : undefined;
   const needle = opts.lineText?.trim() ?? "";
-  let start = stored;
+  let locator = storedLocator;
   if (needle) {
     const lines = opts.fileText.replace(/\n$/, "").split(/\r?\n/);
     const hits: number[] = [];
@@ -15,9 +21,17 @@ export function rebaseAnchor(opts: {
       if (lines[i]!.trim() === needle) hits.push(i + 1);
     }
     if (hits.length) {
-      const target = stored ?? hits[0]!;
-      start = hits.reduce((best, n) => (Math.abs(n - target) < Math.abs(best - target) ? n : best));
+      const target = storedLocator ?? hits[0]!;
+      locator = hits.reduce((best, n) =>
+        Math.abs(n - target) < Math.abs(best - target) ? n : best,
+      );
     }
+  }
+  let start: number | undefined;
+  if (locator !== undefined) {
+    start = Math.max(1, locator - offset);
+  } else if (stored !== undefined) {
+    start = stored;
   }
   const span = opts.span;
   let end: number | undefined;

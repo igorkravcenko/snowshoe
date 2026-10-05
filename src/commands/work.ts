@@ -21,7 +21,7 @@ import {
 import { CliError, EXIT_ATTENTION, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { gitCommitInRange, gitDiffNames, gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
-import { captureAnchorMeta } from "../map/anchor-capture.ts";
+import { anchorLocatorReasons, captureAnchorMeta } from "../map/anchor-capture.ts";
 import { defaultProseRef, inlineBody, readProseFile, writeProseFile } from "../map/prose.ts";
 import {
   anchorExists,
@@ -329,6 +329,7 @@ function persistAnchors(
     symbol?: string | null;
     startLine?: number;
     endLine?: number;
+    locatorOffset: number;
   }>,
 ): Array<{
   path: string;
@@ -337,10 +338,17 @@ function persistAnchors(
   endLine?: number | null;
   lineText?: string | null;
   span?: number | null;
+  locatorOffset?: number | null;
   unresolved: boolean;
 }> {
   return anchors.map((a) => {
-    const meta = captureAnchorMeta(session.repoRoot, a.path, a.startLine, a.endLine);
+    const meta = captureAnchorMeta(
+      session.repoRoot,
+      a.path,
+      a.startLine,
+      a.endLine,
+      a.locatorOffset,
+    );
     return {
       path: a.path,
       symbol: a.symbol,
@@ -348,6 +356,7 @@ function persistAnchors(
       endLine: a.endLine,
       lineText: meta.lineText,
       span: meta.span,
+      locatorOffset: a.locatorOffset,
       unresolved: false,
     };
   });
@@ -618,6 +627,8 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
     for (const anchor of node.anchors ?? []) {
       if (!anchorExists(session.repoRoot, anchor.path)) {
         reasons.push(`anchor_missing:${node.slug}:${anchor.path}`);
+      } else {
+        reasons.push(...anchorLocatorReasons(session.repoRoot, node.slug, anchor));
       }
     }
   }
@@ -835,7 +846,13 @@ function applyStructureOps(
         leaf,
       });
       if (op.node.codeAnchors) {
-        session.ledger.replaceAnchors(slug, persistAnchors(session, op.node.codeAnchors));
+        session.ledger.replaceAnchors(
+          slug,
+          persistAnchors(
+            session,
+            op.node.codeAnchors.map((a) => ({ ...a, locatorOffset: 0 })),
+          ),
+        );
       }
       for (const parentId of op.node.parentIds ?? []) {
         if (session.ledger.getNode(parentId) || seenUpserts.has(parentId)) {

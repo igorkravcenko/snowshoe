@@ -51,3 +51,4 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-10-02-detail-body-wiki](./ADR-2026-10-02-detail-body-wiki.md) | accepted | `detail` hop = expand∪enrich; `bodyOverview`; UI wiki `[[slug]]` |
 | [ADR-2026-10-02-apache-2-0-license](./ADR-2026-10-02-apache-2-0-license.md) | accepted | Product repo licensed Apache-2.0 (`LICENSE` + `NOTICE`) |
 | [ADR-2026-10-05-inbox-marks](./ADR-2026-10-05-inbox-marks.md) | accepted | System inbox marks `new`/`decayed`; Todos Inbox/Later; read on leave |
+| [ADR-2026-10-06-anchor-locator-offset](./ADR-2026-10-06-anchor-locator-offset.md) | accepted | Required `locatorOffset`; identity = startLine+offset; legacy 0 |

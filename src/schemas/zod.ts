@@ -12,6 +12,8 @@ export const detailAnchorSchema = z
     symbol: z.string().optional(),
     startLine: z.number().int().min(1).optional(),
     endLine: z.number().int().min(1).optional(),
+    /** Lines from startLine down to identity (name/declaration) line; 0 = startLine is identity. */
+    locatorOffset: z.number().int().min(0),
   })
   .strict();
 

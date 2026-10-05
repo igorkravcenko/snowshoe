@@ -7,6 +7,7 @@ export type Anchor = {
   endLine?: number;
   lineText?: string;
   span?: number;
+  locatorOffset?: number;
 };
 
 export function sameAnchor(a: Anchor, b: Anchor): boolean {
@@ -14,7 +15,8 @@ export function sameAnchor(a: Anchor, b: Anchor): boolean {
     a.path === b.path &&
     a.startLine === b.startLine &&
     a.endLine === b.endLine &&
-    a.symbol === b.symbol
+    a.symbol === b.symbol &&
+    (a.locatorOffset ?? 0) === (b.locatorOffset ?? 0)
   );
 }
 
@@ -73,6 +75,15 @@ export type SessionInfo = {
   expandDepth?: number;
   packageRoot?: string | null;
 };
+
+/** Header / tab title: `<repo basename> map` (not product brand). */
+export function mapChromeTitle(repoRoot: string | null | undefined): string {
+  if (!repoRoot) return "map";
+  const trimmed = repoRoot.replace(/[/\\]+$/, "");
+  const parts = trimmed.split(/[/\\]/).filter(Boolean);
+  const name = parts.at(-1);
+  return name ? `${name} map` : "map";
+}
 
 export type FeedbackEntry = {
   id: string;
@@ -219,12 +230,19 @@ export type FilePreview = {
 
 export async function fetchFile(
   path: string,
-  opts: { start?: number; end?: number; lineText?: string; span?: number } = {},
+  opts: {
+    start?: number;
+    end?: number;
+    lineText?: string;
+    span?: number;
+    locatorOffset?: number;
+  } = {},
 ): Promise<FilePreview> {
   const q = new URLSearchParams({ path });
   if (opts.start !== undefined) q.set("start", String(opts.start));
   if (opts.end !== undefined) q.set("end", String(opts.end));
   if (opts.span !== undefined) q.set("span", String(opts.span));
+  if (opts.locatorOffset !== undefined) q.set("locatorOffset", String(opts.locatorOffset));
   if (opts.lineText) q.set("lineText", opts.lineText);
   const res = await fetch(`/api/file?${q.toString()}`);
   const body = await readJson<FilePreview & { error?: string; ok?: boolean }>(res);

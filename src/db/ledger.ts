@@ -29,6 +29,7 @@ export type AnchorRow = {
   end_line: number | null;
   line_text: string | null;
   span: number | null;
+  locator_offset: number | null;
   unresolved: number;
 };
 
@@ -75,6 +76,8 @@ function ensureAnchorColumns(db: Database): void {
   const names = new Set(cols.map((c) => c.name));
   if (!names.has("line_text")) db.exec("ALTER TABLE anchors ADD COLUMN line_text TEXT");
   if (!names.has("span")) db.exec("ALTER TABLE anchors ADD COLUMN span INTEGER");
+  if (!names.has("locator_offset"))
+    db.exec("ALTER TABLE anchors ADD COLUMN locator_offset INTEGER");
 }
 
 /** SQLite busy wait (ms). Must be set before other PRAGMAs on open. */
@@ -135,6 +138,7 @@ CREATE TABLE IF NOT EXISTS anchors (
   end_line INTEGER,
   line_text TEXT,
   span INTEGER,
+  locator_offset INTEGER,
   unresolved INTEGER NOT NULL DEFAULT 0
 );
 
@@ -346,14 +350,15 @@ export class Ledger {
       endLine?: number | null;
       lineText?: string | null;
       span?: number | null;
+      locatorOffset?: number | null;
       unresolved?: boolean;
     }>,
   ): void {
     this.db.run("DELETE FROM anchors WHERE slug = ?", [slug]);
     for (const a of anchors) {
       this.db.run(
-        `INSERT INTO anchors (slug, path, symbol, start_line, end_line, line_text, span, unresolved)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO anchors (slug, path, symbol, start_line, end_line, line_text, span, locator_offset, unresolved)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           slug,
           a.path,
@@ -362,6 +367,7 @@ export class Ledger {
           a.endLine ?? null,
           a.lineText ?? null,
           a.span ?? null,
+          a.locatorOffset ?? 0,
           a.unresolved ? 1 : 0,
         ],
       );

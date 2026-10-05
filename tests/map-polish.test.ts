@@ -1,3 +1,4 @@
+import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -251,7 +252,7 @@ describe("map polish: marks, leaf, anchors", () => {
     writeFileSync(join(repo, "src", "span.ts"), "one\ntwo\nthree\n");
     await seedModule(repo, "auth", {
       leaf: false,
-      anchors: [{ path: "src/span.ts", startLine: 1, endLine: 3 }],
+      anchors: [{ path: "src/span.ts", startLine: 1, endLine: 3, locatorOffset: 0 }],
     });
     const status = await snowshoe(repo, [
       "map",
@@ -267,5 +268,86 @@ describe("map polish: marks, leaf, anchors", () => {
     expect(anchors[0]?.endLine).toBe(3);
     expect(anchors[0]?.span).toBe(3);
     expect(anchors[0]?.lineText).toBe("one");
+    expect(anchors[0]?.locatorOffset).toBe(0);
+  });
+
+  test("locatorOffset shifts lineText; missing offset rejects", async () => {
+    const repo = makeGitRepo();
+    mkdirSync(join(repo, "src"), { recursive: true });
+    writeFileSync(
+      join(repo, "src", "carry.py"),
+      "@dataclass(frozen=True, slots=True)\nclass CarrySession:\n    quote_maker_fee: Decimal\n",
+    );
+    await seedModule(repo, "carry", {
+      leaf: true,
+      anchors: [{ path: "src/carry.py", startLine: 1, endLine: 3, locatorOffset: 1 }],
+    });
+    const status = await snowshoe(repo, [
+      "map",
+      "status",
+      "--json",
+      "--all-fields",
+      "--slug",
+      "carry",
+    ]);
+    const node = (status.json.nodes as Array<Record<string, unknown>>)[0]!;
+    const anchors = node.anchors as Array<Record<string, unknown>>;
+    expect(anchors[0]?.startLine).toBe(1);
+    expect(anchors[0]?.endLine).toBe(3);
+    expect(anchors[0]?.locatorOffset).toBe(1);
+    expect(anchors[0]?.lineText).toBe("class CarrySession:");
+    expect(anchors[0]?.span).toBe(3);
+
+    await snowshoe(repo, ["map", "mark", "--slug", "carry", "--kind", "enrich", "--json"]);
+    const next = await snowshoe(repo, ["work", "next", "--json"]);
+    const item = (next.json.items as Array<Record<string, unknown>>)[0]!;
+    const missing = await snowshoe(repo, ["work", "complete", "--json"], {
+      stdin: completeEnvelope([
+        {
+          id: String(item.stepId),
+          leaseToken: String(item.leaseToken),
+          kind: String(item.kind),
+          payload: detailPayload({
+            parentSlug: "carry",
+            nodes: [
+              {
+                slug: "carry",
+                title: "Carry",
+                type: "module",
+                op: "upsert",
+                leaf: true,
+                body: "overview\n\ndetail",
+                anchors: [{ path: "src/carry.py", startLine: 1, endLine: 3 }],
+              },
+            ],
+          }),
+        },
+      ]),
+    });
+    expect(missing.exitCode).not.toBe(0);
+  });
+
+  test("legacy locator_offset null reads as 0", async () => {
+    const repo = makeGitRepo();
+    mkdirSync(join(repo, "src"), { recursive: true });
+    writeFileSync(join(repo, "src", "span.ts"), "one\ntwo\n");
+    await seedModule(repo, "auth", {
+      leaf: true,
+      anchors: [{ path: "src/span.ts", startLine: 1, endLine: 2, locatorOffset: 0 }],
+    });
+    const db = new Database(join(repo, ".snowshoe", "ledger.sqlite"));
+    db.run("UPDATE anchors SET locator_offset = NULL WHERE slug = ?", ["auth"]);
+    db.close();
+    const status = await snowshoe(repo, [
+      "map",
+      "status",
+      "--json",
+      "--all-fields",
+      "--slug",
+      "auth",
+    ]);
+    const node = (status.json.nodes as Array<Record<string, unknown>>)[0]!;
+    const anchors = node.anchors as Array<Record<string, unknown>>;
+    expect(anchors[0]?.locatorOffset).toBe(0);
   });
 });
