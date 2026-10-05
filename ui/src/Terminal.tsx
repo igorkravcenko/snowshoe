@@ -161,14 +161,16 @@ export function TerminalPane(props: { viewId: string | null; active: boolean }):
   return (
     <div className="sidebar-term">
       <div className="term-toolbar">
-        <button
-          type="button"
-          className="term-restart"
-          onClick={() => setSession((n) => n + 1)}
-          title="Kill the server-side shell and spawn a new one"
-        >
-          Restart
-        </button>
+        {!socketOpen ? (
+          <button
+            type="button"
+            className="term-restart"
+            onClick={() => setSession((n) => n + 1)}
+            title="Kill any persisted shell and spawn a new one"
+          >
+            Restart
+          </button>
+        ) : null}
         {!socketOpen ? <span className="hint">disconnected</span> : null}
       </div>
       {error ? <p className="error">{error}</p> : null}
