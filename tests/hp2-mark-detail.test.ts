@@ -35,7 +35,8 @@ describe("HP2 user mark → detail one hop", () => {
       (n) => n.slug === "auth",
     )!;
     expect(authPending.detailStatus).toBe("pending");
-    expect(authPending.marks).toEqual(["detail"]);
+    expect(authPending.marks).toContain("detail");
+    expect(authPending.marks).toContain("new");
 
     const next = await snowshoe(repo, ["work", "next", "--json"]);
     const item = (next.json.items as Array<Record<string, unknown>>)[0]!;

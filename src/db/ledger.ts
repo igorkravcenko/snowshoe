@@ -263,7 +263,8 @@ export class Ledger {
     type: EntityType;
     leaf: boolean;
     proseRef?: string | null;
-  }): void {
+  }): { created: boolean } {
+    const created = this.getNode(input.slug) === null;
     const ts = this.now();
     this.db.run(
       `INSERT INTO nodes (slug, title, type, leaf, prose_ref, created_at, updated_at)
@@ -276,6 +277,8 @@ export class Ledger {
          updated_at = excluded.updated_at`,
       [input.slug, input.title, input.type, input.leaf ? 1 : 0, input.proseRef ?? null, ts, ts],
     );
+    if (created) this.addMark(input.slug, "new");
+    return { created };
   }
 
   deleteNode(slug: string): void {
@@ -400,6 +403,38 @@ export class Ledger {
       "DELETE FROM node_marks WHERE slug = ? AND kind IN ('detail', 'expand', 'enrich', 'fix')",
       [slug],
     );
+  }
+
+  clearInboxMarks(slug: string): number {
+    const before = this.db
+      .query("SELECT COUNT(*) AS n FROM node_marks WHERE slug = ? AND kind IN ('new', 'decayed')")
+      .get(slug) as { n: number };
+    this.db.run("DELETE FROM node_marks WHERE slug = ? AND kind IN ('new', 'decayed')", [slug]);
+    return before.n;
+  }
+
+  clearAllInboxMarks(): number {
+    const before = this.db
+      .query("SELECT COUNT(*) AS n FROM node_marks WHERE kind IN ('new', 'decayed')")
+      .get() as { n: number };
+    this.db.run("DELETE FROM node_marks WHERE kind IN ('new', 'decayed')");
+    return before.n;
+  }
+
+  /**
+   * Stamp `decayed` when a stored metric is lowered.
+   * `treatNullAsFull`: metric_decay treats missing as 1.0 (first decay still notices).
+   * Seed / first write without that flag does not stamp.
+   */
+  noteMetricDrop(
+    slug: string,
+    previous: number | null,
+    next: number,
+    opts?: { treatNullAsFull?: boolean },
+  ): void {
+    const baseline = previous === null ? (opts?.treatNullAsFull ? 1.0 : null) : previous;
+    if (baseline === null) return;
+    if (next < baseline) this.addMark(slug, "decayed");
   }
 
   marksOfNormalized(slug: string): string[] {

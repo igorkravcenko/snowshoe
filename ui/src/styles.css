@@ -390,6 +390,36 @@ header .header-sidebar-toggle {
   gap: 4px;
 }
 
+.todo-section {
+  margin-bottom: 14px;
+}
+
+.todo-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.todo-section-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.todo-section-head .todo-section-title {
+  margin: 0;
+}
+
+.todo-read-all {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
 .todo-row {
   display: flex;
   align-items: center;

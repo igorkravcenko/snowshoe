@@ -267,8 +267,7 @@ const mapMarkCmd = defineCommand({
     slug: { type: "string", description: "Node slug", required: true },
     kind: {
       type: "string",
-      description:
-        "Mark kind: detail (grow and/or rewrite), expand (grow), enrich (fields/body), fix, learn, quiz",
+      description: "Mark kind: detail|expand|enrich|fix|learn|quiz|new|decayed",
       default: "expand",
     },
   },

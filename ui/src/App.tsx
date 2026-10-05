@@ -19,6 +19,8 @@ import {
   markNode,
   previewForNode,
   putMapView,
+  readAllInbox,
+  readInboxNode,
   type SessionInfo,
   sameAnchor,
   setLeaf,
@@ -38,7 +40,14 @@ import {
 import { MetricTarget } from "./MetricTarget.tsx";
 import { mapFingerprint } from "./map-fingerprint.ts";
 import { MarkdownBody } from "./markdown.tsx";
-import { formatNodeTip, humanTodoRows, MARK_KINDS, MARK_LABELS, type MarkKind } from "./marks.ts";
+import {
+  ADDABLE_MARK_KINDS,
+  formatNodeTip,
+  humanTodoRows,
+  inboxTodoRows,
+  MARK_LABELS,
+  type MarkKind,
+} from "./marks.ts";
 import { isExpandable } from "./matrix.ts";
 import { PreviewPanel } from "./Preview.tsx";
 import { applySplitDrag, DEFAULT_SPLIT, parseSplitWeights, type SplitWeights } from "./split.ts";
@@ -314,7 +323,7 @@ function Inspector(props: {
           </button>
           {props.menuOpen ? (
             <div className="mark-menu" role="menu">
-              {MARK_KINDS.map((kind) => (
+              {ADDABLE_MARK_KINDS.map((kind) => (
                 <button
                   key={kind}
                   type="button"
@@ -789,7 +798,24 @@ export function App(): ReactElement {
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const todoRows = useMemo(() => (model ? humanTodoRows(model.nodes) : []), [model]);
+  const inboxRows = useMemo(() => (model ? inboxTodoRows(model.nodes) : []), [model]);
+  const laterRows = useMemo(() => (model ? humanTodoRows(model.nodes) : []), [model]);
+  const todoTabCount = inboxRows.length + laterRows.length;
+  const focusedSlugRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const prev = focusedSlugRef.current;
+    focusedSlugRef.current = selected;
+    if (!prev || prev === selected) return;
+    void (async () => {
+      try {
+        await readInboxNode(prev);
+        await reload();
+      } catch {
+        /* leave-node read is best-effort */
+      }
+    })();
+  }, [selected, reload]);
 
   function toggleExpand(slug: string) {
     setExpanded((cur) => {
@@ -823,6 +849,18 @@ export function App(): ReactElement {
     x = Math.max(4, Math.min(x, box.width - menuW - 4));
     y = Math.max(4, Math.min(y, box.height - menuH - 4));
     setTreeCtx({ slug, x, y });
+  }
+
+  async function onReadAllInbox() {
+    setBusy(true);
+    setError(null);
+    try {
+      await readAllInbox();
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setBusy(false);
+    }
   }
 
   async function onUnmark(slug: string, kind: string) {
@@ -953,8 +991,8 @@ export function App(): ReactElement {
                 onClick={() => setNavTab(tab)}
               >
                 {NAV_TAB_LABELS[tab]}
-                {tab === "todos" && todoRows.length > 0 ? (
-                  <span className="nav-tab-count">{todoRows.length}</span>
+                {tab === "todos" && todoTabCount > 0 ? (
+                  <span className="nav-tab-count">{todoTabCount}</span>
                 ) : null}
               </button>
             ))}
@@ -993,7 +1031,7 @@ export function App(): ReactElement {
                   <div className="graph-ctx-heading">
                     {nodes.get(treeCtx.slug)?.title ?? treeCtx.slug}
                   </div>
-                  {MARK_KINDS.map((kind) => {
+                  {ADDABLE_MARK_KINDS.map((kind) => {
                     const marked = new Set(nodes.get(treeCtx.slug)?.marks ?? []);
                     return (
                       <button
@@ -1031,35 +1069,85 @@ export function App(): ReactElement {
             <div
               className={navTab === "todos" ? "nav-panel" : "nav-panel hidden"}
               role="tabpanel"
-              aria-label="Human todos"
+              aria-label="Inbox and later todos"
             >
-              {todoRows.length === 0 ? (
+              {todoTabCount === 0 ? (
                 <p className="hint">
-                  No human todos yet. Mark a node with {MARK_LABELS.learn} or {MARK_LABELS.quiz} in
-                  the inspector.
+                  Inbox is empty. Personal Later items use {MARK_LABELS.learn} / {MARK_LABELS.quiz}.
                 </p>
               ) : (
-                <ul className="todo-list" aria-label="Nodes marked learn or quiz">
-                  {todoRows.map((row) => (
-                    <li key={row.slug}>
-                      <button
-                        type="button"
-                        className={`todo-row${selected === row.slug ? " selected" : ""}`}
-                        data-slug={row.slug}
-                        onClick={() => selectNode(row.slug)}
-                      >
-                        <span className="todo-title">{row.title}</span>
-                        <span className="todo-kinds">
-                          {row.kinds.map((kind) => (
-                            <span key={kind} className="badge">
-                              {MARK_LABELS[kind]}
-                            </span>
-                          ))}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <div className="todo-section">
+                    <div className="todo-section-head">
+                      <h3 className="todo-section-title">Inbox</h3>
+                      {inboxRows.length > 0 ? (
+                        <button
+                          type="button"
+                          className="todo-read-all"
+                          disabled={busy}
+                          onClick={() => void onReadAllInbox()}
+                        >
+                          Read all
+                        </button>
+                      ) : null}
+                    </div>
+                    {inboxRows.length === 0 ? (
+                      <p className="hint">No new or decayed nodes.</p>
+                    ) : (
+                      <ul className="todo-list" aria-label="Inbox new and decayed nodes">
+                        {inboxRows.map((row) => (
+                          <li key={`inbox-${row.slug}`}>
+                            <button
+                              type="button"
+                              className={`todo-row${selected === row.slug ? " selected" : ""}`}
+                              data-slug={row.slug}
+                              onClick={() => selectNode(row.slug)}
+                            >
+                              <span className="todo-title">{row.title}</span>
+                              <span className="todo-kinds">
+                                {row.kinds.map((kind) => (
+                                  <span key={kind} className="badge">
+                                    {MARK_LABELS[kind]}
+                                  </span>
+                                ))}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <div className="todo-section">
+                    <h3 className="todo-section-title">Later</h3>
+                    {laterRows.length === 0 ? (
+                      <p className="hint">
+                        Mark {MARK_LABELS.learn} or {MARK_LABELS.quiz} on a node to park it here.
+                      </p>
+                    ) : (
+                      <ul className="todo-list" aria-label="Nodes marked learn or quiz">
+                        {laterRows.map((row) => (
+                          <li key={`later-${row.slug}`}>
+                            <button
+                              type="button"
+                              className={`todo-row${selected === row.slug ? " selected" : ""}`}
+                              data-slug={row.slug}
+                              onClick={() => selectNode(row.slug)}
+                            >
+                              <span className="todo-title">{row.title}</span>
+                              <span className="todo-kinds">
+                                {row.kinds.map((kind) => (
+                                  <span key={kind} className="badge">
+                                    {MARK_LABELS[kind]}
+                                  </span>
+                                ))}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </div>

@@ -62,7 +62,8 @@ describe("detail hop is expand∪enrich", () => {
       "auth",
     ]);
     const auth = (status.json.nodes as Array<Record<string, unknown>>)[0]!;
-    expect(auth.marks).toEqual(["detail"]);
+    expect(auth.marks).toContain("detail");
+    expect(auth.marks).toContain("new");
     expect(auth.bodyOverview).toBe("Auth module stub.");
     expect(String(auth.bodyMd)).toContain("## Notes");
 

@@ -7,6 +7,8 @@ import {
   parseMapStatusOpts,
   runMapDetailCancel,
   runMapDetailMark,
+  runMapInboxRead,
+  runMapInboxReadAll,
   runMapMark,
   runMapMetric,
   runMapSetLeaf,
@@ -223,6 +225,22 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
       const kind = url.searchParams.get("kind") ?? body.kind;
       return withSession((s) => {
         const result = runMapUnmark(s, slug, kind);
+        return jsonResponse(result.body, result.exitCode);
+      }, opts.cwd);
+    }
+
+    if (path === "/api/map/inbox/read" && req.method === "POST") {
+      const body = await readJsonBody(req);
+      const slug = url.searchParams.get("slug") || (typeof body.slug === "string" ? body.slug : "");
+      return withSession((s) => {
+        const result = runMapInboxRead(s, slug);
+        return jsonResponse(result.body, result.exitCode);
+      }, opts.cwd);
+    }
+
+    if (path === "/api/map/inbox/read-all" && req.method === "POST") {
+      return withSession((s) => {
+        const result = runMapInboxReadAll(s);
         return jsonResponse(result.body, result.exitCode);
       }, opts.cwd);
     }

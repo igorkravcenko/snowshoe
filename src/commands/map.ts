@@ -402,6 +402,43 @@ export function runMapUnmark(
   };
 }
 
+/** Clear system inbox marks (`new` / `decayed`) on one slug (leave-node / read). */
+export function runMapInboxRead(
+  session: Session,
+  slug: string,
+): { exitCode: number; body: Record<string, unknown> } {
+  if (!slug || !isSlug(slug)) {
+    throw new CliError("Invalid --slug", EXIT_USAGE);
+  }
+  if (!session.ledger.getNode(slug)) {
+    throw new CliError(`Unknown slug: ${slug}`, EXIT_USAGE);
+  }
+  const cleared = session.ledger.clearInboxMarks(slug);
+  return {
+    exitCode: EXIT_OK,
+    body: envelope("map.inbox.read", session.repoRoot, session.gitHead, {
+      ok: true,
+      slug,
+      cleared,
+    }),
+  };
+}
+
+/** Clear all `new` / `decayed` marks in the ledger (Read all). */
+export function runMapInboxReadAll(session: Session): {
+  exitCode: number;
+  body: Record<string, unknown>;
+} {
+  const cleared = session.ledger.clearAllInboxMarks();
+  return {
+    exitCode: EXIT_OK,
+    body: envelope("map.inbox.readAll", session.repoRoot, session.gitHead, {
+      ok: true,
+      cleared,
+    }),
+  };
+}
+
 export function runMapSetLeaf(
   session: Session,
   slug: string,
@@ -452,7 +489,10 @@ function decayParentsOnDrop(
   for (const parent of session.ledger.parentsOf(childSlug)) {
     const current = session.ledger.getMetric(parent, level);
     if (current === null) continue;
-    if (childValue < current) session.ledger.setMetric(parent, level, childValue);
+    if (childValue < current) {
+      session.ledger.setMetric(parent, level, childValue);
+      session.ledger.noteMetricDrop(parent, current, childValue);
+    }
   }
 }
 
@@ -486,6 +526,7 @@ export function runMapMetric(
       const value = updates[level]!;
       const previous = session.ledger.getMetric(slug, level);
       session.ledger.setMetric(slug, level, value);
+      session.ledger.noteMetricDrop(slug, previous, value);
       if (previous === null || value < previous) {
         decayParentsOnDrop(session, slug, level, value);
       }

@@ -50,4 +50,4 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-10-02-map-metric-cli](./ADR-2026-10-02-map-metric-cli.md) | accepted | `map metric` sets node floats; HTTP twin; not work next / not quiz |
 | [ADR-2026-10-02-detail-body-wiki](./ADR-2026-10-02-detail-body-wiki.md) | accepted | `detail` hop = expand∪enrich; `bodyOverview`; UI wiki `[[slug]]` |
 | [ADR-2026-10-02-apache-2-0-license](./ADR-2026-10-02-apache-2-0-license.md) | accepted | Product repo licensed Apache-2.0 (`LICENSE` + `NOTICE`) |
-| [ADR-2026-10-03-skill-cli-install](./ADR-2026-10-03-skill-cli-install.md) | accepted | `skill list|cat|install --skills-path`; opt-in; no harness enum |
+| [ADR-2026-10-05-inbox-marks](./ADR-2026-10-05-inbox-marks.md) | accepted | System inbox marks `new`/`decayed`; Todos Inbox/Later; read on leave |
