@@ -987,6 +987,7 @@ function acceptMetric(session: Session, step: StepRow, raw: unknown): CompleteRe
   );
   session.ledger.transaction(() => {
     session.ledger.setMetric(update.nodeId, update.level, update.value);
+    session.ledger.noteMetricDrop(update.nodeId, stored, update.value, { treatNullAsFull: true });
     decayParents(session, update.nodeId, update.level, update.value);
     session.ledger.updateStep(step.id, {
       status: "accepted",
@@ -1007,7 +1008,10 @@ function decayParents(
   for (const parent of session.ledger.parentsOf(childSlug)) {
     const current = session.ledger.getMetric(parent, level);
     if (current === null) continue;
-    if (childValue < current) session.ledger.setMetric(parent, level, childValue);
+    if (childValue < current) {
+      session.ledger.setMetric(parent, level, childValue);
+      session.ledger.noteMetricDrop(parent, current, childValue);
+    }
   }
 }
 

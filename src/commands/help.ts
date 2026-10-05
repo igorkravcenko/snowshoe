@@ -48,7 +48,7 @@ export const AGENT_HELP = {
     },
     {
       run: "snowshoe map mark --json --slug <slug> --kind detail",
-      when: "Queue detail (grow and/or rewrite body). Narrow: expand (grow only), enrich (fields/body only), fix (repair). learn/quiz are not work next. Only if this turn they asked.",
+      when: "Queue detail (grow and/or rewrite body). Narrow: expand (grow only), enrich (fields/body only), fix (repair). learn/quiz are Later; new/decayed are system inbox. Only if this turn they asked.",
     },
     {
       run: "snowshoe map detail mark --json --slug <slug>",

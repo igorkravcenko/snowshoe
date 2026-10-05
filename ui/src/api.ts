@@ -173,6 +173,30 @@ export async function unmarkNode(slug: string, kind: string): Promise<void> {
   }
 }
 
+export async function readInboxNode(slug: string): Promise<void> {
+  const res = await fetch("/api/map/inbox/read", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ slug }),
+  });
+  const body = await readJson<{ ok?: boolean; error?: string }>(res);
+  if (!res.ok || body.ok === false) {
+    throw new Error(body.error ?? `inbox read HTTP ${res.status}`);
+  }
+}
+
+export async function readAllInbox(): Promise<void> {
+  const res = await fetch("/api/map/inbox/read-all", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "{}",
+  });
+  const body = await readJson<{ ok?: boolean; error?: string }>(res);
+  if (!res.ok || body.ok === false) {
+    throw new Error(body.error ?? `inbox read-all HTTP ${res.status}`);
+  }
+}
+
 export async function setLeaf(slug: string, leaf: boolean): Promise<void> {
   const res = await fetch("/api/map/leaf", {
     method: "POST",

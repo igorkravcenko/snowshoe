@@ -95,7 +95,7 @@ Work mark kinds (each queues **its own** step):
 | `enrich` | Improve **this** node’s fields — especially the markdown `body`. No new children. |
 | `fix` | Something looks wrong here; inspect and repair structure and/or fields. |
 
-`learn` and `quiz` are not `work next`.
+`learn` and `quiz` are personal Later flags (not `work next`). System inbox marks `new` / `decayed` are stamped by the ledger (create / metric drop); do not set them yourself.
 
 When `todo` is `snowshoe init --json`, you may add `--locale <tag>` (alias `--ui-language`) with a BCP-47 tag such as `en` or `en-US`. Init is idempotent: the same command on an existing ledger sets or updates locale meta.
 
@@ -202,6 +202,8 @@ You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, t
 ### `kind=enrich`
 
 Same complete envelope family as expand, but **only** upsert `parentSlug` (title, type, `leaf`, `body` / anchors). Keep `children` / `refs` / `retire` / `clearEdges` empty. Rejects `enrich_forbids_*` / `enrich_only_parent` / `enrich_requires_parent_upsert` if you grow the graph. Prefer rewriting the markdown body in the init locale (overview + detail; wiki links for jargon).
+
+If you substantially change what the node *means* (not a typo / wording polish), consider lowering comprehension metrics via the metric_decay hop or by asking the human — only when their understanding of this node likely dropped. Do not always decay. The map UI stamps system inbox marks (`new` on create, `decayed` on metric drops); do not invent those marks yourself.
 
 ### `kind=fix`
 

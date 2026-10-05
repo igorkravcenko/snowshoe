@@ -77,7 +77,10 @@ describe("map polish: marks, leaf, anchors", () => {
     ]);
     const node = (status.json.nodes as Array<Record<string, unknown>>)[0]!;
     expect(node.leaf).toBe(true);
-    expect(node.marks).toEqual(expect.arrayContaining(["enrich", "expand", "learn"]));
+    expect(node.marks).toContain("enrich");
+    expect(node.marks).toContain("expand");
+    expect(node.marks).toContain("learn");
+    expect(node.marks).toContain("new");
 
     const next = await snowshoe(repo, ["work", "next", "--json"]);
     const items = next.json.items as Array<Record<string, unknown>>;
@@ -134,7 +137,8 @@ describe("map polish: marks, leaf, anchors", () => {
     ]);
     const auth = (after.json.nodes as Array<Record<string, unknown>>)[0]!;
     expect(auth.detailStatus).toBeNull();
-    expect(auth.marks).toEqual(["learn"]);
+    expect(auth.marks).toContain("learn");
+    expect(auth.marks).toContain("new");
     expect(auth.children).toEqual(["session"]);
   });
 

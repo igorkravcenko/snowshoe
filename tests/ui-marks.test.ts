@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import type { MapNode } from "../ui/src/api.ts";
-import { formatNodeTip, humanTodoRows, isHumanTodoKind } from "../ui/src/marks.ts";
+import {
+  formatNodeTip,
+  humanTodoRows,
+  inboxTodoRows,
+  isHumanTodoKind,
+  isInboxMarkKind,
+} from "../ui/src/marks.ts";
 
 function node(partial: Partial<MapNode> & Pick<MapNode, "slug">): MapNode {
   return {
@@ -19,27 +25,31 @@ describe("formatNodeTip", () => {
   });
 });
 
-describe("human todo marks", () => {
-  test("learn and quiz are human todo kinds; work marks are not", () => {
+describe("mark kind buckets", () => {
+  test("inbox vs later vs work", () => {
+    expect(isInboxMarkKind("new")).toBe(true);
+    expect(isInboxMarkKind("decayed")).toBe(true);
+    expect(isInboxMarkKind("learn")).toBe(false);
     expect(isHumanTodoKind("learn")).toBe(true);
     expect(isHumanTodoKind("quiz")).toBe(true);
+    expect(isHumanTodoKind("new")).toBe(false);
     expect(isHumanTodoKind("expand")).toBe(false);
-    expect(isHumanTodoKind("enrich")).toBe(false);
-    expect(isHumanTodoKind("fix")).toBe(false);
-    expect(isHumanTodoKind("detail")).toBe(false);
   });
 
-  test("humanTodoRows lists only nodes with learn/quiz, sorted by slug", () => {
-    const rows = humanTodoRows([
-      node({ slug: "z", marks: ["expand"] }),
-      node({ slug: "b", title: "Beta", marks: ["quiz", "learn"] }),
-      node({ slug: "a", marks: ["learn"] }),
-      node({ slug: "c", marks: [] }),
-      node({ slug: "d" }),
+  test("inbox and later rows split", () => {
+    const nodes = [
+      node({ slug: "a", title: "Alpha", marks: ["new", "learn"] }),
+      node({ slug: "b", title: "Beta", marks: ["decayed"] }),
+      node({ slug: "c", title: "Gamma", marks: ["expand"] }),
+      node({ slug: "d", title: "Delta", marks: ["quiz"] }),
+    ];
+    expect(inboxTodoRows(nodes)).toEqual([
+      { slug: "a", title: "Alpha", kinds: ["new"] },
+      { slug: "b", title: "Beta", kinds: ["decayed"] },
     ]);
-    expect(rows).toEqual([
-      { slug: "a", title: "a", kinds: ["learn"] },
-      { slug: "b", title: "Beta", kinds: ["learn", "quiz"] },
+    expect(humanTodoRows(nodes)).toEqual([
+      { slug: "a", title: "Alpha", kinds: ["learn"] },
+      { slug: "d", title: "Delta", kinds: ["quiz"] },
     ]);
   });
 });

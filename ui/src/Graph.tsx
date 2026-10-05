@@ -11,7 +11,7 @@ import {
   type GraphDisplayOptions,
   radialLayout,
 } from "./graph.ts";
-import { formatNodeTip, MARK_KINDS, MARK_LABELS, type MarkKind } from "./marks.ts";
+import { ADDABLE_MARK_KINDS, formatNodeTip, MARK_LABELS, type MarkKind } from "./marks.ts";
 
 const FOCUS_R = 5.2;
 const NODE_R = 3.8;
@@ -403,7 +403,7 @@ export function GraphPanel(props: {
           aria-label={`Mark ${ctx.slug}`}
         >
           <div className="graph-ctx-heading">{ctxNode?.title ?? ctx.slug}</div>
-          {MARK_KINDS.map((kind) => (
+          {ADDABLE_MARK_KINDS.map((kind) => (
             <button
               key={kind}
               type="button"
