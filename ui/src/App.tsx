@@ -17,6 +17,7 @@ import {
   type MapNode,
   type MapReadModel,
   markNode,
+  mapChromeTitle,
   previewForNode,
   putMapView,
   readAllInbox,
@@ -557,6 +558,11 @@ export function App(): ReactElement {
     void reload();
   }, [reload]);
 
+  const chromeTitle = mapChromeTitle(session?.repoRoot);
+  useEffect(() => {
+    document.title = chromeTitle;
+  }, [chromeTitle]);
+
   const shownFingerprint = model ? mapFingerprint(model) : null;
 
   useEffect(() => {
@@ -891,7 +897,7 @@ export function App(): ReactElement {
     <div className="app">
       <header>
         <div className="header-brand">
-          <h1>Snowshoe map</h1>
+          <h1>{chromeTitle}</h1>
           <a
             className="header-star"
             href="https://github.com/igorkravcenko/snowshoe"

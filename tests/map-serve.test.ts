@@ -194,7 +194,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(afterJson.nodes.find((n) => n.slug === "auth")?.detailStatus).toBeNull();
   });
 
-  test("UI smoke: built index mentions Snowshoe map and reload", async () => {
+  test("UI smoke: built index mentions map chrome and reload", async () => {
     const repo = makeGitRepo();
     await snowshoe(repo, ["init", "--json"]);
     await ensureMapUiBuilt(snowshoePackageRoot());
@@ -209,7 +209,8 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     const page = await fetch(server.url);
     expect(page.ok).toBe(true);
     const html = await page.text();
-    expect(html).toMatch(/Snowshoe map|id="root"/);
+    expect(html).toMatch(/id="root"/);
+    expect(html).toMatch(/<title>map<\/title>/);
     const asset = html.match(/src="(\/assets\/[^"]+)"/);
     expect(asset?.[1]).toBeTruthy();
     const jsRes = await fetch(`${server.url.replace(/\/$/, "")}${asset![1]}`);
@@ -219,6 +220,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).not.toContain('from"@xterm/xterm"');
     expect(js).toContain("Reload · updated");
     expect(js).toContain("Map changed");
+    expect(js).toContain(" map");
     expect(js).toContain("/api/map/status");
     expect(js).toContain("/api/map/mark");
     expect(js).toContain("/api/file");

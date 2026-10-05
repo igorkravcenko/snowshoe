@@ -76,6 +76,14 @@ export type SessionInfo = {
   packageRoot?: string | null;
 };
 
+/** Header / tab title: `<repo basename> map` (not product brand). */
+export function mapChromeTitle(repoRoot: string | null | undefined): string {
+  if (!repoRoot) return "map";
+  const trimmed = repoRoot.replace(/[/\\]+$/, "");
+  const parts = trimmed.split(/[/\\]/).filter(Boolean);
+  const name = parts.at(-1);
+  return name ? `${name} map` : "map";
+}
 
 export type FeedbackEntry = {
   id: string;
