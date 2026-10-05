@@ -965,6 +965,30 @@ button.linkish.active {
   color: var(--accent);
 }
 
+.body-md .md-table-wrap {
+  overflow-x: auto;
+  margin: 0 0 12px;
+}
+
+.body-md table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+
+.body-md th,
+.body-md td {
+  border: 1px solid var(--line);
+  padding: 6px 8px;
+  vertical-align: top;
+}
+
+.body-md th {
+  background: #1b232c;
+  font-weight: 600;
+  text-align: left;
+}
+
 .body-md .wiki-link {
   color: var(--accent);
   font: inherit;
