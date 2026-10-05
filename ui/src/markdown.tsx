@@ -199,7 +199,10 @@ export function MarkdownBody(props: {
             <thead>
               <tr>
                 {headCells.map(({ cell, align, ci }) => (
-                  <th key={`th-${tableKey}-${ci}-${cell}`} style={align ? { textAlign: align } : undefined}>
+                  <th
+                    key={`th-${tableKey}-${ci}-${cell}`}
+                    style={align ? { textAlign: align } : undefined}
+                  >
                     {inline(cell, `th${tableKey}-${ci}`, wiki)}
                   </th>
                 ))}
@@ -211,10 +214,7 @@ export function MarkdownBody(props: {
                 return (
                   <tr key={rowKey}>
                     {headCells.map(({ align, ci }) => (
-                      <td
-                        key={`${rowKey}-c${ci}`}
-                        style={align ? { textAlign: align } : undefined}
-                      >
+                      <td key={`${rowKey}-c${ci}`} style={align ? { textAlign: align } : undefined}>
                         {inline(row[ci] ?? "", `td${tableKey}-${ri}-${ci}`, wiki)}
                       </td>
                     ))}
