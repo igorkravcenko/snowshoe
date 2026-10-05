@@ -88,6 +88,7 @@ function fullNode(session: Session, slug: string): Record<string, unknown> | nul
     ...(a.end_line ? { endLine: a.end_line } : {}),
     ...(a.line_text ? { lineText: a.line_text } : {}),
     ...(a.span ? { span: a.span } : {}),
+    locatorOffset: a.locator_offset ?? 0,
   }));
   const unresolved = session.ledger.unresolvedAnchorPaths(n.slug);
   const marks = session.ledger.marksOfNormalized(n.slug);

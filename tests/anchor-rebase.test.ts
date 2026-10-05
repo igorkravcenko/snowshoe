@@ -15,4 +15,18 @@ describe("rebaseAnchor", () => {
     expect(r.startLine).toBe(3);
     expect(r.endLine).toBe(3);
   });
+
+  test("locatorOffset reconstructs window start from identity line", () => {
+    const py =
+      "@dataclass(frozen=True, slots=True)\nclass CarrySession:\n    quote_maker_fee: Decimal\n";
+    const r = rebaseAnchor({
+      fileText: `hdr\n${py}`,
+      storedStart: 1,
+      locatorOffset: 1,
+      lineText: "class CarrySession:",
+      span: 3,
+    });
+    expect(r.startLine).toBe(2);
+    expect(r.endLine).toBe(4);
+  });
 });

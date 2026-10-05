@@ -81,7 +81,7 @@ describe("HP1 cold init → root detail seed", () => {
                 title: "Auth",
                 type: "module",
                 op: "upsert",
-                anchors: [{ path: "src/missing.ts", symbol: "ghost" }],
+                anchors: [{ path: "src/missing.ts", symbol: "ghost", locatorOffset: 0 }],
               },
             ],
           }),
@@ -113,7 +113,7 @@ describe("HP1 cold init → root detail seed", () => {
                 op: "upsert",
                 leaf: false,
                 proseRef: ".snowshoe/map/nodes/auth.md",
-                anchors: [{ path: "README.md", symbol: "fixture", startLine: 1 }],
+                anchors: [{ path: "README.md", symbol: "fixture", startLine: 1, locatorOffset: 0 }],
                 metrics: { overview: 0.9 },
               },
               {

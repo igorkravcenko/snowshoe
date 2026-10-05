@@ -23,7 +23,7 @@ async function seedRootChild(repo: string): Promise<void> {
                 type: "module",
                 op: "upsert",
                 body: "CLI surface",
-                anchors: [{ path: "README.md", startLine: 1 }],
+                anchors: [{ path: "README.md", startLine: 1, locatorOffset: 0 }],
               },
             ],
             children: ["cli"],

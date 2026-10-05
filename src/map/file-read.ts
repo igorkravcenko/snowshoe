@@ -78,7 +78,13 @@ function countLines(text: string): number {
 export function readRepoFile(
   repoRoot: string,
   requested: string,
-  range: { start?: number; end?: number; lineText?: string; span?: number } = {},
+  range: {
+    start?: number;
+    end?: number;
+    lineText?: string;
+    span?: number;
+    locatorOffset?: number;
+  } = {},
 ): FileReadResult {
   const { abs, rel } = resolveRepoFile(repoRoot, requested);
   if (!existsSync(abs)) {
@@ -112,6 +118,16 @@ export function readRepoFile(
   let startLine = parseLine(range.start, "start");
   let endLine = parseLine(range.end, "end");
   const span = parseLine(range.span, "span");
+  const offset =
+    range.locatorOffset === undefined
+      ? 0
+      : (() => {
+          const raw = range.locatorOffset;
+          if (!Number.isInteger(raw) || raw < 0) {
+            throw new FileReadError("locatorOffset must be a non-negative integer", 400);
+          }
+          return raw;
+        })();
   if (range.lineText !== undefined && range.lineText.trim() !== "") {
     const derivedSpan =
       span ??
@@ -121,6 +137,7 @@ export function readRepoFile(
     const rebased = rebaseAnchor({
       fileText: text,
       storedStart: startLine,
+      locatorOffset: offset,
       lineText: range.lineText,
       span: derivedSpan,
     });

@@ -54,6 +54,7 @@ export function PreviewPanel(props: {
   const endLine = anchor?.endLine;
   const span = anchor?.span;
   const lineText = anchor?.lineText;
+  const locatorOffset = anchor?.locatorOffset;
   const symbol = anchor?.symbol;
 
   useEffect(() => {
@@ -72,6 +73,7 @@ export function PreviewPanel(props: {
       end: endLine,
       lineText,
       span,
+      locatorOffset,
     })
       .then((body) => {
         if (!cancelled) {
@@ -89,7 +91,7 @@ export function PreviewPanel(props: {
     return () => {
       cancelled = true;
     };
-  }, [path, startLine, endLine, span, lineText]);
+  }, [path, startLine, endLine, span, lineText, locatorOffset]);
 
   useEffect(() => {
     if (!active || !data || startLine === undefined) return;

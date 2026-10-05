@@ -179,7 +179,8 @@ You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, t
                 "path": "src/cli.ts",
                 "symbol": "main",
                 "startLine": 45,
-                "endLine": 80
+                "endLine": 80,
+                "locatorOffset": 0
               }
             ]
           }
@@ -195,7 +196,7 @@ You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, t
 - `unchanged: true` with empty `nodes` / `children` / `refs` clears the todo without growing the graph.
 - `proseRef`, if used, must stay under `.snowshoe/map/`.
 - Anchor `path`s must exist in the repo (missing or moved paths reject the complete).
-- Each anchor is `{ path, symbol?, startLine?, endLine? }`. `path` is required (repo-relative). `startLine` / `endLine` are **1-based, inclusive**. `endLine` is optional: send it only when the end is known; omit rather than guess. The ledger stores fragment size from that span. `symbol` is an optional label, not a substitute for lines.
+- Each anchor is `{ path, symbol?, startLine?, endLine?, locatorOffset }`. `path` is required (repo-relative). **`locatorOffset` is required** (int ≥ 0): lines from `startLine` down to the identity / declaration line whose text the ledger stores for rebase. Use `0` when `startLine` is already that line. Example: fragment starts at a decorator and the class is next → `startLine` on the decorator, `locatorOffset: 1`. `startLine` / `endLine` are **1-based, inclusive**. `endLine` is optional: send it only when the end is known; omit rather than guess. The ledger stores fragment size from that span. `symbol` is an optional label, not a substitute for lines.
 - The map UI loads the **whole file**, scrolls to `startLine` (if set), and highlights `startLine…endLine` or just `startLine`. Prefer a real span (function, section) over always `startLine: 1`.
 - Follow `allowedChildTypes` from `work next`. `leaf: true` nodes are a stop-flag; humans still open `anchors[]`. A later expand mark on that node is a request to cut children.
 

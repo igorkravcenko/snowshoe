@@ -55,7 +55,7 @@ describe("ledger sqlite busy", () => {
                   type: "module",
                   op: "upsert",
                   body: "fixture",
-                  anchors: [{ path: "README.md", startLine: 1 }],
+                  anchors: [{ path: "README.md", startLine: 1, locatorOffset: 0 }],
                 },
               ],
               children: ["auth"],

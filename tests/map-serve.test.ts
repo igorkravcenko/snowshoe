@@ -35,7 +35,7 @@ async function seedAuth(repo: string): Promise<void> {
               title: "Auth",
               type: "module",
               op: "upsert",
-              anchors: [{ path: "README.md", symbol: "fixture", startLine: 1 }],
+              anchors: [{ path: "README.md", symbol: "fixture", startLine: 1, locatorOffset: 0 }],
             },
           ],
         }),

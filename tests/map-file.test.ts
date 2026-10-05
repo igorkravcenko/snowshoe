@@ -116,6 +116,19 @@ describe("repo file sandbox (GET /api/file)", () => {
     expect(rebased.startLine).toBe(3);
     expect(rebased.endLine).toBe(3);
 
+    writeFileSync(
+      join(repo, "src", "carry.py"),
+      "pre\n@dataclass\nclass CarrySession:\n    x: int\n",
+    );
+    const withOffset = readRepoFile(repo, "src/carry.py", {
+      start: 1,
+      lineText: "class CarrySession:",
+      span: 3,
+      locatorOffset: 1,
+    });
+    expect(withOffset.startLine).toBe(2);
+    expect(withOffset.endLine).toBe(4);
+
     const missingPath = await fileApi(repo, "");
     expect(missingPath.status).toBe(400);
 
