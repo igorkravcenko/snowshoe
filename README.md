@@ -21,41 +21,80 @@ _Screenshot placeholder: map after pull (stale nodes + catch-up). See [docs/asse
 
 ## Install
 
-You need Bun 1.1+.
+You need Bun 1.1+. The PATH binary is **`snowshoe`** (alias **`snoe`** is the same entrypoint).
 
-### From a clone (works today)
+### 1. Put `snowshoe` on PATH
+
+**From the registry** (scoped package only):
+
+```bash
+bun add -g @igorkravcenko/snowshoe
+# or: npm install -g @igorkravcenko/snowshoe
+command -v snowshoe
+```
+
+**From a clone of this project** (contributors / local link):
 
 ```bash
 bun install --frozen-lockfile
 bun link
 # ensure ~/.bun/bin is on PATH
-snowshoe init --json --locale en
+command -v snowshoe
 ```
 
-That puts **`snowshoe`** on PATH once `~/.bun/bin` is on PATH. Short alias:
-**`snoe`** (same binary).
+`snowshoe init` does **not** install git hooks. Hooks and the PR check are later intent.
 
-`snowshoe init` does not install git hooks. Opt-in hooks and the PR check are
-intent for later (CLI not shipped yet). Default signal is skill/human → CLI.
+### 2. Clone the repo you want to understand
 
-### After publish
+Snowshoe maps **your** working tree. Clone (or open) that repository — it does not have to be this one.
 
 ```bash
-bun add -g @igorkravcenko/snowshoe
-# or: npm install -g @igorkravcenko/snowshoe
-snowshoe init --json --locale en
+git clone <your-repo> && cd <your-repo>
 ```
 
-Still do **not** use bare npm `snowshoe` (unrelated Stamp client). Prefer the clone path above until you install the scoped package.
+### 3. Install the skill into the agent harness
 
-## How to try
+Opt-in; not part of `init`. Example for Cursor:
 
-1. `snowshoe init --json --locale en`
-2. `snowshoe map serve --open` and walk the tree
-3. Optional: load `skills/snowshoe/` and let an agent run `snowshoe work next`
+```bash
+snowshoe skill install --json --skills-path .cursor/skills
+```
+
+Other harnesses: pass their skills directory as `--skills-path`. Check with `snowshoe skill list --json`.
+
+## Learning (first pass)
+
+Goal: open the map UI first, then run one agent in the UI terminal in **combined** mode — background drain (`work next --wait`) while you talk in the foreground about what to mark and detail.
+
+1. **Open the UI** (soft-init: works before ledger init; empty map + CTA until init runs):
+
+   ```bash
+   snowshoe map serve --open
+   ```
+
+   Default port is **3232** (override with `--port`; `0` = ephemeral).
+
+2. **Start an agent in the map UI terminal** and invoke the Snowshoe skill in **combined** mode (map UI open + keep draining while studying). The skill reads both `drain.md` and `learn.md`.
+
+3. **Background:** one `snowshoe work next --json --wait` (optional `--wait-timeout 0` for no timeout). That waiter runs init / refresh / advance / claimed work as the queue needs. Do **not** start a second waiter.
+
+4. **Foreground:** while wait is idle, talk — explore nodes, ask what they mean, ask to mark for detail / expand / enrich. Mark from the UI or ask the agent (`snowshoe map mark --json --slug <slug> --kind detail`). Marks stay disabled in the UI until the map is initialized.
+
+5. When the agent finishes a batch of work, **reload the map** and mark the next nodes. Repeat.
+
+6. Stay in one UI-terminal session: do not kill the background waiter just to study the map.
 
 Longer path: [docs/brain/notes/how-to-try-e2e.md](docs/brain/notes/how-to-try-e2e.md).
-Contributor checks live in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## After a pull
+
+When upstream moves:
+
+```bash
+git pull
+```
+
+Then drain again — either a one-shot catch-up (`snowshoe work next` via the skill on the drain branch) or the same **combined** session in the map UI (one `--wait` + foreground conversation). Reload the map when work lands.
 
 ## What it is / is not
 
