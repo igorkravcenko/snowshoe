@@ -4,13 +4,16 @@ import { DEFAULT_MAP_EXPAND_DEPTH } from "../domain/types.ts";
 import { CliError, EXIT_INTERNAL, EXIT_USAGE } from "../errors.ts";
 import { gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
-import { findRepoRoot, requireInitialized, snowshoePackageRoot } from "../paths.ts";
+import { findRepoRoot, snowshoePackageRoot } from "../paths.ts";
 import { handleMapHttp } from "./http.ts";
 import { isLoopbackHost } from "./loopback.ts";
 import { mapPtyWebsocket, type PtyWsData, tryUpgradeMapPty } from "./pty.ts";
 import { createMapViewStore } from "./views.ts";
 
 export { snowshoePackageRoot };
+
+/** Default `map serve` port (avoids Wrangler's common 8787). */
+export const DEFAULT_MAP_PORT = 3232;
 
 export function mapUiDistDir(packageRoot = snowshoePackageRoot()): string {
   return join(packageRoot, "ui", "dist");
@@ -107,7 +110,6 @@ export async function startMapServer(opts: {
 }): Promise<MapServer> {
   const cwd = opts.cwd ?? process.cwd();
   const repoRoot = findRepoRoot(cwd);
-  requireInitialized(repoRoot);
   const packageRoot = opts.packageRoot ?? snowshoePackageRoot();
   if (opts.buildUi !== false) {
     await ensureMapUiBuilt(packageRoot);
@@ -120,7 +122,7 @@ export async function startMapServer(opts: {
       EXIT_USAGE,
     );
   }
-  const requestedPort = opts.port ?? 8787;
+  const requestedPort = opts.port ?? DEFAULT_MAP_PORT;
   const expandDepth = opts.expandDepth ?? DEFAULT_MAP_EXPAND_DEPTH;
   const views = createMapViewStore();
 

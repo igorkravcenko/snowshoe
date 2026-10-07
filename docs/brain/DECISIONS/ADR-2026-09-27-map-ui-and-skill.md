@@ -48,6 +48,12 @@ HTTP `/api/*` route require a **loopback `Host` header** (DNS-rebinding
 mitigation: peer IP can still be loopback while `Host` is attacker-controlled).
 Documented in `SECURITY.md`.
 
+
+
+## Amendment 2026-10-07: Soft-init + default port 3232
+
+`map serve` boots without `.snowshoe/`. Session/status return `initialized: false` + empty nodes + CTA; ledger mutations stay 4xx. Default bind port is **3232** (`--port` / `0` ephemeral unchanged). See [ADR-2026-10-07-soft-init-combined-port](./ADR-2026-10-07-soft-init-combined-port.md).
+
 ## Evidence
 
 - [../notes/e2e-happy-path-no-learning.md](../notes/e2e-happy-path-no-learning.md)

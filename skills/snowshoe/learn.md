@@ -2,7 +2,11 @@
 
 Conversation about the mapped repo. Snowshoe does not chat, spawn the agent, or send prompts. The human types.
 
-Do not complete claimed steps. If they want the drain queue, they re-invoke the skill.
+Do not invent quiz/verify features. Prefer map read-models over guessing.
+
+**Default (learn-only):** do not complete claimed steps. If they want the drain queue alone, they re-invoke the skill on the drain branch.
+
+**Combined mode** (map UI / UI terminal open while keep-draining — see `SKILL.md`): you may follow `drain.md` in the same invocation. Run at most one background `snowshoe work next --json --wait` (optional `--wait-timeout 0`) and keep the foreground learn/map conversation; do not kill that waiter to study the map. When the waiter returns work, handle it per `drain.md`, then restart one waiter. Never start a second waiter.
 
 ## Live focus
 

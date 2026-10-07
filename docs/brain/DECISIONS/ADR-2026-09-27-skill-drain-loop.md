@@ -76,6 +76,12 @@ Working repos bootstrap via `snowshoe skill list|cat|install --skills-path <dir>
 - CURRENT: skill package is a gate at `skills/snowshoe/`; drain still PATH-`snowshoe`, `work next` gated, default batch 5. Optional `--wait`: [ADR-2026-09-27-work-next-wait](./ADR-2026-09-27-work-next-wait.md). `learn.md` is not quiz.
 - Proposed ADR-B CLI families stay proposed; this ADR specifies the working `work next` envelope for the slice.
 
+
+
+## Amendment 2026-10-07: Combined drain + learn
+
+When map UI / UI terminal / map PTY is open **and** the human wants keep-draining in the same session, the gate may read **both** `drain.md` and `learn.md`. One background `work next --json --wait` plus foreground learn/map conversation; still one waiter. Details: [ADR-2026-10-07-soft-init-combined-port](./ADR-2026-10-07-soft-init-combined-port.md).
+
 ## Evidence
 
 - [../notes/how-to-try-e2e.md](../notes/how-to-try-e2e.md)

@@ -1006,3 +1006,21 @@ button.linkish.active {
   text-decoration: underline wavy;
   text-underline-offset: 2px;
 }
+
+.init-cta {
+  padding: 16px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  margin: 8px;
+  background: color-mix(in srgb, var(--panel) 80%, transparent);
+}
+
+.init-cta .warn {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.init-cta .hint {
+  margin: 0 0 6px;
+  line-height: 1.4;
+}
