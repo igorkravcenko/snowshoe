@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  DEFAULT_MAP_PORT,
   ensureMapUiBuilt,
   isMapUiDistStale,
   snowshoePackageRoot,
@@ -231,6 +232,8 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).toContain("No entity body yet");
     expect(js).toContain("No refs on this node");
     expect(js).toContain("No children yet");
+    expect(js).toContain("Map not initialized");
+    expect(js).toContain("snowshoe init");
     expect(js).toContain("Preview in UI");
     expect(js).toContain("/api/view");
     expect(js).toContain("Location");
@@ -479,5 +482,99 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
       body: JSON.stringify({ text: "host ok" }),
     });
     expect(feedbackOk.status).toBe(200);
+  });
+
+  test("soft-init: serve without .snowshoe boots; session/status uninitialized; mark fails gracefully", async () => {
+    const repo = makeGitRepo();
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+
+    const sess = await fetch(`${server.url}api/session`);
+    expect(sess.status).toBe(200);
+    const sessJson = (await sess.json()) as {
+      initialized: boolean;
+      repoRoot: string;
+      nodes?: unknown;
+      hint?: string;
+      cta?: string;
+      expandDepth: number;
+    };
+    expect(sessJson.initialized).toBe(false);
+    expect(sessJson.repoRoot).toBe(repo);
+    expect(String(sessJson.hint ?? sessJson.cta)).toMatch(/snowshoe init/i);
+    expect(sessJson.expandDepth).toBe(1);
+
+    const status = await fetch(`${server.url}api/map/status?allFields=1`);
+    expect(status.status).toBe(200);
+    const statusJson = (await status.json()) as {
+      initialized: boolean;
+      rootSlug: string;
+      nodes: unknown[];
+      hint?: string;
+    };
+    expect(statusJson.initialized).toBe(false);
+    expect(statusJson.rootSlug).toBe("root");
+    expect(statusJson.nodes).toEqual([]);
+    expect(String(statusJson.hint)).toMatch(/snowshoe init|skill/i);
+
+    const mark = await fetch(`${server.url}api/map/mark`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ slug: "root", kind: "detail" }),
+    });
+    expect(mark.status).toBe(400);
+    const markJson = (await mark.json()) as { ok?: boolean; error?: string };
+    expect(markJson.ok).toBe(false);
+    expect(String(markJson.error)).toMatch(/snowshoe init/i);
+
+    const file = await fetch(`${server.url}api/file?path=README.md&start=1&end=1`);
+    expect(file.status).toBe(400);
+    const fileJson = (await file.json()) as { error?: string };
+    expect(String(fileJson.error)).toMatch(/snowshoe init/i);
+
+    const created = await fetch(`${server.url}api/view`, { method: "POST" });
+    expect(created.ok).toBe(true);
+
+    // Host check still applies when uninitialized
+    const evil = await fetch(`${server.url}api/session`, { headers: { Host: "evil.example" } });
+    expect(evil.status).toBe(403);
+  });
+
+  test("soft-init: after init, session/status report initialized and match CLI", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+
+    const sess = await fetch(`${server.url}api/session`);
+    const sessJson = (await sess.json()) as { initialized: boolean; repoRoot: string };
+    expect(sessJson.initialized).toBe(true);
+    expect(sessJson.repoRoot).toBe(repo);
+
+    const status = await fetch(`${server.url}api/map/status?allFields=1`);
+    const statusJson = (await status.json()) as {
+      initialized: boolean;
+      rootSlug: string;
+      nodes: Array<{ slug: string }>;
+    };
+    expect(statusJson.initialized).toBe(true);
+    expect(statusJson.rootSlug).toBe("root");
+    expect(statusJson.nodes.some((n) => n.slug === "root")).toBe(true);
+  });
+
+  test("DEFAULT_MAP_PORT is 3232", () => {
+    expect(DEFAULT_MAP_PORT).toBe(3232);
   });
 });

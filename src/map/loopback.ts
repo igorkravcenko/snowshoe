@@ -38,7 +38,7 @@ export function isLoopbackHost(host: string | null | undefined): boolean {
   if (colon > -1 && h.includes(".") && /^\d+$/.test(h.slice(colon + 1))) {
     h = h.slice(0, colon);
   } else if (colon > -1 && !h.includes(".") && h !== "::1") {
-    // bare hostname:port (e.g. localhost:8787)
+    // bare hostname:port (e.g. localhost:3232)
     if (/^\d+$/.test(h.slice(colon + 1))) h = h.slice(0, colon);
   }
 

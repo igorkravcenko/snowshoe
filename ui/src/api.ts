@@ -64,6 +64,9 @@ export type MapReadModel = {
   rootSlug: string;
   locale?: string | null;
   nodes: MapNode[];
+  initialized?: boolean;
+  hint?: string;
+  cta?: string;
 };
 
 export type SessionInfo = {
@@ -74,6 +77,9 @@ export type SessionInfo = {
   locale?: string | null;
   expandDepth?: number;
   packageRoot?: string | null;
+  initialized?: boolean;
+  hint?: string;
+  cta?: string;
 };
 
 /** Header / tab title: `<repo basename> map` (not product brand). */

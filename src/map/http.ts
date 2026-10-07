@@ -18,7 +18,8 @@ import {
 import { mapEpochAnchor, refreshRequired, withSession } from "../commands/session.ts";
 import { DEFAULT_MAP_EXPAND_DEPTH } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_INTERNAL, EXIT_OK, EXIT_USAGE } from "../errors.ts";
-import { findRepoRoot, requireInitialized } from "../paths.ts";
+import { gitHead } from "../git.ts";
+import { findRepoRoot, isInitialized, requireInitialized, UNINITIALIZED_HINT } from "../paths.ts";
 import { FileReadError, readRepoFile } from "./file-read.ts";
 import { loopbackHostHeaderOrError } from "./loopback.ts";
 import type { MapViewStore } from "./views.ts";
@@ -65,6 +66,17 @@ function jsonHttp(body: unknown, status: number): Response {
 
 function jsonResponse(body: unknown, exitCode: number): Response {
   return jsonHttp(body, httpStatusForExit(exitCode));
+}
+
+function uninitializedHintBody(extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    schemaVersion: 1,
+    ok: true,
+    initialized: false,
+    hint: UNINITIALIZED_HINT,
+    cta: "Run `snowshoe init` or invoke the snowshoe skill (agent) to build the map.",
+    ...extra,
+  };
 }
 
 function errorResponse(err: unknown): Response {
@@ -153,6 +165,18 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
     }
 
     if (path === "/api/map/status" && req.method === "GET") {
+      const repoRoot = findRepoRoot(opts.cwd);
+      if (!isInitialized(repoRoot)) {
+        return jsonHttp(
+          uninitializedHintBody({
+            rootSlug: "root",
+            nodes: [],
+            repoRoot,
+            gitHead: gitHead(repoRoot),
+          }),
+          200,
+        );
+      }
       return withSession((s) => {
         const result = runMapStatus(
           s,
@@ -170,7 +194,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
                 : undefined,
           }),
         );
-        return jsonResponse(result.body, result.exitCode);
+        return jsonResponse({ ...result.body, initialized: true }, result.exitCode);
       }, opts.cwd);
     }
 
@@ -192,10 +216,26 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
     }
 
     if (path === "/api/session" && req.method === "GET") {
+      const repoRoot = findRepoRoot(opts.cwd);
+      if (!isInitialized(repoRoot)) {
+        return jsonHttp(
+          uninitializedHintBody({
+            repoRoot,
+            gitHead: gitHead(repoRoot),
+            mapAnchor: null,
+            refreshRequired: false,
+            locale: null,
+            expandDepth: opts.expandDepth ?? DEFAULT_MAP_EXPAND_DEPTH,
+            packageRoot: opts.packageRoot ?? null,
+          }),
+          200,
+        );
+      }
       return withSession(
         (s) =>
           jsonResponse(
             {
+              initialized: true,
               repoRoot: s.repoRoot,
               gitHead: s.gitHead,
               mapAnchor: mapEpochAnchor(s),

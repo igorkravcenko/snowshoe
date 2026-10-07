@@ -387,7 +387,7 @@ const mapServeCmd = defineCommand({
     description: "Local map UI + HTTP twins of map status/mark/cancel (no SQLite from the UI)",
   },
   args: {
-    port: { type: "string", description: "Port (default 8787; 0 = ephemeral)", default: "8787" },
+    port: { type: "string", description: "Port (default 3232; 0 = ephemeral)", default: "3232" },
     host: {
       type: "string",
       description: "Loopback bind only (default 127.0.0.1; localhost / ::1 also ok)",

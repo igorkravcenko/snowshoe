@@ -31,6 +31,10 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(gate).toContain("map detail mark");
     expect(gate).toContain("this turn");
     expect(gate).toContain("Not required");
+    expect(gate).toContain("Combined");
+    expect(gate).toMatch(/drain\.md.*learn\.md|both/);
+    expect(gate).toContain("at most");
+    expect(gate).toContain("work next --json --wait");
   });
 
   test("drain.md is repo-agnostic PATH snowshoe (no snowshoe-repo internals)", () => {
@@ -82,13 +86,15 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(drain).not.toContain("1–3");
   });
 
-  test("learn.md is a map-conversation stub (no quiz, no complete)", () => {
+  test("learn.md is a map-conversation stub (no quiz; combined may wait)", () => {
     expect(learn).toContain("map view --json");
     expect(learn).toContain("--fields title,type,leaf,children,refs,bodyOverview");
     expect(learn).toContain("SNOWSHOE_MAP_URL");
     expect(learn).toContain("SNOWSHOE_VIEW");
     expect(learn).not.toContain("work complete");
-    expect(learn).not.toContain("work next --json");
+    expect(learn).toContain("Combined mode");
+    expect(learn).toContain("work next --json --wait");
+    expect(learn.toLowerCase()).not.toContain("quiz product");
   });
 
   test("dry-run: documented work next → complete → map status", async () => {

@@ -24,12 +24,12 @@ describe("isLoopbackPeer", () => {
 describe("isLoopbackHost", () => {
   test("accepts loopback names and host:port", () => {
     expect(isLoopbackHost("127.0.0.1")).toBe(true);
-    expect(isLoopbackHost("127.0.0.1:8787")).toBe(true);
+    expect(isLoopbackHost("127.0.0.1:3232")).toBe(true);
     expect(isLoopbackHost("localhost")).toBe(true);
-    expect(isLoopbackHost("localhost:8787")).toBe(true);
+    expect(isLoopbackHost("localhost:3232")).toBe(true);
     expect(isLoopbackHost("::1")).toBe(true);
     expect(isLoopbackHost("[::1]")).toBe(true);
-    expect(isLoopbackHost("[::1]:8787")).toBe(true);
+    expect(isLoopbackHost("[::1]:3232")).toBe(true);
   });
 
   test("rejects wildcards, LAN, empty", () => {
@@ -39,7 +39,7 @@ describe("isLoopbackHost", () => {
     expect(isLoopbackHost("::")).toBe(false);
     expect(isLoopbackHost("*")).toBe(false);
     expect(isLoopbackHost("10.0.0.1")).toBe(false);
-    expect(isLoopbackHost("evil.example:8787")).toBe(false);
-    expect(isLoopbackHost("192.168.1.9:8787")).toBe(false);
+    expect(isLoopbackHost("evil.example:3232")).toBe(false);
+    expect(isLoopbackHost("192.168.1.9:3232")).toBe(false);
   });
 });

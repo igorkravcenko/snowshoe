@@ -265,6 +265,8 @@ function Inspector(props: {
   preview: Anchor | null;
   busy: boolean;
   menuOpen: boolean;
+  uninitialized?: boolean;
+  initHint?: string | null;
   onMenuOpen: (open: boolean) => void;
   onMark: (slug: string, kind: MarkKind) => void;
   onUnmark: (slug: string, kind: string) => void;
@@ -273,6 +275,18 @@ function Inspector(props: {
   onGoTo: (slug: string) => void;
 }): ReactElement {
   const { node } = props;
+  if (props.uninitialized) {
+    return (
+      <div className="init-cta" role="status">
+        <p className="warn">Map not initialized</p>
+        <p className="hint">
+          {props.initHint ??
+            "Run `snowshoe init` or ask your agent to use the snowshoe skill to build the map."}
+        </p>
+        <p className="hint">Mark actions stay disabled until a ledger exists.</p>
+      </div>
+    );
+  }
   if (!node) {
     return (
       <p className="hint">
@@ -804,6 +818,9 @@ export function App(): ReactElement {
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  const uninitialized = session?.initialized === false || model?.initialized === false;
+  const initHint = session?.cta ?? session?.hint ?? model?.cta ?? model?.hint ?? null;
+
   const inboxRows = useMemo(() => (model ? inboxTodoRows(model.nodes) : []), [model]);
   const laterRows = useMemo(() => (model ? humanTodoRows(model.nodes) : []), [model]);
   const todoTabCount = inboxRows.length + laterRows.length;
@@ -812,7 +829,7 @@ export function App(): ReactElement {
   useEffect(() => {
     const prev = focusedSlugRef.current;
     focusedSlugRef.current = selected;
-    if (!prev || prev === selected) return;
+    if (uninitialized || !prev || prev === selected) return;
     void (async () => {
       try {
         await readInboxNode(prev);
@@ -821,7 +838,7 @@ export function App(): ReactElement {
         /* leave-node read is best-effort */
       }
     })();
-  }, [selected, reload]);
+  }, [selected, reload, uninitialized]);
 
   function toggleExpand(slug: string) {
     setExpanded((cur) => {
@@ -833,6 +850,10 @@ export function App(): ReactElement {
   }
 
   async function onMark(slug: string, kind: MarkKind) {
+    if (uninitialized) {
+      setError(initHint ?? "Snowshoe is not initialized. Run `snowshoe init` first.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setTreeCtx(null);
@@ -846,6 +867,7 @@ export function App(): ReactElement {
   }
 
   function openTreeMarkCtx(slug: string, clientX: number, clientY: number) {
+    if (uninitialized) return;
     const box = treePanelRef.current?.getBoundingClientRect();
     if (!box) return;
     const menuW = 160;
@@ -870,6 +892,10 @@ export function App(): ReactElement {
   }
 
   async function onUnmark(slug: string, kind: string) {
+    if (uninitialized) {
+      setError(initHint ?? "Snowshoe is not initialized. Run `snowshoe init` first.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -882,6 +908,10 @@ export function App(): ReactElement {
   }
 
   async function onLeaf(slug: string, leaf: boolean) {
+    if (uninitialized) {
+      setError(initHint ?? "Snowshoe is not initialized. Run `snowshoe init` first.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -935,6 +965,9 @@ export function App(): ReactElement {
           {busy ? "Loading…" : stale ? "Reload · updated" : "Reload"}
         </button>
         {stale ? <span className="warn">Map changed</span> : null}
+        {uninitialized ? (
+          <span className="warn">Not initialized — run snowshoe init / skill</span>
+        ) : null}
         {error ? <span className="error">{error}</span> : null}
         <button
           type="button"
@@ -1010,7 +1043,14 @@ export function App(): ReactElement {
               aria-label="Map tree"
               ref={treePanelRef}
             >
-              {model ? (
+              {uninitialized ? (
+                <div className="init-cta" role="status">
+                  <p className="warn">Empty map</p>
+                  <p className="hint">
+                    {initHint ?? "Run `snowshoe init` or ask your agent to use the snowshoe skill."}
+                  </p>
+                </div>
+              ) : model ? (
                 <div role="tree" aria-label="Map tree">
                   <TreeNode
                     slug={model.rootSlug}
@@ -1172,6 +1212,8 @@ export function App(): ReactElement {
             preview={preview}
             busy={busy}
             menuOpen={markMenu}
+            uninitialized={uninitialized}
+            initHint={initHint}
             onMenuOpen={setMarkMenu}
             onMark={onMark}
             onUnmark={onUnmark}
