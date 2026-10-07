@@ -5,6 +5,8 @@
 
 **Don't let your agents outrun your understanding. Keep your footing.**
 
+Catch up after pull.
+
 Do not `npm i -g snowshoe`. That package is an unrelated stamp client. This
 project is `@igorkravcenko/snowshoe`.
 
@@ -38,15 +40,13 @@ intent for later (CLI not shipped yet). Default signal is skill/human → CLI.
 
 ### After publish
 
-When `@igorkravcenko/snowshoe` is on the registry (not yet today):
-
 ```bash
 bun add -g @igorkravcenko/snowshoe
 # or: npm install -g @igorkravcenko/snowshoe
 snowshoe init --json --locale en
 ```
 
-Still do **not** use bare npm `snowshoe` (unrelated Stamp client).
+Still do **not** use bare npm `snowshoe` (unrelated Stamp client). Prefer the clone path above until you install the scoped package.
 
 ## How to try
 
