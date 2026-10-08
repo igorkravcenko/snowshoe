@@ -51,7 +51,7 @@ Classify in this order:
 
 Explicit drain in the prompt beats env **unless** combined signals apply.
 
-**Combined** when this turn (or the live map session) clearly has map UI / UI terminal / map PTY **and** keep-draining / catch-up / `work next --wait` together. Then read **both** `drain.md` and `learn.md`.
+**Combined** when this turn (or the live map session) clearly has map UI / UI terminal / map PTY **and** keep-draining / catch-up / `work next --wait` together. Or if user explicitly asks for combined mode. Then read **both** `drain.md` and `learn.md`.
 
 If drain and learn appear without a combined signal → ask one line which branch, or take the first/stronger signal. Then read only that file.
 
