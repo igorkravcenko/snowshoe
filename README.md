@@ -5,15 +5,11 @@
 
 **Don't let your agents outrun your understanding. Keep your footing.**
 
-Catch up after pull.
+Catch up after pull. This is the gist of what this project strives to help with. 
+Snowshoe shows what in your personal understanding went stale after changes. 
+You choose what to catch up on. Agents can help.
 
-Do not `npm i -g snowshoe`. That package is an unrelated stamp client. This
-project is `@igorkravcenko/snowshoe`.
-
-After a pull or a big merge, Snowshoe shows what in your personal map went stale.
-You choose what to catch up on. Agents can help. They don't get to outrun you.
-
-Your map lives in `.snowshoe/` and stays gitignored. Local, git-native,
+Your map lives in `.snowshoe/` and stays gitignored by default. Local, git-native,
 Apache-2.0. Not a team wiki. Not an agent control panel.
 
 <!-- TODO(OWNER): replace with docs/assets/map-after-pull.png -->
@@ -21,7 +17,10 @@ _Screenshot placeholder: map after pull (stale nodes + catch-up). See [docs/asse
 
 ## Install
 
-You need Bun 1.1+. The PATH binary is **`snowshoe`** (alias **`snoe`** is the same entrypoint).
+It is advised to use Bun 1.1+. Npm will probably work fine, but it's not validated. The PATH binary is **`snowshoe`** (alias **`snoe`** is the same entrypoint).
+
+> [!IMPORTANT]
+> This project is `@igorkravcenko/snowshoe` in npm. Raw `snowshoe` without the namespace is an unrelated project.
 
 ### 1. Put `snowshoe` on PATH
 
@@ -42,11 +41,10 @@ bun link
 command -v snowshoe
 ```
 
-`snowshoe init` does **not** install git hooks. Hooks and the PR check are later intent.
-
 ### 2. Clone the repo you want to understand
 
-Snowshoe maps **your** working tree. Clone (or open) that repository — it does not have to be this one.
+Snowshoe maps **your** working tree. Clone (or open) that repository.  
+It's recommended to keep it separate from the development copy, to separate learning from other work. 
 
 ```bash
 git clone <your-repo> && cd <your-repo>
@@ -54,19 +52,17 @@ git clone <your-repo> && cd <your-repo>
 
 ### 3. Install the skill into the agent harness
 
-Opt-in; not part of `init`. Example for Cursor:
+Example for Cursor:
 
 ```bash
 snowshoe skill install --json --skills-path .cursor/skills
 ```
 
-Other harnesses: pass their skills directory as `--skills-path`. Check with `snowshoe skill list --json`.
+Other harnesses: pass their skills directory as `--skills-path`.
 
-## Learning (first pass)
+## Learning
 
-Goal: open the map UI first, then run one agent in the UI terminal in **combined** mode — background drain (`work next --wait`) while you talk in the foreground about what to mark and detail.
-
-1. **Open the UI** (soft-init: works before ledger init; empty map + CTA until init runs):
+1. **Open the UI**:
 
    ```bash
    snowshoe map serve --open
@@ -74,27 +70,26 @@ Goal: open the map UI first, then run one agent in the UI terminal in **combined
 
    Default port is **3232** (override with `--port`; `0` = ephemeral).
 
-2. **Start an agent in the map UI terminal** and invoke the Snowshoe skill in **combined** mode (map UI open + keep draining while studying). The skill reads both `drain.md` and `learn.md`.
+2. **Start an agent in the map UI terminal** and invoke the Snowshoe skill in **combined** mode: 
+  
+   ```
+   /snowshoe combined
+   ```
+   Optionally specify the wanted language in the prompt.  
+   Combined mode allows the agent to both be a worker (building and expanding the mental map), 
+   and a tutor (speaking with you and teaching).  
+   Do **not** start more than one worker at a time.
 
-3. **Background:** one `snowshoe work next --json --wait` (optional `--wait-timeout 0` for no timeout). That waiter runs init / refresh / advance / claimed work as the queue needs. Do **not** start a second waiter.
+3. **Traverse** the mental map with the tree or the graph views. **Mark** the nodes of interest for expansion and enrichment.  
+   The worker agent should receive the work you asked for, and change the map accordingly.  
+   For now the map reloading is manual with `Reload` button.  
+   If you  want something specific - just ask the agent.
 
-4. **Foreground:** while wait is idle, talk — explore nodes, ask what they mean, ask to mark for detail / expand / enrich. Mark from the UI or ask the agent (`snowshoe map mark --json --slug <slug> --kind detail`). Marks stay disabled in the UI until the map is initialized.
+4. **Learn** by asking your agent to explain stuff and to teach you. **Track** your understanding using corresponding metrics. 
 
-5. When the agent finishes a batch of work, **reload the map** and mark the next nodes. Repeat.
-
-6. Stay in one UI-terminal session: do not kill the background waiter just to study the map.
+5. **Pull** changes for the repo. Trigger the Snowshoe skill to react to changes.
 
 Longer path: [docs/brain/notes/how-to-try-e2e.md](docs/brain/notes/how-to-try-e2e.md).
-
-## After a pull
-
-When upstream moves:
-
-```bash
-git pull
-```
-
-Then drain again — either a one-shot catch-up (`snowshoe work next` via the skill on the drain branch) or the same **combined** session in the map UI (one `--wait` + foreground conversation). Reload the map when work lands.
 
 ## What it is / is not
 
@@ -106,6 +101,8 @@ Then drain again — either a one-shot catch-up (`snowshoe work next` via the sk
 | Human-chosen catch-up | Agent HITL / control plane |
 
 Positioning: [docs/product/positioning.md](docs/product/positioning.md).
+
+If you're interested in a collaborative version of this for teams - let me know.
 
 ## Docs
 
