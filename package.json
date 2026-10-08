@@ -1,13 +1,26 @@
 {
   "name": "@igorkravcenko/snowshoe",
   "version": "0.0.1",
-  "private": true,
   "license": "Apache-2.0",
   "description": "Snowshoe — don't let your agents outrun your understanding. Keep your footing. A git-native personal comprehension map of a repository — tracks what goes stale after pull.",
   "type": "module",
   "bin": {
     "snowshoe": "./src/index.ts",
     "snoe": "./src/index.ts"
+  },
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "ui",
+    "skills/snowshoe",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "repository": {
     "type": "git",
@@ -25,7 +38,8 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "check": "biome check .",
-    "build:ui": "vite build --config ui/vite.config.ts"
+    "build:ui": "vite build --config ui/vite.config.ts",
+    "prepack": "bun run build:ui"
   },
   "engines": {
     "bun": ">=1.1.0"
