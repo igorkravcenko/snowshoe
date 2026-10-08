@@ -40,9 +40,9 @@ describe("map serve CSRF / CSWSH guards", () => {
     expect(server.url).not.toContain(server.token);
     expect(server.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
 
-    const page = await fetch(server.uiUrl);
-    expect(page.ok).toBe(true);
-    expect(page.headers.get("x-frame-options")).toBe("DENY");
+    const sess = await mapApi(server, "api/session");
+    expect(sess.ok).toBe(true);
+    expect(sess.headers.get("x-frame-options")).toBe("DENY");
   });
 
   test("missing token is 401 on /api including file reads", async () => {
