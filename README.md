@@ -12,8 +12,7 @@ You choose what to catch up on. Agents can help.
 Your map lives in `.snowshoe/` and stays gitignored by default. Local, git-native,
 Apache-2.0. Not a team wiki. Not an agent control panel.
 
-<!-- TODO(OWNER): replace with docs/assets/map-after-pull.png -->
-_Screenshot placeholder: map after pull (stale nodes + catch-up). See [docs/assets/](docs/assets/)._
+![…](docs/assets/map-after-pull.png)
 
 ## Install
 
