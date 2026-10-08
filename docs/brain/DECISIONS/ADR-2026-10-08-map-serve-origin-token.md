@@ -27,7 +27,7 @@ HTML responses (`text/html`) send:
 
 `default-src 'self'; connect-src 'self' ws://127.0.0.1:<port> ws://localhost:<port> ws://[::1]:<port>; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; style-src-attr 'unsafe-inline'`
 
-`style-src-attr 'unsafe-inline'` is required for React `style={{…}}` (column split, graph positions, Prism token colors). Script and style *elements* stay `'self'` (Vite emits `/assets/*` only). JSON `/api` keeps `frame-ancestors 'none'`. All responses send `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`. No CORS allow headers.
+`style-src-attr 'unsafe-inline'` is required for React `style={{…}}` (column split, graph positions, Prism token colors). Script and style *elements* stay `'self'` (Vite emits `/assets/*` only). JSON `/api` keeps `frame-ancestors 'none'`. All responses send `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`. No CORS allow headers. Chrome may ignore `ws://[::1]:<port>` as a CSP host-source (IPv6 is outside the host-part grammar); `'self'` still covers same-origin `ws:` when the document is loaded on `[::1]`.
 
 ## Alternatives considered
 
