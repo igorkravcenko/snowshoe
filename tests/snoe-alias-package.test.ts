@@ -31,7 +31,7 @@ describe("snoe npm alias package", () => {
     expect(root.bin.snowshoe).toBe("./src/index.ts");
     expect(root.bin.snoe).toBe("./src/index.ts");
 
-    expect(snoe.name).toBe("snoe");
+    expect(snoe.name).toBe("@igorkravcenko/snoe");
     expect(snoe.version).toBe(root.version);
     expect(snoe.license).toBe("Apache-2.0");
     expect(snoe.bin).toEqual({ snoe: "./cli.ts" });
