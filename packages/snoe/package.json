@@ -1,0 +1,34 @@
+{
+  "name": "snoe",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "description": "Snowshoe CLI alias (snoe). Don't let your agents outrun your understanding. Keep your footing. Thin wrapper around @igorkravcenko/snowshoe — https://github.com/igorkravcenko/snowshoe",
+  "type": "module",
+  "bin": {
+    "snoe": "./cli.ts"
+  },
+  "files": [
+    "cli.ts",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igorkravcenko/snowshoe.git",
+    "directory": "packages/snoe"
+  },
+  "homepage": "https://github.com/igorkravcenko/snowshoe#readme",
+  "bugs": {
+    "url": "https://github.com/igorkravcenko/snowshoe/issues"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "dependencies": {
+    "@igorkravcenko/snowshoe": "0.0.1"
+  }
+}

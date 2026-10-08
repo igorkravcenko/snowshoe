@@ -50,6 +50,12 @@ Bare npm name `snowshoe` is taken by an unrelated SnowShoe Stamp API client
 **`@igorkravcenko/snowshoe`**. PATH / install binary remains **`snowshoe`**.
 Do not document bare `npx snowshoe` or `npm i -g snowshoe` for this project.
 
+## Amendment 2026-10-08: npm alias package `snoe`
+
+Bare npm name `snoe` is free. Ship a **thin** package `snoe` (`packages/snoe`) that depends on `@igorkravcenko/snowshoe` at the same version and exposes **only** the `snoe` bin (re-exports the scoped CLI). It does **not** duplicate map/UI/skill code.
+
+Primary install remains `bun add -g @igorkravcenko/snowshoe` (both `snowshoe` and `snoe` on PATH). `bun add -g snoe` / `npm i -g snoe` is an optional alias. Skills/agents keep calling **`snowshoe`**. Do not publish bare `snowshoe`.
+
 ## Amendment 2026-10-04: subtitle
 
 Locked subtitle is now:
