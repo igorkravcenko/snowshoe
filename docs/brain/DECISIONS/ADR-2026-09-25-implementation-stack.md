@@ -43,7 +43,7 @@ Thin framework. **Default recommendation: citty.** **commander** is an acceptabl
 
 ### Binary name
 
-CLI spelling is **`snowshoe …`**. PATH bins: canonical **`snowshoe`**, short **`snoe`** (same entrypoint). Informal discussion shorthand *snow* is **not** a PATH command (Snowflake owns global `snow`). Skills/agents keep calling **`snowshoe`** ([provisional-name ADR](./ADR-2026-09-25-provisional-name-snowshoe.md)).
+CLI spelling is **`snowshoe …`**. Install / PATH: **`snowshoe`** via **`@igorkravcenko/snowshoe`**. Informal discussion shorthand *snow* is **not** a PATH command (Snowflake owns global `snow`). Skills/agents call **`snowshoe`** ([provisional-name ADR](./ADR-2026-09-25-provisional-name-snowshoe.md)).
 
 ### Explicitly out of day-1
 

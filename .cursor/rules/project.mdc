@@ -10,7 +10,7 @@ Subtitle: **Don't let your agents outrun your understanding. Keep your footing.*
 
 Git-native personal comprehension map of a repository (ledger is personal/local). Freshness after commits or pull; the human chooses what to catch up on.
 
-v1 surfaces (intent): signal after pull + PR-check. Default signal is skill/human → CLI (`snowshoe …`; short PATH alias `snoe`; informal *snow* is not CLI). `init` does not install git hooks; opt-in hooks remain intent (CLI not shipped).
+v1 surfaces (intent): signal after pull + PR-check. Default signal is skill/human → CLI (`snowshoe …`; informal *snow* is not CLI). `init` does not install git hooks; opt-in hooks remain intent (CLI not shipped).
 
 Not v1: chat hell, AI code review, multiplayer knowledge graph, agent HITL/control plane.
 
