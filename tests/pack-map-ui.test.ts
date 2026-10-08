@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -16,17 +16,19 @@ const ROOT = join(import.meta.dir, "..");
 describe("packed npm install map UI", () => {
   test("tarball ships ui/dist; bun add tree serves it without vite even if mtimes look stale", async () => {
     const packDir = mkdtempSync(join(tmpdir(), "snowshoe-pack-"));
-    const packed = Bun.spawnSync(
-      ["bun", "pm", "pack", "--destination", packDir, "--filename", "snowshoe.tgz"],
-      { cwd: ROOT, stdout: "pipe", stderr: "pipe" },
-    );
+    const packed = Bun.spawnSync(["bun", "pm", "pack", "--destination", packDir], {
+      cwd: ROOT,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     if (packed.exitCode !== 0) {
       throw new Error(
         `bun pm pack failed: ${packed.stderr.toString() || packed.stdout.toString()}`,
       );
     }
-    const tgz = join(packDir, "snowshoe.tgz");
-    expect(existsSync(tgz)).toBe(true);
+    const tgzName = readdirSync(packDir).find((name) => name.endsWith(".tgz"));
+    expect(tgzName).toBeTruthy();
+    const tgz = join(packDir, tgzName!);
 
     const listing = Bun.spawnSync(["tar", "-tf", tgz], { stdout: "pipe", stderr: "pipe" });
     const files = listing.stdout.toString();
