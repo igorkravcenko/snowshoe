@@ -14,16 +14,20 @@ Do **not** file a public GitHub issue for a security vulnerability.
 
 ## Supported versions
 
-Only the tip of `main` / unreleased `0.0.2` is supported for security fixes.
-There is no older release train yet.
+Security fixes land on **`main`** and the **latest npm** release of
+`@igorkravcenko/snowshoe` (lockstep `@igorkravcenko/snoe`). Older npm versions
+are not a supported train — upgrade.
 
 ## In scope
 
 - Local CLI (`snowshoe` / `snoe`) and personal `.snowshoe/` ledger on disk
 - `snowshoe map serve` on **loopback bind only** (`127.0.0.1` / `localhost` / `::1`)
-- Map PTY: loopback peer **and** loopback `Host` header
-- All map HTTP `/api/*` routes: loopback `Host` header (mitigates DNS rebinding
-  into shell, repo file read, and ledger read/write)
+- Map PTY: loopback peer, loopback `Host`, **Origin** matching this server's
+  loopback origin (missing Origin denied), and the per-launch access token
+- All map HTTP `/api/*` routes (including `GET /api/file`): loopback `Host`,
+  per-launch token (`Authorization: Bearer`), reject foreign `Origin` /
+  `Sec-Fetch-Site: cross-site`; POST/PUT/PATCH (and DELETE with a body) require
+  `Content-Type: application/json`
 - Day-1 CI hygiene (frozen lockfile, SHA-pinned Actions)
 
 ## Out of scope (for now)

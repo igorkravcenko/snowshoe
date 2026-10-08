@@ -51,3 +51,33 @@ export function loopbackHostHeaderOrError(req: Request): string | null {
   if (!isLoopbackHost(raw)) return null;
   return raw!.trim();
 }
+
+function originForLoopbackName(name: string, port: number): string {
+  const host = name.includes(":") ? `[${name}]` : name;
+  if (port === 80) return `http://${host}`;
+  return `http://${host}:${port}`;
+}
+
+/**
+ * Exact Origin strings this `map serve` instance considers itself.
+ * Port is the actually bound port (not the attacker-controlled Host port).
+ */
+export function loopbackOriginsForPort(port: number): ReadonlySet<string> {
+  return new Set([
+    originForLoopbackName("127.0.0.1", port),
+    originForLoopbackName("localhost", port),
+    originForLoopbackName("::1", port),
+  ]);
+}
+
+export function httpOriginForBind(hostname: string, port: number): string {
+  const host = hostname.includes(":") && !hostname.startsWith("[") ? `[${hostname}]` : hostname;
+  if (port === 80) return `http://${host}`;
+  return `http://${host}:${port}`;
+}
+
+/** Exact match only. Missing Origin is not allowed. */
+export function isAllowedMapOrigin(origin: string | null | undefined, port: number): boolean {
+  if (!origin) return false;
+  return loopbackOriginsForPort(port).has(origin.trim());
+}

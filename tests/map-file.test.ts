@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { FileReadError, readRepoFile, resolveRepoFile } from "../src/map/file-read.ts";
 import { handleMapHttp } from "../src/map/http.ts";
 import { startMapServer } from "../src/map/serve.ts";
-import { makeGitRepo, snowshoe } from "./helpers.ts";
+import { makeGitRepo, mapApi, mapHttpHeaders, snowshoe, TEST_MAP_TOKEN } from "./helpers.ts";
 
 let stop: (() => void) | undefined;
 
@@ -26,10 +26,12 @@ function expectEscape(requested: string, repo: string): void {
 
 async function fileApi(repo: string, query: string, host = "127.0.0.1"): Promise<Response> {
   return handleMapHttp(
-    new Request(`http://127.0.0.1/api/file?${query}`, { headers: { Host: host } }),
+    new Request(`http://127.0.0.1/api/file?${query}`, { headers: mapHttpHeaders(host) }),
     {
       cwd: repo,
       uiDist: join(repo, "no-ui"),
+      accessToken: TEST_MAP_TOKEN,
+      port: 80,
     },
   );
 }
@@ -143,7 +145,7 @@ describe("repo file sandbox (GET /api/file)", () => {
       buildUi: false,
     });
     stop = server.stop;
-    const live = await fetch(`${server.url}api/file?path=README.md&start=1&end=1`);
+    const live = await mapApi(server, "api/file?path=README.md&start=1&end=1");
     expect(live.ok).toBe(true);
     const liveJson = (await live.json()) as { text: string; startLine: number };
     expect(liveJson.text).toContain("fixture");

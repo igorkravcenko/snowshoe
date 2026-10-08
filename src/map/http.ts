@@ -26,8 +26,14 @@ import {
   UNINITIALIZED_CTA,
   UNINITIALIZED_HINT,
 } from "../paths.ts";
+import {
+  isJsonContentType,
+  mapAccessTokenFromHttpRequest,
+  mapAccessTokensEqual,
+  mutationRequiresJsonContentType,
+} from "./access-token.ts";
 import { FileReadError, readRepoFile } from "./file-read.ts";
-import { loopbackHostHeaderOrError } from "./loopback.ts";
+import { isAllowedMapOrigin, loopbackHostHeaderOrError } from "./loopback.ts";
 import type { MapViewStore } from "./views.ts";
 
 const MIME: Record<string, string> = {
@@ -50,6 +56,10 @@ export type MapHttpOptions = {
   expandDepth?: number;
   packageRoot?: string;
   views?: MapViewStore;
+  /** Per-launch secret; required on every `/api/*` route. */
+  accessToken: string;
+  /** Actually bound port — Origin allowlist is exact for this port. */
+  port: number;
 };
 
 function httpStatusForExit(code: number): number {
@@ -66,6 +76,8 @@ function jsonHttp(body: unknown, status: number): Response {
     headers: {
       "content-type": "application/json; charset=utf-8",
       "cache-control": "no-store",
+      "x-frame-options": "DENY",
+      "content-security-policy": "frame-ancestors 'none'",
     },
   });
 }
@@ -150,11 +162,48 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
   const path = url.pathname;
 
   try {
-    if (path.startsWith("/api/") && !loopbackHostHeaderOrError(req)) {
-      return jsonHttp(
-        { schemaVersion: 1, ok: false, error: "Map API requires a loopback Host header" },
-        403,
-      );
+    if (path.startsWith("/api/")) {
+      if (!loopbackHostHeaderOrError(req)) {
+        return jsonHttp(
+          { schemaVersion: 1, ok: false, error: "Map API requires a loopback Host header" },
+          403,
+        );
+      }
+      const origin = req.headers.get("origin");
+      if (origin !== null && origin !== "" && !isAllowedMapOrigin(origin, opts.port)) {
+        return jsonHttp(
+          {
+            schemaVersion: 1,
+            ok: false,
+            error: "Map API requires Origin matching this map server",
+          },
+          403,
+        );
+      }
+      const site = req.headers.get("sec-fetch-site");
+      if (site?.toLowerCase() === "cross-site") {
+        return jsonHttp(
+          { schemaVersion: 1, ok: false, error: "Map API rejects cross-site fetch" },
+          403,
+        );
+      }
+      const offered = mapAccessTokenFromHttpRequest(req);
+      if (!offered || !mapAccessTokensEqual(offered, opts.accessToken)) {
+        return jsonHttp(
+          { schemaVersion: 1, ok: false, error: "Map API requires a valid access token" },
+          401,
+        );
+      }
+      if (mutationRequiresJsonContentType(req.method, req) && !isJsonContentType(req)) {
+        return jsonHttp(
+          {
+            schemaVersion: 1,
+            ok: false,
+            error: "Map API mutations require Content-Type: application/json",
+          },
+          415,
+        );
+      }
     }
 
     if (path === "/api/file" && req.method === "GET") {
@@ -447,6 +496,8 @@ function serveUiAsset(urlPath: string, uiDist: string): Response {
     headers: {
       "content-type": type,
       "cache-control": "no-store",
+      "x-frame-options": "DENY",
+      "content-security-policy": "frame-ancestors 'none'",
     },
   });
 }

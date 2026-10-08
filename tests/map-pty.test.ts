@@ -61,6 +61,37 @@ describe("map PTY shell", () => {
     expect(out).toContain("snowshoe skill");
     expect(out).toMatch(/learn/);
   });
+
+  test("sets SNOWSHOE_MAP_TOKEN when spawned with a token", async () => {
+    const chunks: Buffer[] = [];
+    const token = "pty-token-fixture-00000000000000000001";
+    const { terminal, proc } = spawnMapPtyShell({
+      cwd: "/tmp",
+      viewId: "token-view",
+      mapUrl: "http://127.0.0.1:9",
+      token,
+      onData(chunk) {
+        chunks.push(Buffer.from(chunk));
+      },
+    });
+    stop = () => {
+      try {
+        proc.kill("SIGKILL");
+      } catch {
+        /* ignore */
+      }
+      try {
+        terminal.close();
+      } catch {
+        /* ignore */
+      }
+    };
+    await Bun.sleep(250);
+    terminal.write("printenv SNOWSHOE_MAP_TOKEN\r");
+    await Bun.sleep(250);
+    const out = Buffer.concat(chunks).toString();
+    expect(out).toContain(token);
+  });
 });
 
 describe("map PTY session persistence", () => {

@@ -68,7 +68,7 @@ export const AGENT_HELP = {
     },
     {
       run: "snowshoe map view --json",
-      when: "Learn/PTY: focused slug from a running map serve (env SNOWSHOE_MAP_URL / SNOWSHOE_VIEW).",
+      when: "Learn/PTY: focused slug from a running map serve (env SNOWSHOE_MAP_URL / SNOWSHOE_VIEW / SNOWSHOE_MAP_TOKEN).",
     },
     {
       run: "snowshoe feedback add --json",

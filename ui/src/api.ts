@@ -1,3 +1,5 @@
+import { mapAuthHeaders } from "./session-token.ts";
+
 export type DetailStatus = "pending" | "leased" | null;
 
 export type Anchor = {
@@ -107,15 +109,27 @@ async function readJson<T>(res: Response): Promise<T> {
   }
 }
 
+function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const headers = mapAuthHeaders(init.headers);
+  const method = (init.method ?? "GET").toUpperCase();
+  if (
+    (method === "POST" || method === "PUT" || method === "PATCH") &&
+    !headers.has("content-type")
+  ) {
+    headers.set("content-type", "application/json");
+  }
+  return fetch(input, { ...init, headers });
+}
+
 export async function fetchMapStatus(): Promise<MapReadModel> {
-  const res = await fetch("/api/map/status?allFields=1");
+  const res = await apiFetch("/api/map/status?allFields=1");
   const body = await readJson<MapReadModel & { error?: string }>(res);
   if (!res.ok) throw new Error(body.error ?? `map status HTTP ${res.status}`);
   return body;
 }
 
 export async function fetchFeedback(): Promise<FeedbackEntry[]> {
-  const res = await fetch("/api/feedback");
+  const res = await apiFetch("/api/feedback");
   const body = await readJson<{ entries?: FeedbackEntry[]; error?: string }>(res);
   if (!res.ok) throw new Error(body.error ?? `feedback HTTP ${res.status}`);
   return body.entries ?? [];
@@ -124,7 +138,7 @@ export async function fetchFeedback(): Promise<FeedbackEntry[]> {
 export async function addFeedback(text: string, command?: string): Promise<FeedbackEntry> {
   const payload: { text: string; command?: string } = { text };
   if (command?.trim()) payload.command = command.trim();
-  const res = await fetch("/api/feedback", {
+  const res = await apiFetch("/api/feedback", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(payload),
@@ -135,27 +149,36 @@ export async function addFeedback(text: string, command?: string): Promise<Feedb
 }
 
 export async function removeFeedback(id: string): Promise<void> {
-  const res = await fetch(`/api/feedback?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+  const res = await apiFetch(`/api/feedback?id=${encodeURIComponent(id)}`, { method: "DELETE" });
   const body = await readJson<{ ok?: boolean; error?: string; removedId?: string }>(res);
   if (!res.ok) throw new Error(body.error ?? `feedback remove HTTP ${res.status}`);
 }
 
 export async function fetchSession(): Promise<SessionInfo> {
-  const res = await fetch("/api/session");
+  const res = await apiFetch("/api/session");
   const body = await readJson<SessionInfo & { error?: string }>(res);
   if (!res.ok) throw new Error(body.error ?? `session HTTP ${res.status}`);
   return body;
 }
 
+export async function fetchMapView(id: string): Promise<boolean> {
+  const res = await apiFetch(`/api/view/${encodeURIComponent(id)}`);
+  return res.ok;
+}
+
 export async function createMapView(): Promise<string> {
-  const res = await fetch("/api/view", { method: "POST" });
+  const res = await apiFetch("/api/view", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "{}",
+  });
   const body = await readJson<{ id?: string; error?: string }>(res);
   if (!res.ok || !body.id) throw new Error(body.error ?? `view HTTP ${res.status}`);
   return body.id;
 }
 
 export async function putMapView(id: string, slug: string | null): Promise<void> {
-  const res = await fetch(`/api/view/${encodeURIComponent(id)}`, {
+  const res = await apiFetch(`/api/view/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ slug }),
@@ -167,7 +190,7 @@ export async function putMapView(id: string, slug: string | null): Promise<void>
 }
 
 export async function markNode(slug: string, kind: string): Promise<void> {
-  const res = await fetch("/api/map/mark", {
+  const res = await apiFetch("/api/map/mark", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ slug, kind }),
@@ -179,7 +202,7 @@ export async function markNode(slug: string, kind: string): Promise<void> {
 }
 
 export async function unmarkNode(slug: string, kind: string): Promise<void> {
-  const res = await fetch("/api/map/unmark", {
+  const res = await apiFetch("/api/map/unmark", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ slug, kind }),
@@ -191,7 +214,7 @@ export async function unmarkNode(slug: string, kind: string): Promise<void> {
 }
 
 export async function readInboxNode(slug: string): Promise<void> {
-  const res = await fetch("/api/map/inbox/read", {
+  const res = await apiFetch("/api/map/inbox/read", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ slug }),
@@ -203,7 +226,7 @@ export async function readInboxNode(slug: string): Promise<void> {
 }
 
 export async function readAllInbox(): Promise<void> {
-  const res = await fetch("/api/map/inbox/read-all", {
+  const res = await apiFetch("/api/map/inbox/read-all", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: "{}",
@@ -215,7 +238,7 @@ export async function readAllInbox(): Promise<void> {
 }
 
 export async function setLeaf(slug: string, leaf: boolean): Promise<void> {
-  const res = await fetch("/api/map/leaf", {
+  const res = await apiFetch("/api/map/leaf", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ slug, leaf }),
@@ -250,7 +273,7 @@ export async function fetchFile(
   if (opts.span !== undefined) q.set("span", String(opts.span));
   if (opts.locatorOffset !== undefined) q.set("locatorOffset", String(opts.locatorOffset));
   if (opts.lineText) q.set("lineText", opts.lineText);
-  const res = await fetch(`/api/file?${q.toString()}`);
+  const res = await apiFetch(`/api/file?${q.toString()}`);
   const body = await readJson<FilePreview & { error?: string; ok?: boolean }>(res);
   if (!res.ok || body.ok === false) {
     throw new Error(body.error ?? `file HTTP ${res.status}`);

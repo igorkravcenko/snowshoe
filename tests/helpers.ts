@@ -4,6 +4,31 @@ import { dirname, join } from "node:path";
 
 export const CLI = join(import.meta.dir, "../src/index.ts");
 
+/** Authenticated fetch against a running `map serve` (header token, never `?t=`). */
+export function mapApi(
+  server: { url: string; token: string },
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const headers = new Headers(init.headers);
+  if (!headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${server.token}`);
+  }
+  const rel = path.replace(/^\//, "");
+  return fetch(new URL(rel, server.url), { ...init, headers });
+}
+
+export const TEST_MAP_TOKEN = "test-map-token-not-for-production-0001";
+
+export function mapHttpHeaders(host = "127.0.0.1", extra?: RequestInit["headers"]): Headers {
+  const headers = new Headers(extra);
+  headers.set("Host", host);
+  if (!headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${TEST_MAP_TOKEN}`);
+  }
+  return headers;
+}
+
 export function makeGitRepo(prefix = "snowshoe-hp-"): string {
   const dir = mkdtempSync(join(tmpdir(), prefix));
   git(dir, ["init", "-b", "main"]);

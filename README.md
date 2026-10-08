@@ -89,6 +89,14 @@ Other harnesses: pass their skills directory as `--skills-path`.
 
 5. **Pull** changes for the repo. Trigger the Snowshoe skill to react to the changes.
 
+## What runs locally
+
+`snowshoe map serve` binds **loopback only** (`127.0.0.1` / `localhost` / `::1`).
+The map UI includes a terminal that runs **your shell with your environment**.
+That PTY and the `/api` routes are protected by a matching `Origin` check and a
+**per-launch token** (the printed URL and `--open` put it in the URL fragment).
+Stop the server when you are done.
+
 ## What it is / is not
 
 | v1 intent | Not (v1) |

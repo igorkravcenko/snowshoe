@@ -1,12 +1,15 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { type ReactElement, useEffect, useRef, useState } from "react";
+import { mapAccessToken } from "./session-token.ts";
 import "@xterm/xterm/css/xterm.css";
 
 function ptyWsUrl(viewId: string, reset: boolean): string {
   const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
   const q = new URLSearchParams({ v: viewId });
   if (reset) q.set("reset", "1");
+  const token = mapAccessToken();
+  if (token) q.set("t", token);
   return `${proto}//${window.location.host}/api/pty?${q.toString()}`;
 }
 

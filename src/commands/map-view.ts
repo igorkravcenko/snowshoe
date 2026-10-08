@@ -14,7 +14,10 @@ export async function runMapView(opts: {
     );
   }
   const base = urlRaw.replace(/\/$/, "");
-  const res = await fetch(`${base}/api/view/${encodeURIComponent(id)}`);
+  const token = (process.env.SNOWSHOE_MAP_TOKEN ?? "").trim();
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${base}/api/view/${encodeURIComponent(id)}`, { headers });
   const text = await res.text();
   let parsed: Record<string, unknown> = {};
   try {

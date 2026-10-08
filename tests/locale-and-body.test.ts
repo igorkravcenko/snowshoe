@@ -2,7 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { handleMapHttp } from "../src/map/http.ts";
-import { completeEnvelope, makeGitRepo, snowshoe } from "./helpers.ts";
+import {
+  completeEnvelope,
+  makeGitRepo,
+  mapHttpHeaders,
+  snowshoe,
+  TEST_MAP_TOKEN,
+} from "./helpers.ts";
 
 describe("locale at init (idempotent amend)", () => {
   test("persists --locale on init and exposes it on map status, session, work next", async () => {
@@ -18,10 +24,12 @@ describe("locale at init (idempotent amend)", () => {
     expect(next.json.locale).toBe("ru");
 
     const sess = await handleMapHttp(
-      new Request("http://127.0.0.1/api/session", { headers: { Host: "127.0.0.1" } }),
+      new Request("http://127.0.0.1/api/session", { headers: mapHttpHeaders() }),
       {
         cwd: repo,
         uiDist: join(repo, "no-ui"),
+        accessToken: TEST_MAP_TOKEN,
+        port: 80,
       },
     );
     expect(sess.ok).toBe(true);
