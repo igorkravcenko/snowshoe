@@ -14,7 +14,7 @@ Do **not** file a public GitHub issue for a security vulnerability.
 
 ## Supported versions
 
-Only the tip of `main` / unreleased `0.0.1` is supported for security fixes.
+Only the tip of `main` / unreleased `0.0.2` is supported for security fixes.
 There is no older release train yet.
 
 ## In scope
