@@ -1,34 +1,40 @@
 ---
 name: snowshoe-install
 description: >-
-  How to put the `snowshoe` binary on PATH (`bun link` today; scoped registry after publish).
+  How to put the `snowshoe` binary on PATH from the npm registry (or `bun link` from a clone).
 ---
 
 # Install `snowshoe` on PATH
 
-The **canonical PATH binary** is `snowshoe`. A short PATH alias **`snoe`**
-points at the same entrypoint (package `bin`). Skills and agents should still
-invoke `snowshoe`. The npm package name is scoped `@igorkravcenko/snowshoe`
+The **canonical PATH binary** is `snowshoe`. Skills and agents should invoke
+`snowshoe`. The npm package name is scoped `@igorkravcenko/snowshoe`
 (bare npm `snowshoe` is a different, unrelated package).
 
 Requires **Bun** (`>=1.1`).
 
-## From a clone (works today)
+## From the registry (preferred)
 
-From the package root:
+```bash
+bun add -g @igorkravcenko/snowshoe
+# or
+npm install -g @igorkravcenko/snowshoe
+command -v snowshoe
+snowshoe --help   # exit 0; command index (does not mutate the ledger)
+```
+
+Still do **not** use bare npm `snowshoe` (unrelated Stamp client).
+There is no Homebrew formula and no promise of bare `npx snowshoe`.
+
+## From a clone (contributors / local link)
+
+From the package root of this project:
 
 ```bash
 bun install --frozen-lockfile
 bun link
 # ensure ~/.bun/bin is on PATH (bun link alone does not edit your shell PATH)
-```
-
-Then:
-
-```bash
 command -v snowshoe
-command -v snoe
-snowshoe --help   # exit 0; command index (does not mutate the ledger)
+snowshoe --help
 ```
 
 `bun link` is **one global** symlink. It does not follow git worktrees. If you
@@ -41,23 +47,6 @@ Equivalent link via npm (still from this package root):
 ```bash
 npm link
 ```
-
-There is no Homebrew formula and no promise of bare `npx snowshoe`.
-
-## After publish
-
-When `@igorkravcenko/snowshoe` is on the registry:
-
-```bash
-bun add -g @igorkravcenko/snowshoe
-# or
-npm install -g @igorkravcenko/snowshoe
-command -v snowshoe
-command -v snoe
-snowshoe --help
-```
-
-Still do **not** use bare npm `snowshoe` (unrelated Stamp client).
 
 ## Skill files into a working repo (opt-in)
 

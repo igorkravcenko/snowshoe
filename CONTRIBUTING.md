@@ -20,7 +20,7 @@ Requires [Bun](https://bun.sh) (`>=1.1`). From a clone:
 
 ```bash
 bun install --frozen-lockfile
-bun link                  # PATH: snowshoe (+ snoe); ensure ~/.bun/bin is on PATH
+bun link                  # PATH: snowshoe; ensure ~/.bun/bin is on PATH
 ```
 
 Personal ledger lives under `.snowshoe/` (gitignored). `init` does not install

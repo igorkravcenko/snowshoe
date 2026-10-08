@@ -13,7 +13,7 @@ description: >-
 
 Assume **`snowshoe` is on PATH**. Always pass `--json` and parse the result.
 
-The install binary is **`snowshoe`** (call this). Short PATH alias **`snoe`** is the same entrypoint — do not prefer it in agent steps.
+The install binary is **`snowshoe`** (call this).
 
 If this working repo is missing the skill files under the harness skills dir, run
 `snowshoe skill install --json --skills-path <harness-skills-dir>` (e.g. `.cursor/skills`
@@ -31,7 +31,7 @@ If `command -v snowshoe` fails, read **`install.md`** in this same folder — on
 
 After following it, run `command -v snowshoe` again:
 
-- Still missing → **STOP**. The binary often needs a **new shell** after `bun link`. Tell the human how to re-check; do not start drain or learn.
+- Still missing → **STOP**. The binary often needs a **new shell** after global install or `bun link`. Tell the human how to re-check; do not start drain or learn.
 - Now present **and** this turn already classified drain, learn, or combined → go to **Intent** and open that file.
 - Now present **but** they only asked to install, or intent is still unclear → ask once: drain, learn, combined, or stop.
 

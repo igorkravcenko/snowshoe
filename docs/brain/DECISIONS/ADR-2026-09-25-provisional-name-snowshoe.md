@@ -56,7 +56,7 @@ Ship a **thin** package in `packages/snoe` that depends on `@igorkravcenko/snows
 
 **npm package name:** `@igorkravcenko/snoe` (scoped). Bare unscoped `snoe` was rejected by the registry as too similar to existing names (`snyk`, `sane`, `sade`, …) — do not retry unscoped `snoe`. PATH binary remains **`snoe`**.
 
-Primary install remains `bun add -g @igorkravcenko/snowshoe` (both `snowshoe` and `snoe` on PATH). `bun add -g @igorkravcenko/snoe` / `npm i -g @igorkravcenko/snoe` is an optional alias. Skills/agents keep calling **`snowshoe`**. Do not publish bare `snowshoe`.
+Primary (and only documented) install is `bun add -g @igorkravcenko/snowshoe` / `npm i -g @igorkravcenko/snowshoe`. The thin `@igorkravcenko/snoe` package may exist on the registry, but README and skills do **not** advertise it or the `snoe` PATH name — skills/agents call **`snowshoe`**. Do not publish bare `snowshoe`.
 
 ## Amendment 2026-10-04: subtitle
 

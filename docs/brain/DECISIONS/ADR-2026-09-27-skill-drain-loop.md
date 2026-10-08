@@ -20,7 +20,7 @@ Product-owner-locked: the skill must be repo-agnostic and self-contained; entry 
 ### Skill
 
 - Package is **one** product skill at `skills/snowshoe/` (`SKILL.md` gate + `drain.md` + `learn.md` + sibling `install.md`). Not three skills. Harness-agnostic SoT; Cursor discovers it via symlink `.cursor/skills/snowshoe` → `../../skills/snowshoe`.
-- `SKILL.md` is the **only** copy of shared operator rules: PATH/`--json`, bin name / `snoe`, do not write the ledger, do not start `map serve` unless asked, one branch, `install.md` only if missing. It may mention optional `snowshoe feedback add --json` (dev inbox; not a drain step) ([ADR-2026-09-30-agent-feedback-inbox](./ADR-2026-09-30-agent-feedback-inbox.md)). YAML `description` covers after-pull drain **and** map-PTY / study-the-map (`SNOWSHOE_MODE=learn`). `drain.md` / `learn.md` / `install.md` do not restate those lines.
+- `SKILL.md` is the **only** copy of shared operator rules: PATH/`--json`, call **`snowshoe`**, do not write the ledger, do not start `map serve` unless asked, one branch, `install.md` only if missing. It may mention optional `snowshoe feedback add --json` (dev inbox; not a drain step) ([ADR-2026-09-30-agent-feedback-inbox](./ADR-2026-09-30-agent-feedback-inbox.md)). YAML `description` covers after-pull drain **and** map-PTY / study-the-map (`SNOWSHOE_MODE=learn`). `drain.md` / `learn.md` / `install.md` do not restate those lines.
 - **No binary** (`command -v snowshoe` fails) → read `install.md` only (not loaded on a normal drain or learn). Recheck PATH. Still missing → STOP (new shell). Present and this turn already classified → that branch. Present but they only asked to install / intent unclear → one question: drain, learn, or stop.
 - **Intent** (this invocation): (a) the user prompt that invoked the skill; (b) nearby user text **this turn only**; (c) `SNOWSHOE_MODE=learn` if text is still empty; (d) **drain**. Explicit drain in the prompt beats env. Greys: “look at the map” / “what is this node” → learn; “after pull / catch up / marked nodes / work next” → drain.
 - **One branch per invocation.** Never read both `drain.md` and `learn.md`. If both intents appear, one-line ask or first/stronger signal.
@@ -48,7 +48,7 @@ Agent loop: outer cycle re-runs `work next`; if `todo` is set, run only that com
 
 ### PATH vs chat
 
-Install / PATH bins: canonical **`snowshoe`**, short **`snoe`** (same entrypoint). Informal *snow* is not PATH. Skills/agents keep calling **`snowshoe`**. See the provisional-name ADR amendment.
+Install / PATH: **`snowshoe`** via **`@igorkravcenko/snowshoe`**. Informal *snow* is not PATH. Skills/agents call **`snowshoe`**. See the provisional-name ADR amendment.
 
 ## Alternatives considered
 
