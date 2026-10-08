@@ -19,7 +19,13 @@ import { mapEpochAnchor, refreshRequired, withSession } from "../commands/sessio
 import { DEFAULT_MAP_EXPAND_DEPTH } from "../domain/types.ts";
 import { CliError, EXIT_ATTENTION, EXIT_INTERNAL, EXIT_OK, EXIT_USAGE } from "../errors.ts";
 import { gitHead } from "../git.ts";
-import { findRepoRoot, isInitialized, requireInitialized, UNINITIALIZED_HINT } from "../paths.ts";
+import {
+  findRepoRoot,
+  isInitialized,
+  requireInitialized,
+  UNINITIALIZED_CTA,
+  UNINITIALIZED_HINT,
+} from "../paths.ts";
 import { FileReadError, readRepoFile } from "./file-read.ts";
 import { loopbackHostHeaderOrError } from "./loopback.ts";
 import type { MapViewStore } from "./views.ts";
@@ -74,7 +80,7 @@ function uninitializedHintBody(extra: Record<string, unknown> = {}): Record<stri
     ok: true,
     initialized: false,
     hint: UNINITIALIZED_HINT,
-    cta: "Run `snowshoe init` or invoke the snowshoe skill (agent) to build the map.",
+    cta: UNINITIALIZED_CTA,
     ...extra,
   };
 }

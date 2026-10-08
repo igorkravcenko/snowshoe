@@ -15,7 +15,7 @@ Accepted. Amends [ADR-2026-09-27-map-ui-and-skill](./ADR-2026-09-27-map-ui-and-s
 
 ## Decision
 
-1. **Soft-init.** `snowshoe map serve` boots without a ledger. UI assets and loopback Host checks stay. `GET /api/session` and `GET /api/map/status` return HTTP 200 with `initialized: false`, empty `nodes`, and an actionable `hint` / `cta` (mention `snowshoe init` / skill). Ledger-needing routes (mark / detail / file / metric / …) still fail with JSON 4xx via `requireInitialized` (same hint). In-memory `/api/view` and loopback PTY keep working. UI renders empty map + CTA and disables mark actions until initialized.
+1. **Soft-init.** `snowshoe map serve` boots without a ledger. UI assets and loopback Host checks stay. `GET /api/session` and `GET /api/map/status` return HTTP 200 with `initialized: false`, empty `nodes`, and an actionable `hint` / `cta` (snowshoe skill via the agent first; manual `snowshoe init` secondary, in parentheses). Ledger-needing routes (mark / detail / file / metric / …) still fail with JSON 4xx via `requireInitialized` (same hint). In-memory `/api/view` and loopback PTY keep working. UI renders empty map + CTA and disables mark actions until initialized.
 
 2. **Combined skill mode.** When map UI / UI terminal / map PTY is live **and** the human wants keep-draining in the same session, the gate allows reading **both** `drain.md` and `learn.md`. Background: one `snowshoe work next --json --wait` (optional `--wait-timeout 0`); foreground learn/map conversation — do not kill the waiter to study. Still at most one waiter; restart after handling work. Learn-only still does not complete claimed steps.
 

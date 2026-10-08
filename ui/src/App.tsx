@@ -281,7 +281,7 @@ function Inspector(props: {
         <p className="warn">Map not initialized</p>
         <p className="hint">
           {props.initHint ??
-            "Run `snowshoe init` or ask your agent to use the snowshoe skill to build the map."}
+            "Ask your agent to use the snowshoe skill to build the map (or run `snowshoe init` manually)."}
         </p>
         <p className="hint">Mark actions stay disabled until a ledger exists.</p>
       </div>
@@ -851,7 +851,10 @@ export function App(): ReactElement {
 
   async function onMark(slug: string, kind: MarkKind) {
     if (uninitialized) {
-      setError(initHint ?? "Snowshoe is not initialized. Run `snowshoe init` first.");
+      setError(
+        initHint ??
+          "Snowshoe is not initialized. Ask your agent to use the snowshoe skill (or run `snowshoe init` manually).",
+      );
       return;
     }
     setBusy(true);
@@ -893,7 +896,10 @@ export function App(): ReactElement {
 
   async function onUnmark(slug: string, kind: string) {
     if (uninitialized) {
-      setError(initHint ?? "Snowshoe is not initialized. Run `snowshoe init` first.");
+      setError(
+        initHint ??
+          "Snowshoe is not initialized. Ask your agent to use the snowshoe skill (or run `snowshoe init` manually).",
+      );
       return;
     }
     setBusy(true);
@@ -909,7 +915,10 @@ export function App(): ReactElement {
 
   async function onLeaf(slug: string, leaf: boolean) {
     if (uninitialized) {
-      setError(initHint ?? "Snowshoe is not initialized. Run `snowshoe init` first.");
+      setError(
+        initHint ??
+          "Snowshoe is not initialized. Ask your agent to use the snowshoe skill (or run `snowshoe init` manually).",
+      );
       return;
     }
     setBusy(true);
@@ -966,7 +975,7 @@ export function App(): ReactElement {
         </button>
         {stale ? <span className="warn">Map changed</span> : null}
         {uninitialized ? (
-          <span className="warn">Not initialized — run snowshoe init / skill</span>
+          <span className="warn">Not initialized — use the snowshoe skill (or snowshoe init)</span>
         ) : null}
         {error ? <span className="error">{error}</span> : null}
         <button
@@ -1047,7 +1056,8 @@ export function App(): ReactElement {
                 <div className="init-cta" role="status">
                   <p className="warn">Empty map</p>
                   <p className="hint">
-                    {initHint ?? "Run `snowshoe init` or ask your agent to use the snowshoe skill."}
+                    {initHint ??
+                      "Ask your agent to use the snowshoe skill to build the map (or run `snowshoe init` manually)."}
                   </p>
                 </div>
               ) : model ? (

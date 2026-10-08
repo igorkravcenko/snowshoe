@@ -67,9 +67,16 @@ export function isInitialized(repoRoot: string): boolean {
   return existsSync(ledgerPath(repoRoot));
 }
 
-/** Actionable hint for map UI / JSON APIs when `.snowshoe/` is missing. */
+/**
+ * Actionable hint for map UI / JSON APIs / CLI errors when `.snowshoe/` is missing.
+ * Skill via the user's agent is primary; manual `snowshoe init` is secondary.
+ */
 export const UNINITIALIZED_HINT =
-  "Snowshoe is not initialized. Run `snowshoe init` (or use the snowshoe skill) first.";
+  "Snowshoe is not initialized. Ask your agent to use the snowshoe skill (or run `snowshoe init` manually).";
+
+/** Call to action for the empty map (soft-init). Skill first, manual init second. */
+export const UNINITIALIZED_CTA =
+  "Ask your agent to use the snowshoe skill to build the map (or run `snowshoe init` manually).";
 
 export function requireInitialized(repoRoot: string): void {
   if (!isInitialized(repoRoot)) {
