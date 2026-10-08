@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Server } from "bun";
 import { mapAccessTokensEqual } from "../src/map/access-token.ts";
 import { type PtyWsData, tryUpgradeMapPty } from "../src/map/pty.ts";
-import { startMapServer } from "../src/map/serve.ts";
+import { mapHtmlContentSecurityPolicy } from "../src/map/security-headers.ts";
+import { ensureMapUiBuilt, snowshoePackageRoot, startMapServer } from "../src/map/serve.ts";
 import { makeGitRepo, mapApi, snowshoe } from "./helpers.ts";
 
 let stop: (() => void) | undefined;
@@ -11,6 +14,40 @@ afterEach(() => {
   stop?.();
   stop = undefined;
 });
+
+function assertNoCors(res: Response): void {
+  expect(res.headers.get("access-control-allow-origin")).toBeNull();
+  expect(res.headers.get("access-control-allow-credentials")).toBeNull();
+  expect(res.headers.get("access-control-allow-headers")).toBeNull();
+  expect(res.headers.get("access-control-allow-methods")).toBeNull();
+}
+
+async function wsOpened(
+  url: string,
+  origin: string,
+): Promise<{ opened: boolean; closeCode?: number }> {
+  const socket = new WebSocket(url, { headers: { Origin: origin } } as never);
+  const result = await new Promise<{ opened: boolean; closeCode?: number }>((resolve) => {
+    const timer = setTimeout(() => resolve({ opened: socket.readyState === WebSocket.OPEN }), 1500);
+    socket.addEventListener("open", () => {
+      clearTimeout(timer);
+      resolve({ opened: true });
+    });
+    socket.addEventListener("close", (ev) => {
+      clearTimeout(timer);
+      resolve({ opened: false, closeCode: ev.code });
+    });
+    socket.addEventListener("error", () => {
+      /* close follows */
+    });
+  });
+  try {
+    socket.close();
+  } catch {
+    /* already */
+  }
+  return result;
+}
 
 function mockPtyServer(opts: {
   ip?: string | null;
@@ -43,6 +80,9 @@ describe("map serve CSRF / CSWSH guards", () => {
     const sess = await mapApi(server, "api/session");
     expect(sess.ok).toBe(true);
     expect(sess.headers.get("x-frame-options")).toBe("DENY");
+    expect(sess.headers.get("referrer-policy")).toBe("no-referrer");
+    expect(sess.headers.get("content-security-policy")).toBe("frame-ancestors 'none'");
+    assertNoCors(sess);
   });
 
   test("missing token is 401 on /api including file reads", async () => {
@@ -247,6 +287,20 @@ describe("map serve CSRF / CSWSH guards", () => {
     );
     expect(missingToken?.status).toBe(401);
 
+    const wrongToken = tryUpgradeMapPty(
+      new Request(`http://127.0.0.1:3232/api/pty?v=x&t=${"B".repeat(43)}`, {
+        headers: {
+          Host: "127.0.0.1:3232",
+          Origin: "http://127.0.0.1:3232",
+          Upgrade: "websocket",
+        },
+      }),
+      server,
+      cwd,
+      { token, port: 3232 },
+    );
+    expect(wrongToken?.status).toBe(401);
+
     const ok = tryUpgradeMapPty(
       new Request(base, {
         headers: {
@@ -322,6 +376,195 @@ describe("map serve CSRF / CSWSH guards", () => {
     });
     expect(welcome).toContain("snowshoe skill");
     good.close();
+  });
+
+  test("Origin: null is 403 on HTTP and WS", async () => {
+    const repo = makeGitRepo();
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+    const httpRes = await fetch(`${server.url}api/session`, {
+      headers: {
+        Authorization: `Bearer ${server.token}`,
+        Origin: "null",
+      },
+    });
+    expect(httpRes.status).toBe(403);
+    assertNoCors(httpRes);
+
+    const ptyHttp = await fetch(
+      `${server.url}api/pty?v=nullorig&t=${encodeURIComponent(server.token)}`,
+      { headers: { Origin: "null" } },
+    );
+    expect(ptyHttp.status).toBe(403);
+    assertNoCors(ptyHttp);
+    const liveNull = await wsOpened(
+      `ws://127.0.0.1:${server.port}/api/pty?v=nullorig&t=${encodeURIComponent(server.token)}`,
+      "null",
+    );
+    expect(liveNull.opened).toBe(false);
+
+    const token = "A".repeat(43);
+    let upgraded = 0;
+    const mock = mockPtyServer({
+      upgrade: () => {
+        upgraded += 1;
+        return true;
+      },
+    });
+    const wsRes = tryUpgradeMapPty(
+      new Request(`http://127.0.0.1:3232/api/pty?v=x&t=${token}`, {
+        headers: {
+          Host: "127.0.0.1:3232",
+          Origin: "null",
+          Upgrade: "websocket",
+        },
+      }),
+      mock,
+      "/tmp",
+      { token, port: 3232 },
+    );
+    expect(wsRes?.status).toBe(403);
+    expect(upgraded).toBe(0);
+  });
+
+  test("OPTIONS from foreign origin is 403 with no CORS headers", async () => {
+    const repo = makeGitRepo();
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+    const res = await fetch(`${server.url}api/session`, {
+      method: "OPTIONS",
+      headers: {
+        Origin: "https://evil.example",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type,authorization",
+      },
+    });
+    expect(res.status).toBe(403);
+    assertNoCors(res);
+  });
+
+  test("text/plain POST is 415", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+    const res = await mapApi(server, "api/feedback", {
+      method: "POST",
+      headers: { "content-type": "text/plain" },
+      body: JSON.stringify({ text: "csrf" }),
+    });
+    expect(res.status).toBe(415);
+  });
+
+  test("wrong token on WS is 401; other-port loopback Origin is 403", async () => {
+    const repo = makeGitRepo();
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+    const origin = `http://127.0.0.1:${server.port}`;
+    const wrongHttp = await fetch(`${server.url}api/pty?v=badtok&t=not-the-token`, {
+      headers: { Origin: origin },
+    });
+    expect(wrongHttp.status).toBe(401);
+    assertNoCors(wrongHttp);
+    const wrongTok = `ws://127.0.0.1:${server.port}/api/pty?v=badtok&t=not-the-token`;
+    const wrong = await wsOpened(wrongTok, origin);
+    expect(wrong.opened).toBe(false);
+
+    const otherHttp = await fetch(
+      `${server.url}api/pty?v=otherport&t=${encodeURIComponent(server.token)}`,
+      { headers: { Origin: "http://127.0.0.1:9" } },
+    );
+    expect(otherHttp.status).toBe(403);
+    assertNoCors(otherHttp);
+    const goodUrl = `ws://127.0.0.1:${server.port}/api/pty?v=otherport&t=${encodeURIComponent(server.token)}`;
+    const otherPort = await wsOpened(goodUrl, "http://127.0.0.1:9");
+    expect(otherPort.opened).toBe(false);
+  });
+
+  test("HEAD is gated like GET", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+    const missing = await fetch(`${server.url}api/session`, { method: "HEAD" });
+    expect(missing.status).toBe(401);
+    expect(await missing.text()).toBe("");
+    const evil = await fetch(`${server.url}api/session`, {
+      method: "HEAD",
+      headers: {
+        Authorization: `Bearer ${server.token}`,
+        Origin: "https://evil.example",
+      },
+    });
+    expect(evil.status).toBe(403);
+    expect(await evil.text()).toBe("");
+    assertNoCors(evil);
+    const ok = await mapApi(server, "api/session", { method: "HEAD" });
+    expect(ok.status).toBe(200);
+    expect(await ok.text()).toBe("");
+    expect(ok.headers.get("content-type")).toMatch(/application\/json/);
+  });
+
+  test("HTML responses send full CSP and Vite dist has no inline script/style", async () => {
+    await ensureMapUiBuilt(snowshoePackageRoot());
+    const distHtml = readFileSync(join(snowshoePackageRoot(), "ui", "dist", "index.html"), "utf8");
+    expect(distHtml).not.toMatch(/<script(?![^>]*\bsrc=)/i);
+    expect(distHtml).not.toMatch(/<style[\s>]/i);
+    expect(distHtml).toMatch(/<script type="module"[^>]*\bsrc="\/assets\//);
+
+    const repo = makeGitRepo();
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      buildUi: false,
+    });
+    stop = server.stop;
+    const page = await fetch(server.url);
+    expect(page.ok).toBe(true);
+    expect(page.headers.get("referrer-policy")).toBe("no-referrer");
+    expect(page.headers.get("x-frame-options")).toBe("DENY");
+    const csp = page.headers.get("content-security-policy") ?? "";
+    expect(csp).toBe(mapHtmlContentSecurityPolicy(server.port));
+    expect(csp).toContain("default-src 'self'");
+    expect(csp).toContain(`ws://127.0.0.1:${server.port}`);
+    expect(csp).toContain(`ws://localhost:${server.port}`);
+    expect(csp).toContain(`ws://[::1]:${server.port}`);
+    expect(csp).toContain("object-src 'none'");
+    expect(csp).toContain("base-uri 'none'");
+    expect(csp).toContain("frame-ancestors 'none'");
+    assertNoCors(page);
   });
 
   test("map view without SNOWSHOE_MAP_TOKEN fails; with token matches UI view", async () => {

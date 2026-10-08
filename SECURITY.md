@@ -26,8 +26,12 @@ are not a supported train — upgrade.
   loopback origin (missing Origin denied), and the per-launch access token
 - All map HTTP `/api/*` routes (including `GET /api/file`): loopback `Host`,
   per-launch token (`Authorization: Bearer`), reject foreign `Origin` /
-  `Sec-Fetch-Site: cross-site`; POST/PUT/PATCH (and DELETE with a body) require
-  `Content-Type: application/json`
+  `Sec-Fetch-Site: cross-site` / `Origin: null`; POST/PUT/PATCH (and DELETE with
+  a body) require `Content-Type: application/json`; HEAD uses the same gates as
+  GET
+- Map HTML: CSP `default-src 'self'` with loopback `ws:` `connect-src`,
+  `object-src 'none'`, `base-uri 'none'`, `frame-ancestors 'none'`;
+  `Referrer-Policy: no-referrer`; no CORS allow headers
 - Day-1 CI hygiene (frozen lockfile, SHA-pinned Actions)
 
 ## Out of scope (for now)
