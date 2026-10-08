@@ -234,6 +234,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).toContain("No children yet");
     expect(js).toContain("Map not initialized");
     expect(js).toContain("snowshoe init");
+    expect(js).toContain("Ask your agent to use the snowshoe skill");
     expect(js).toContain("Preview in UI");
     expect(js).toContain("/api/view");
     expect(js).toContain("Location");
@@ -508,6 +509,12 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(sessJson.initialized).toBe(false);
     expect(sessJson.repoRoot).toBe(repo);
     expect(String(sessJson.hint ?? sessJson.cta)).toMatch(/snowshoe init/i);
+    // Skill (via agent) is the primary CTA; manual `snowshoe init` is secondary.
+    for (const text of [String(sessJson.cta), String(sessJson.hint)]) {
+      expect(text).toContain("snowshoe skill");
+      expect(text).toContain("(or run `snowshoe init` manually)");
+      expect(text.indexOf("skill")).toBeLessThan(text.indexOf("snowshoe init"));
+    }
     expect(sessJson.expandDepth).toBe(1);
 
     const status = await fetch(`${server.url}api/map/status?allFields=1`);
@@ -522,6 +529,9 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(statusJson.rootSlug).toBe("root");
     expect(statusJson.nodes).toEqual([]);
     expect(String(statusJson.hint)).toMatch(/snowshoe init|skill/i);
+    const statusCta = String((statusJson as { cta?: string }).cta);
+    expect(statusCta.indexOf("skill")).toBeGreaterThanOrEqual(0);
+    expect(statusCta.indexOf("skill")).toBeLessThan(statusCta.indexOf("snowshoe init"));
 
     const mark = await fetch(`${server.url}api/map/mark`, {
       method: "POST",
@@ -532,6 +542,9 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     const markJson = (await mark.json()) as { ok?: boolean; error?: string };
     expect(markJson.ok).toBe(false);
     expect(String(markJson.error)).toMatch(/snowshoe init/i);
+    expect(String(markJson.error).indexOf("skill")).toBeLessThan(
+      String(markJson.error).indexOf("snowshoe init"),
+    );
 
     const file = await fetch(`${server.url}api/file?path=README.md&start=1&end=1`);
     expect(file.status).toBe(400);
