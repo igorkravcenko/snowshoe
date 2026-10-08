@@ -53,4 +53,4 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-10-05-inbox-marks](./ADR-2026-10-05-inbox-marks.md) | accepted | System inbox marks `new`/`decayed`; Todos Inbox/Later; read on leave |
 | [ADR-2026-10-06-anchor-locator-offset](./ADR-2026-10-06-anchor-locator-offset.md) | accepted | Required `locatorOffset`; identity = startLine+offset; legacy 0 |
 | [ADR-2026-10-07-soft-init-combined-port](./ADR-2026-10-07-soft-init-combined-port.md) | accepted | Soft-init map serve; skill combined drain+learn; default port 3232 |
-| [ADR-2026-10-08-map-serve-origin-token](./ADR-2026-10-08-map-serve-origin-token.md) | accepted | Map serve CSWSH/CSRF: Origin + per-launch token + JSON Content-Type |
+| [ADR-2026-10-08-map-serve-origin-token](./ADR-2026-10-08-map-serve-origin-token.md) | accepted | Map serve CSWSH/CSRF: Origin + token + JSON CT; HTML CSP + Referrer-Policy |

@@ -34,6 +34,7 @@ import {
 } from "./access-token.ts";
 import { FileReadError, readRepoFile } from "./file-read.ts";
 import { isAllowedMapOrigin, loopbackHostHeaderOrError } from "./loopback.ts";
+import { withMapSecurityHeaders } from "./security-headers.ts";
 import type { MapViewStore } from "./views.ts";
 
 const MIME: Record<string, string> = {
@@ -70,20 +71,21 @@ function httpStatusForExit(code: number): number {
   return 500;
 }
 
-function jsonHttp(body: unknown, status: number): Response {
+function jsonHttp(body: unknown, status: number, port: number): Response {
   return new Response(`${JSON.stringify(body, null, 2)}\n`, {
     status,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store",
-      "x-frame-options": "DENY",
-      "content-security-policy": "frame-ancestors 'none'",
-    },
+    headers: withMapSecurityHeaders(
+      {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+      },
+      { port, html: false },
+    ),
   });
 }
 
-function jsonResponse(body: unknown, exitCode: number): Response {
-  return jsonHttp(body, httpStatusForExit(exitCode));
+function jsonResponse(body: unknown, exitCode: number, port: number): Response {
+  return jsonHttp(body, httpStatusForExit(exitCode), port);
 }
 
 function uninitializedHintBody(extra: Record<string, unknown> = {}): Record<string, unknown> {
@@ -97,9 +99,9 @@ function uninitializedHintBody(extra: Record<string, unknown> = {}): Record<stri
   };
 }
 
-function errorResponse(err: unknown): Response {
+function errorResponse(err: unknown, port: number): Response {
   if (err instanceof FileReadError) {
-    return jsonHttp({ schemaVersion: 1, ok: false, error: err.message }, err.status);
+    return jsonHttp({ schemaVersion: 1, ok: false, error: err.message }, err.status, port);
   }
   if (err instanceof CliError) {
     return jsonResponse(
@@ -110,10 +112,16 @@ function errorResponse(err: unknown): Response {
         ...err.body,
       },
       err.exitCode,
+      port,
     );
   }
   const message = err instanceof Error ? err.message : String(err);
-  return jsonResponse({ schemaVersion: 1, ok: false, error: message }, EXIT_INTERNAL);
+  return jsonResponse({ schemaVersion: 1, ok: false, error: message }, EXIT_INTERNAL, port);
+}
+
+function asHead(req: Request, res: Response): Response {
+  if (req.method !== "HEAD") return res;
+  return new Response(null, { status: res.status, headers: res.headers });
 }
 
 function queryInt(url: URL, name: string): number | undefined {
@@ -158,8 +166,14 @@ async function readSlug(req: Request, url: URL): Promise<string> {
  * POST /api/feedback twins `feedback add`; DELETE /api/feedback?id= twins `feedback remove`.
  */
 export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise<Response> {
+  return asHead(req, await handleMapHttpBody(req, opts));
+}
+
+async function handleMapHttpBody(req: Request, opts: MapHttpOptions): Promise<Response> {
   const url = new URL(req.url);
   const path = url.pathname;
+  const method = req.method === "HEAD" ? "GET" : req.method;
+  const port = opts.port;
 
   try {
     if (path.startsWith("/api/")) {
@@ -167,6 +181,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
         return jsonHttp(
           { schemaVersion: 1, ok: false, error: "Map API requires a loopback Host header" },
           403,
+          port,
         );
       }
       const origin = req.headers.get("origin");
@@ -178,6 +193,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
             error: "Map API requires Origin matching this map server",
           },
           403,
+          port,
         );
       }
       const site = req.headers.get("sec-fetch-site");
@@ -185,6 +201,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
         return jsonHttp(
           { schemaVersion: 1, ok: false, error: "Map API rejects cross-site fetch" },
           403,
+          port,
         );
       }
       const offered = mapAccessTokenFromHttpRequest(req);
@@ -192,6 +209,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
         return jsonHttp(
           { schemaVersion: 1, ok: false, error: "Map API requires a valid access token" },
           401,
+          port,
         );
       }
       if (mutationRequiresJsonContentType(req.method, req) && !isJsonContentType(req)) {
@@ -202,11 +220,12 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
             error: "Map API mutations require Content-Type: application/json",
           },
           415,
+          port,
         );
       }
     }
 
-    if (path === "/api/file" && req.method === "GET") {
+    if (path === "/api/file" && method === "GET") {
       const repoRoot = findRepoRoot(opts.cwd);
       requireInitialized(repoRoot);
       const result = readRepoFile(repoRoot, url.searchParams.get("path") ?? "", {
@@ -216,10 +235,10 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
         locatorOffset: queryInt(url, "locatorOffset"),
         lineText: url.searchParams.get("lineText") ?? undefined,
       });
-      return jsonHttp({ schemaVersion: 1, ...result }, 200);
+      return jsonHttp({ schemaVersion: 1, ...result }, 200, port);
     }
 
-    if (path === "/api/map/status" && req.method === "GET") {
+    if (path === "/api/map/status" && method === "GET") {
       const repoRoot = findRepoRoot(opts.cwd);
       if (!isInitialized(repoRoot)) {
         return jsonHttp(
@@ -230,6 +249,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
             gitHead: gitHead(repoRoot),
           }),
           200,
+          port,
         );
       }
       return withSession((s) => {
@@ -249,28 +269,28 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
                 : undefined,
           }),
         );
-        return jsonResponse({ ...result.body, initialized: true }, result.exitCode);
+        return jsonResponse({ ...result.body, initialized: true }, result.exitCode, port);
       }, opts.cwd);
     }
 
-    if (path === "/api/feedback" && req.method === "GET") {
+    if (path === "/api/feedback" && method === "GET") {
       const result = runFeedbackList(opts.cwd);
-      return jsonResponse(result.body, result.exitCode);
+      return jsonResponse(result.body, result.exitCode, port);
     }
 
     if (path === "/api/feedback" && req.method === "POST") {
       const body = await readJsonBody(req);
       const result = runFeedbackAdd(opts.cwd, body);
-      return jsonResponse(result.body, result.exitCode);
+      return jsonResponse(result.body, result.exitCode, port);
     }
 
     if (path === "/api/feedback" && req.method === "DELETE") {
       const id = url.searchParams.get("id") ?? "";
       const result = runFeedbackRemove(opts.cwd, id);
-      return jsonResponse(result.body, result.exitCode);
+      return jsonResponse(result.body, result.exitCode, port);
     }
 
-    if (path === "/api/session" && req.method === "GET") {
+    if (path === "/api/session" && method === "GET") {
       const repoRoot = findRepoRoot(opts.cwd);
       if (!isInitialized(repoRoot)) {
         return jsonHttp(
@@ -284,6 +304,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
             packageRoot: opts.packageRoot ?? null,
           }),
           200,
+          port,
         );
       }
       return withSession(
@@ -300,6 +321,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
               packageRoot: opts.packageRoot ?? null,
             },
             EXIT_OK,
+            port,
           ),
         opts.cwd,
       );
@@ -311,7 +333,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
       const kind = url.searchParams.get("kind") ?? body.kind ?? "detail";
       return withSession((s) => {
         const result = runMapMark(s, slug, kind);
-        return jsonResponse(result.body, result.exitCode);
+        return jsonResponse(result.body, result.exitCode, port);
       }, opts.cwd);
     }
 
@@ -321,7 +343,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
       const kind = url.searchParams.get("kind") ?? body.kind;
       return withSession((s) => {
         const result = runMapUnmark(s, slug, kind);
-        return jsonResponse(result.body, result.exitCode);
+        return jsonResponse(result.body, result.exitCode, port);
       }, opts.cwd);
     }
 
@@ -330,14 +352,14 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
       const slug = url.searchParams.get("slug") || (typeof body.slug === "string" ? body.slug : "");
       return withSession((s) => {
         const result = runMapInboxRead(s, slug);
-        return jsonResponse(result.body, result.exitCode);
+        return jsonResponse(result.body, result.exitCode, port);
       }, opts.cwd);
     }
 
     if (path === "/api/map/inbox/read-all" && req.method === "POST") {
       return withSession((s) => {
         const result = runMapInboxReadAll(s);
-        return jsonResponse(result.body, result.exitCode);
+        return jsonResponse(result.body, result.exitCode, port);
       }, opts.cwd);
     }
 
@@ -347,7 +369,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
       const leafRaw = url.searchParams.get("leaf") ?? body.leaf;
       return withSession((s) => {
         const result = runMapSetLeaf(s, slug, parseLeafFlag(leafRaw));
-        return jsonResponse(result.body, result.exitCode);
+        return jsonResponse(result.body, result.exitCode, port);
       }, opts.cwd);
     }
 
@@ -356,7 +378,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
       const slug = url.searchParams.get("slug") || (typeof body.slug === "string" ? body.slug : "");
       return withSession((s) => {
         const result = runMapMetric(s, slug, metricUpdatesFromBody(body));
-        return jsonResponse(result.body, result.exitCode);
+        return jsonResponse(result.body, result.exitCode, port);
       }, opts.cwd);
     }
 
@@ -364,7 +386,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
       const slug = await readSlug(req, url);
       return withSession((s) => {
         const result = runMapDetailMark(s, slug);
-        return jsonResponse(result.body, result.exitCode);
+        return jsonResponse(result.body, result.exitCode, port);
       }, opts.cwd);
     }
 
@@ -372,7 +394,7 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
       const slug = await readSlug(req, url);
       return withSession((s) => {
         const result = runMapDetailCancel(s, slug);
-        return jsonResponse(result.body, result.exitCode);
+        return jsonResponse(result.body, result.exitCode, port);
       }, opts.cwd);
     }
 
@@ -381,11 +403,12 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
         return jsonResponse(
           { schemaVersion: 1, ok: false, error: "Map views are not available" },
           EXIT_INTERNAL,
+          port,
         );
       }
       const id = opts.views.create();
       const repoRoot = findRepoRoot(opts.cwd);
-      return jsonHttp({ schemaVersion: 1, ok: true, id, slug: null, repoRoot }, 200);
+      return jsonHttp({ schemaVersion: 1, ok: true, id, slug: null, repoRoot }, 200, port);
     }
 
     const viewId = path.startsWith("/api/view/") ? path.slice("/api/view/".length) : "";
@@ -394,15 +417,20 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
         return jsonResponse(
           { schemaVersion: 1, ok: false, error: "Map views are not available" },
           EXIT_INTERNAL,
+          port,
         );
       }
-      if (req.method === "GET") {
+      if (method === "GET") {
         const rec = opts.views.get(viewId);
         if (!rec) {
-          return jsonHttp({ schemaVersion: 1, ok: false, error: "Unknown view id" }, 404);
+          return jsonHttp({ schemaVersion: 1, ok: false, error: "Unknown view id" }, 404, port);
         }
         const repoRoot = findRepoRoot(opts.cwd);
-        return jsonHttp({ schemaVersion: 1, ok: true, id: viewId, slug: rec.slug, repoRoot }, 200);
+        return jsonHttp(
+          { schemaVersion: 1, ok: true, id: viewId, slug: rec.slug, repoRoot },
+          200,
+          port,
+        );
       }
       if (req.method === "PUT") {
         const text = await req.text();
@@ -417,9 +445,9 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
         }
         const rec = opts.views.put(viewId, slug);
         if (!rec) {
-          return jsonHttp({ schemaVersion: 1, ok: false, error: "Unknown view id" }, 404);
+          return jsonHttp({ schemaVersion: 1, ok: false, error: "Unknown view id" }, 404, port);
         }
-        return jsonHttp({ schemaVersion: 1, ok: true, id: viewId, slug: rec.slug }, 200);
+        return jsonHttp({ schemaVersion: 1, ok: true, id: viewId, slug: rec.slug }, 200, port);
       }
     }
 
@@ -427,13 +455,14 @@ export async function handleMapHttp(req: Request, opts: MapHttpOptions): Promise
       return jsonResponse(
         { schemaVersion: 1, ok: false, error: `Unknown API route ${req.method} ${path}` },
         EXIT_USAGE,
+        port,
       );
     }
   } catch (err) {
-    return errorResponse(err);
+    return errorResponse(err, port);
   }
 
-  return serveUiAsset(path, opts.uiDist);
+  return serveUiAsset(path, opts.uiDist, port);
 }
 
 function safeDistFile(uiDist: string, urlPath: string): string | null {
@@ -464,7 +493,7 @@ function isSpaIndexFallback(urlPath: string): boolean {
   return true;
 }
 
-function serveUiAsset(urlPath: string, uiDist: string): Response {
+function serveUiAsset(urlPath: string, uiDist: string, port: number): Response {
   if (!existsSync(uiDist)) {
     return jsonResponse(
       {
@@ -473,12 +502,21 @@ function serveUiAsset(urlPath: string, uiDist: string): Response {
         error: "Map UI is not built. Run `bun run build:ui` or restart `snowshoe map serve`.",
       },
       EXIT_INTERNAL,
+      port,
     );
   }
 
   let file = safeDistFile(uiDist, urlPath);
+  const htmlFallbackHeaders = (status: number, body: string) =>
+    new Response(body, {
+      status,
+      headers: withMapSecurityHeaders(
+        { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
+        { port, html: false },
+      ),
+    });
   if (!file) {
-    return new Response("Forbidden", { status: 403 });
+    return htmlFallbackHeaders(403, "Forbidden");
   }
 
   if (!existsSync(file) || statSync(file).isDirectory()) {
@@ -486,18 +524,20 @@ function serveUiAsset(urlPath: string, uiDist: string): Response {
     if (existsSync(index) && isSpaIndexFallback(urlPath)) {
       file = index;
     } else {
-      return new Response("Not found", { status: 404 });
+      return htmlFallbackHeaders(404, "Not found");
     }
   }
 
   const bytes = Bun.file(file);
   const type = MIME[extname(file).toLowerCase()] ?? "application/octet-stream";
+  const html = type.startsWith("text/html");
   return new Response(bytes, {
-    headers: {
-      "content-type": type,
-      "cache-control": "no-store",
-      "x-frame-options": "DENY",
-      "content-security-policy": "frame-ancestors 'none'",
-    },
+    headers: withMapSecurityHeaders(
+      {
+        "content-type": type,
+        "cache-control": "no-store",
+      },
+      { port, html },
+    ),
   });
 }

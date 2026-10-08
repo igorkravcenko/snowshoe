@@ -1,6 +1,7 @@
 import type { Server, ServerWebSocket } from "bun";
 import { mapAccessTokenFromPtyUpgrade, mapAccessTokensEqual } from "./access-token.ts";
 import { isAllowedMapOrigin, isLoopbackPeer, loopbackHostHeaderOrError } from "./loopback.ts";
+import { withMapSecurityHeaders } from "./security-headers.ts";
 
 export type PtyWsData = {
   viewId: string;
@@ -40,10 +41,13 @@ const PTY_BUFFER_MAX_BYTES = 64 * 1024;
 
 const sessions = new Map<string, PtySession>();
 
-function jsonError(message: string, status: number): Response {
+function jsonError(message: string, status: number, port: number): Response {
   return new Response(`${JSON.stringify({ schemaVersion: 1, ok: false, error: message })}\n`, {
     status,
-    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+    headers: withMapSecurityHeaders(
+      { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+      { port, html: false },
+    ),
   });
 }
 
@@ -73,25 +77,25 @@ export function tryUpgradeMapPty(
   if (url.pathname !== "/api/pty") return undefined;
   const ip = server.requestIP(req)?.address ?? null;
   if (!isLoopbackPeer(ip)) {
-    return jsonError("PTY is allowed only for loopback peers", 403);
+    return jsonError("PTY is allowed only for loopback peers", 403, auth.port);
   }
   if (!loopbackHostHeaderOrError(req)) {
-    return jsonError("PTY requires a loopback Host header", 403);
+    return jsonError("PTY requires a loopback Host header", 403, auth.port);
   }
   const origin = req.headers.get("origin");
   if (!isAllowedMapOrigin(origin, auth.port)) {
-    return jsonError("PTY requires Origin matching this map server", 403);
+    return jsonError("PTY requires Origin matching this map server", 403, auth.port);
   }
   const offered = mapAccessTokenFromPtyUpgrade(req);
   if (!offered || !mapAccessTokensEqual(offered, auth.token)) {
-    return jsonError("PTY requires a valid access token", 401);
+    return jsonError("PTY requires a valid access token", 401, auth.port);
   }
   const viewId = url.searchParams.get("v") ?? "";
   const reset = url.searchParams.get("reset") === "1";
   const upgraded = server.upgrade(req, {
     data: { viewId, mapUrl: mapOriginFromRequest(req), cwd, reset, token: auth.token },
   });
-  if (!upgraded) return jsonError("PTY upgrade failed", 400);
+  if (!upgraded) return jsonError("PTY upgrade failed", 400, auth.port);
   return undefined;
 }
 

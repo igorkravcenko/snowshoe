@@ -92,10 +92,12 @@ Other harnesses: pass their skills directory as `--skills-path`.
 ## What runs locally
 
 `snowshoe map serve` binds **loopback only** (`127.0.0.1` / `localhost` / `::1`).
-The map UI includes a terminal that runs **your shell with your environment**.
-That PTY and the `/api` routes are protected by a matching `Origin` check and a
-**per-launch token** (the printed URL and `--open` put it in the URL fragment).
-Stop the server when you are done.
+The map UI includes a terminal that runs **your shell and inherits your
+environment**. `GET /api/file` serves repo file contents to the map UI (sandboxed
+to the repo root). The printed URL (and `--open`) contains a **per-launch token**
+in the fragment — treat it like a password; it can end up in agent transcripts
+and browser history. Origin + that token protect the PTY and `/api`. Stop the
+server when you are done.
 
 ## What it is / is not
 
