@@ -369,7 +369,7 @@ const mapViewCmd = defineCommand({
   meta: {
     name: "view",
     description:
-      "Re-read RAM map focus from a running map serve (SNOWSHOE_MAP_URL + SNOWSHOE_VIEW)",
+      "Re-read RAM map focus from a running map serve (SNOWSHOE_MAP_URL + SNOWSHOE_VIEW + SNOWSHOE_MAP_TOKEN)",
   },
   args: {
     json: { type: "boolean", description: "JSON output", default: false },
@@ -569,7 +569,7 @@ export const main = defineCommand({
   meta: {
     name: "snowshoe",
     description: "Don't let your agents outrun your understanding. Keep your footing.",
-    version: "0.0.2",
+    version: "0.0.3",
   },
   subCommands: {
     help: helpCmd,

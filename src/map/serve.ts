@@ -5,8 +5,9 @@ import { CliError, EXIT_INTERNAL, EXIT_USAGE } from "../errors.ts";
 import { gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
 import { findRepoRoot, snowshoePackageRoot } from "../paths.ts";
+import { generateMapAccessToken, mapUiUrl } from "./access-token.ts";
 import { handleMapHttp } from "./http.ts";
-import { isLoopbackHost } from "./loopback.ts";
+import { httpOriginForBind, isLoopbackHost } from "./loopback.ts";
 import { mapPtyWebsocket, type PtyWsData, tryUpgradeMapPty } from "./pty.ts";
 import { createMapViewStore } from "./views.ts";
 
@@ -113,11 +114,15 @@ function openBrowser(url: string): void {
 }
 
 export type MapServer = {
+  /** API base (`http://127.0.0.1:<port>/`) — no fragment. */
   url: string;
+  /** Clickable UI URL with `#t=<token>` (printed / `--open`). */
+  uiUrl: string;
   port: number;
   hostname: string;
   packageRoot: string;
   uiDist: string;
+  token: string;
   stop: () => void;
 };
 
@@ -156,6 +161,7 @@ export async function startMapServer(opts: {
   const requestedPort = opts.port ?? DEFAULT_MAP_PORT;
   const expandDepth = opts.expandDepth ?? DEFAULT_MAP_EXPAND_DEPTH;
   const views = createMapViewStore();
+  const token = generateMapAccessToken();
 
   let queue: Promise<unknown> = Promise.resolve();
   const runSerialized = (fn: () => Promise<Response>): Promise<Response> => {
@@ -171,11 +177,23 @@ export async function startMapServer(opts: {
     hostname,
     port: requestedPort,
     fetch(req, srv) {
-      const pty = tryUpgradeMapPty(req, srv, repoRoot);
+      const bound = srv.port;
+      const pty = tryUpgradeMapPty(req, srv, repoRoot, {
+        token,
+        port: typeof bound === "number" ? bound : requestedPort,
+      });
       if (pty) return pty;
       if (new URL(req.url).pathname === "/api/pty") return;
       return runSerialized(() =>
-        handleMapHttp(req, { cwd: repoRoot, uiDist, expandDepth, packageRoot, views }),
+        handleMapHttp(req, {
+          cwd: repoRoot,
+          uiDist,
+          expandDepth,
+          packageRoot,
+          views,
+          accessToken: token,
+          port: typeof bound === "number" ? bound : requestedPort,
+        }),
       );
     },
     websocket: mapPtyWebsocket,
@@ -187,15 +205,19 @@ export async function startMapServer(opts: {
     throw new CliError("map serve failed to bind a port", EXIT_INTERNAL);
   }
 
-  const url = `http://${hostname}:${boundPort}/`;
-  if (opts.open) openBrowser(url);
+  const origin = httpOriginForBind(hostname, boundPort);
+  const url = `${origin}/`;
+  const uiUrl = mapUiUrl(origin, token);
+  if (opts.open) openBrowser(uiUrl);
 
   return {
     url,
+    uiUrl,
     port: boundPort,
     hostname,
     packageRoot,
     uiDist,
+    token,
     stop: () => server.stop(true),
   };
 }
@@ -222,13 +244,13 @@ export async function runMapServe(opts: {
   });
   const body = envelope("map.serve", repoRoot, gitHead(repoRoot), {
     ok: true,
-    url: server.url,
+    url: server.uiUrl,
     port: server.port,
     hostname: server.hostname,
     expandDepth,
     packageRoot: server.packageRoot,
     uiDist: server.uiDist,
-    hint: "Mapped repo is cwd. UI is uiDist. GET /api/view/:id is RAM focus. Loopback-peer PTY at /api/pty.",
+    hint: "Mapped repo is cwd. UI is uiDist. Open url (fragment holds a per-launch token). GET /api/view/:id is RAM focus. Loopback PTY at /api/pty (Origin + token).",
   });
   return { exitCode: 0, body, server };
 }

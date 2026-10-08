@@ -48,7 +48,9 @@ HTTP `/api/*` route require a **loopback `Host` header** (DNS-rebinding
 mitigation: peer IP can still be loopback while `Host` is attacker-controlled).
 Documented in `SECURITY.md`.
 
+## Amendment 2026-10-08: Origin + per-launch token
 
+Loopback `Host` remains. PTY and every `/api/*` also require a matching loopback Origin (PTY: Origin mandatory) and a per-launch access token. See [ADR-2026-10-08-map-serve-origin-token](./ADR-2026-10-08-map-serve-origin-token.md).
 
 ## Amendment 2026-10-07: Soft-init + default port 3232
 

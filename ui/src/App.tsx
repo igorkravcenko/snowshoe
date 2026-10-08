@@ -12,6 +12,7 @@ import {
   type Anchor,
   createMapView,
   fetchMapStatus,
+  fetchMapView,
   fetchSession,
   incomingRefs,
   type MapNode,
@@ -627,8 +628,8 @@ export function App(): ReactElement {
       const fromQuery = new URLSearchParams(window.location.search).get("v");
       let id = fromQuery;
       if (id) {
-        const res = await fetch(`/api/view/${encodeURIComponent(id)}`);
-        if (!res.ok) id = null;
+        const ok = await fetchMapView(id);
+        if (!ok) id = null;
       }
       if (!id) id = await createMapView();
       if (cancelled || !id) return;

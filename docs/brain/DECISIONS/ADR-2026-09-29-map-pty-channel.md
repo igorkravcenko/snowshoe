@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-09-29
-updated: 2026-10-04
+updated: 2026-10-08
 ---
 
 # ADR-2026-09-29: Map UI localhost PTY channel (not chat, not learning)
@@ -19,7 +19,7 @@ Focus lives in RAM (`GET /api/view/:id`). Shell env is a snapshot; the CLI must 
 ## Decision
 
 1. **Channel, not chat.** Map UI may embed a PTY (xterm) as the first sidebar tab. Snowshoe does not spawn an agent, send prompts, or tell the agent to open a node. The human types.
-2. **Fuse is peer, not bind.** PTY/WebSocket is allowed only if the **client address is loopback**. `--host 0.0.0.0` may still serve the map on a LAN; non-loopback clients do not get a shell. No confirm-prompt or repo config that can default PTY-on later.
+2. **Fuse is peer, not bind.** PTY/WebSocket is allowed only if the **client address is loopback**. `--host 0.0.0.0` may still serve the map on a LAN; non-loopback clients do not get a shell. No confirm-prompt or repo config that can default PTY-on later. Amendment 2026-10-08: also require matching loopback **Origin** (missing Origin denied) and the per-launch map access token — [ADR-2026-10-08-map-serve-origin-token](./ADR-2026-10-08-map-serve-origin-token.md). `--host` is loopback-only in this slice, so the LAN clause is historical.
 3. **`snowshoe map view`** GETs `{url}/api/view/{id}` using `SNOWSHOE_MAP_URL` + `SNOWSHOE_VIEW` (or `--url` / `--id`). Not ledger. Not `.snowshoe/`. Skill routing: [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md) (`learn.md` uses this CLI).
 4. **Learning product** (quiz/verify) remains unshipped. The PTY may print a **human** welcome that invites starting the operator’s own agent and loading the snowshoe skill to discuss/study the map. Env **`SNOWSHOE_MODE=learn`** is a hint for that external agent (with `SNOWSHOE_MAP_URL` / `SNOWSHOE_VIEW`). Snowshoe still does not spawn an agent or send prompts.
 5. **Session survives WS drops.** The shell is keyed by map `viewId` inside `map serve`. Closing the WebSocket (laptop sleep, brief network blip, tab backgrounding) **detaches** but does not kill the process; the UI auto-reconnects and replays a short output buffer. **Restart** (UI) or `?reset=1` destroys the server-side session and spawns a new shell. Orphans are bounded: idle detached sessions are reaped after **12h**, and at most **4** shells exist per `map serve` (evict oldest detached first when spawning another). Stopping `map serve` still ends all PTYs.

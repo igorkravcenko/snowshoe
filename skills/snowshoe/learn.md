@@ -14,6 +14,7 @@ Map PTY env (slug in env can go stale; the view id stays):
 
 - `SNOWSHOE_MAP_URL` — origin of `map serve`
 - `SNOWSHOE_VIEW` — view id (`?v=`)
+- `SNOWSHOE_MAP_TOKEN` — per-launch map access token (required by `/api/*`; the PTY sets this)
 
 Re-read the focused slug after they move in the tree:
 

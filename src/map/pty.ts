@@ -1,5 +1,6 @@
 import type { Server, ServerWebSocket } from "bun";
-import { isLoopbackPeer, loopbackHostHeaderOrError } from "./loopback.ts";
+import { mapAccessTokenFromPtyUpgrade, mapAccessTokensEqual } from "./access-token.ts";
+import { isAllowedMapOrigin, isLoopbackPeer, loopbackHostHeaderOrError } from "./loopback.ts";
 
 export type PtyWsData = {
   viewId: string;
@@ -7,6 +8,8 @@ export type PtyWsData = {
   cwd: string;
   /** When true, destroy any persisted session for this view before attach. */
   reset: boolean;
+  /** Per-launch map access token (PTY env `SNOWSHOE_MAP_TOKEN` for `map view`). */
+  token?: string;
 };
 
 type PtySession = {
@@ -50,11 +53,21 @@ export function mapOriginFromRequest(req: Request): string {
   return "http://127.0.0.1";
 }
 
-/** Upgrade `/api/pty` only for loopback peers. Returns a Response when not upgraded. */
+export type PtyUpgradeAuth = {
+  token: string;
+  port: number;
+};
+
+/**
+ * Upgrade `/api/pty` only for loopback peers with a matching Origin and token.
+ * Missing Origin is denied: the PTY is a browser map-UI channel. Non-browser
+ * clients may send Origin equal to this server's loopback origin plus the token.
+ */
 export function tryUpgradeMapPty(
   req: Request,
   server: Server<PtyWsData>,
   cwd: string,
+  auth: PtyUpgradeAuth,
 ): Response | undefined {
   const url = new URL(req.url);
   if (url.pathname !== "/api/pty") return undefined;
@@ -65,10 +78,18 @@ export function tryUpgradeMapPty(
   if (!loopbackHostHeaderOrError(req)) {
     return jsonError("PTY requires a loopback Host header", 403);
   }
+  const origin = req.headers.get("origin");
+  if (!isAllowedMapOrigin(origin, auth.port)) {
+    return jsonError("PTY requires Origin matching this map server", 403);
+  }
+  const offered = mapAccessTokenFromPtyUpgrade(req);
+  if (!offered || !mapAccessTokensEqual(offered, auth.token)) {
+    return jsonError("PTY requires a valid access token", 401);
+  }
   const viewId = url.searchParams.get("v") ?? "";
   const reset = url.searchParams.get("reset") === "1";
   const upgraded = server.upgrade(req, {
-    data: { viewId, mapUrl: mapOriginFromRequest(req), cwd, reset },
+    data: { viewId, mapUrl: mapOriginFromRequest(req), cwd, reset, token: auth.token },
   });
   if (!upgraded) return jsonError("PTY upgrade failed", 400);
   return undefined;
@@ -184,7 +205,12 @@ function detachWs(session: PtySession, ws: ServerWebSocket<PtyWsData>): void {
   scheduleIdle(session);
 }
 
-function createSession(opts: { cwd: string; viewId: string; mapUrl: string }): PtySession {
+function createSession(opts: {
+  cwd: string;
+  viewId: string;
+  mapUrl: string;
+  token?: string;
+}): PtySession {
   reapForCapacity(opts.viewId);
   const now = Date.now();
   const session: PtySession = {
@@ -206,6 +232,7 @@ function createSession(opts: { cwd: string; viewId: string; mapUrl: string }): P
     cwd: opts.cwd,
     viewId: opts.viewId,
     mapUrl: opts.mapUrl,
+    token: opts.token,
     onData(chunk) {
       pushBuffer(session, chunk);
       session.sink?.(chunk);
@@ -260,6 +287,7 @@ export function spawnMapPtyShell(opts: {
   cwd: string;
   viewId: string;
   mapUrl: string;
+  token?: string;
   cols?: number;
   rows?: number;
   onData: (chunk: Uint8Array<ArrayBuffer>) => void;
@@ -280,6 +308,7 @@ export function spawnMapPtyShell(opts: {
       SNOWSHOE_VIEW: opts.viewId,
       SNOWSHOE_MAP_URL: opts.mapUrl,
       SNOWSHOE_MODE: SNOWSHOE_MODE_LEARN,
+      ...(opts.token ? { SNOWSHOE_MAP_TOKEN: opts.token } : {}),
     },
     terminal,
     detached: true,
@@ -306,7 +335,7 @@ export function hasPtySessionForTests(viewId: string): boolean {
 
 export const mapPtyWebsocket = {
   open(ws: ServerWebSocket<PtyWsData>) {
-    const { cwd, viewId, mapUrl, reset } = ws.data;
+    const { cwd, viewId, mapUrl, reset, token } = ws.data;
     const key = viewId || "__default__";
     try {
       let session = sessions.get(key);
@@ -315,7 +344,7 @@ export const mapPtyWebsocket = {
         session = undefined;
       }
       if (!session) {
-        session = createSession({ cwd, viewId: key, mapUrl });
+        session = createSession({ cwd, viewId: key, mapUrl, token });
       }
       // Keep env snapshot fresh for map view CLI (shell already has old env).
       attachWs(session, ws);

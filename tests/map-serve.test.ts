@@ -11,7 +11,14 @@ import {
   snowshoePackageRoot,
   startMapServer,
 } from "../src/map/serve.ts";
-import { commitFile, completeEnvelope, detailPayload, makeGitRepo, snowshoe } from "./helpers.ts";
+import {
+  commitFile,
+  completeEnvelope,
+  detailPayload,
+  makeGitRepo,
+  mapApi,
+  snowshoe,
+} from "./helpers.ts";
 
 let stop: (() => void) | undefined;
 
@@ -64,7 +71,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     });
     stop = server.stop;
     const cli = await snowshoe(repo, ["feedback", "list", "--json"]);
-    const httpRes = await fetch(`${server.url}api/feedback`);
+    const httpRes = await mapApi(server, "api/feedback");
     expect(httpRes.ok).toBe(true);
     const httpJson = (await httpRes.json()) as {
       entries: Array<{ text: string }>;
@@ -87,7 +94,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     });
     stop = server.stop;
 
-    const added = await fetch(`${server.url}api/feedback`, {
+    const added = await mapApi(server, "api/feedback", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ text: "from ui" }),
@@ -96,16 +103,19 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     const addJson = (await added.json()) as { entry: { id: string; text: string } };
     expect(addJson.entry.text).toBe("from ui");
 
-    const listed = await fetch(`${server.url}api/feedback`);
+    const listed = await mapApi(server, "api/feedback");
     const listJson = (await listed.json()) as { entries: Array<{ id: string }> };
     expect(listJson.entries.some((e) => e.id === addJson.entry.id)).toBe(true);
 
-    const deleted = await fetch(
-      `${server.url}api/feedback?id=${encodeURIComponent(addJson.entry.id)}`,
-      { method: "DELETE" },
+    const deleted = await mapApi(
+      server,
+      `api/feedback?id=${encodeURIComponent(addJson.entry.id)}`,
+      {
+        method: "DELETE",
+      },
     );
     expect(deleted.ok).toBe(true);
-    const after = await fetch(`${server.url}api/feedback`);
+    const after = await mapApi(server, "api/feedback");
     const afterJson = (await after.json()) as { entries: Array<{ id: string }> };
     expect(afterJson.entries.some((e) => e.id === addJson.entry.id)).toBe(false);
   });
@@ -124,7 +134,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     stop = server.stop;
 
     const cli = await snowshoe(repo, ["map", "status", "--json", "--all-fields"]);
-    const httpRes = await fetch(`${server.url}api/map/status?allFields=1`);
+    const httpRes = await mapApi(server, "api/map/status?allFields=1");
     expect(httpRes.ok).toBe(true);
     const httpJson = (await httpRes.json()) as Record<string, unknown>;
     expect(httpJson.rootSlug).toBe("root");
@@ -136,8 +146,9 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(authHttp.detailStatus).toBeNull();
     expect((authHttp.anchors as Array<Record<string, unknown>>)[0]?.path).toBe("README.md");
 
-    const treeHttp = await fetch(
-      `${server.url}api/map/status?fields=slug,title,type,leaf,children,refs&slug=auth&depth=0`,
+    const treeHttp = await mapApi(
+      server,
+      "api/map/status?fields=slug,title,type,leaf,children,refs&slug=auth&depth=0",
     );
     expect(treeHttp.ok).toBe(true);
     const treeJson = (await treeHttp.json()) as {
@@ -147,15 +158,16 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(treeJson.fields).toEqual(["slug", "title", "type", "leaf", "children", "refs"]);
     expect(treeJson.nodes.map((n) => n.slug)).toEqual(["auth"]);
 
-    const nbHttp = await fetch(
-      `${server.url}api/map/status?fields=slug,title,type,leaf,children,refs&slug=auth&neighborhood=1`,
+    const nbHttp = await mapApi(
+      server,
+      "api/map/status?fields=slug,title,type,leaf,children,refs&slug=auth&neighborhood=1",
     );
     expect(nbHttp.ok).toBe(true);
     const nbJson = (await nbHttp.json()) as { neighborhood?: boolean; edges: unknown[] };
     expect(nbJson.neighborhood).toBe(true);
     expect(Array.isArray(nbJson.edges)).toBe(true);
 
-    const sess = await fetch(`${server.url}api/session`);
+    const sess = await mapApi(server, "api/session");
     const sessJson = (await sess.json()) as {
       repoRoot: string;
       locale: string | null;
@@ -165,7 +177,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(sessJson.locale).toBeNull();
     expect(sessJson.expandDepth).toBe(1);
 
-    const mark = await fetch(`${server.url}api/map/detail/mark`, {
+    const mark = await mapApi(server, "api/map/detail/mark", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ slug: "auth" }),
@@ -175,7 +187,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(markJson.command).toBe("map.detail.mark");
     expect(markJson.status).toBe("pending");
 
-    const pending = await fetch(`${server.url}api/map/status?allFields=1`);
+    const pending = await mapApi(server, "api/map/status?allFields=1");
     const pendingJson = (await pending.json()) as { nodes: Array<Record<string, unknown>> };
     expect(pendingJson.nodes.find((n) => n.slug === "auth")?.detailStatus).toBe("pending");
 
@@ -185,14 +197,14 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     )!;
     expect(cliAuth.detailStatus).toBe("pending");
 
-    const cancel = await fetch(`${server.url}api/map/detail/cancel`, {
+    const cancel = await mapApi(server, "api/map/detail/cancel", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ slug: "auth" }),
     });
     expect(cancel.ok).toBe(true);
 
-    const after = await fetch(`${server.url}api/map/status?allFields=1`);
+    const after = await mapApi(server, "api/map/status?allFields=1");
     const afterJson = (await after.json()) as { nodes: Array<Record<string, unknown>> };
     expect(afterJson.nodes.find((n) => n.slug === "auth")?.detailStatus).toBeNull();
   });
@@ -239,6 +251,8 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).toContain("Ask your agent to use the snowshoe skill");
     expect(js).toContain("Preview in UI");
     expect(js).toContain("/api/view");
+    expect(js).toContain("Authorization");
+    expect(js).toContain("snowshoe.mapAccessToken");
     expect(js).toContain("Location");
     expect(js).not.toContain("Dumb client");
     expect(js).not.toContain("prose: ");
@@ -379,7 +393,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
       expandDepth: 2,
     });
     stop = server.stop;
-    const sess = await fetch(`${server.url}api/session`);
+    const sess = await mapApi(server, "api/session");
     const body = (await sess.json()) as { expandDepth: number; packageRoot: string };
     expect(body.expandDepth).toBe(2);
     expect(body.packageRoot).toBe(snowshoePackageRoot());
@@ -404,7 +418,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     });
     stop = server.stop;
 
-    const cold = (await (await fetch(`${server.url}api/session`)).json()) as {
+    const cold = (await (await mapApi(server, "api/session")).json()) as {
       gitHead: string;
       mapAnchor: string | null;
       refreshRequired: boolean;
@@ -413,7 +427,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(cold.refreshRequired).toBe(false);
 
     commitFile(repo, "ahead.md", "one\n", "head ahead of caught_up_base");
-    const drifted = (await (await fetch(`${server.url}api/session`)).json()) as {
+    const drifted = (await (await mapApi(server, "api/session")).json()) as {
       gitHead: string;
       mapAnchor: string | null;
       refreshRequired: boolean;
@@ -424,7 +438,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
 
     const refreshed = await snowshoe(repo, ["routine", "refresh", "--json"]);
     expect(refreshed.json.action).toBe("opened");
-    const bound = (await (await fetch(`${server.url}api/session`)).json()) as {
+    const bound = (await (await mapApi(server, "api/session")).json()) as {
       gitHead: string;
       mapAnchor: string | null;
       refreshRequired: boolean;
@@ -446,27 +460,31 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     });
     stop = server.stop;
 
-    const created = await fetch(`${server.url}api/view`, { method: "POST" });
+    const created = await mapApi(server, "api/view", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    });
     expect(created.ok).toBe(true);
     const createdJson = (await created.json()) as { id: string; slug: string | null };
     expect(createdJson.id).toBeTruthy();
     expect(createdJson.slug).toBeNull();
 
-    const missing = await fetch(`${server.url}api/view/not-a-real-id`);
+    const missing = await mapApi(server, "api/view/not-a-real-id");
     expect(missing.status).toBe(404);
 
-    const put = await fetch(`${server.url}api/view/${createdJson.id}`, {
+    const put = await mapApi(server, `api/view/${createdJson.id}`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ slug: "root" }),
     });
     expect(put.ok).toBe(true);
-    const got = await fetch(`${server.url}api/view/${createdJson.id}`);
+    const got = await mapApi(server, `api/view/${createdJson.id}`);
     const gotJson = (await got.json()) as { slug: string | null; repoRoot?: string };
     expect(gotJson.slug).toBe("root");
     expect(gotJson.repoRoot).toBe(repo);
 
-    const sess = await fetch(`${server.url}api/session`);
+    const sess = await mapApi(server, "api/session");
     const sessJson = (await sess.json()) as { repoRoot?: string; slug?: string };
     expect(sessJson.repoRoot).toBe(repo);
     expect(sessJson.slug).toBeUndefined();
@@ -489,15 +507,23 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
       buildUi: false,
     });
     stop = server.stop;
-    const created = await fetch(`${server.url}api/view`, { method: "POST" });
+    const created = await mapApi(server, "api/view", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    });
     const createdJson = (await created.json()) as { id: string };
-    await fetch(`${server.url}api/view/${createdJson.id}`, {
+    await mapApi(server, `api/view/${createdJson.id}`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ slug: "root" }),
     });
     const viewed = await snowshoe(repo, ["map", "view", "--json"], {
-      env: { SNOWSHOE_MAP_URL: server.url.replace(/\/$/, ""), SNOWSHOE_VIEW: createdJson.id },
+      env: {
+        SNOWSHOE_MAP_URL: server.url.replace(/\/$/, ""),
+        SNOWSHOE_VIEW: createdJson.id,
+        SNOWSHOE_MAP_TOKEN: server.token,
+      },
     });
     expect(viewed.exitCode).toBe(0);
     expect(viewed.json.command).toBe("map.view");
@@ -508,7 +534,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     const viaFlags = await snowshoe(
       repo,
       ["map", "view", "--json", "--url", server.url.replace(/\/$/, ""), "--id", createdJson.id],
-      { env: { SNOWSHOE_MAP_URL: "", SNOWSHOE_VIEW: "" } },
+      { env: { SNOWSHOE_MAP_URL: "", SNOWSHOE_VIEW: "", SNOWSHOE_MAP_TOKEN: server.token } },
     );
     expect(viaFlags.exitCode).toBe(0);
     expect(viaFlags.json.slug).toBe("root");
@@ -553,7 +579,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     stop = server.stop;
     const loopback = `127.0.0.1:${server.port}`;
     const evil = { headers: { Host: "evil.example" } };
-    const good = { headers: { Host: loopback } };
+    const good = { headers: { Host: loopback, Authorization: `Bearer ${server.token}` } };
 
     for (const path of ["api/map/status", "api/session", "api/file?path=README.md&start=1&end=1"]) {
       const bad = await fetch(`${server.url}${path}`, evil);
@@ -572,7 +598,11 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(fileOk.status).toBe(200);
     const feedbackOk = await fetch(`${server.url}api/feedback`, {
       method: "POST",
-      headers: { Host: loopback, "content-type": "application/json" },
+      headers: {
+        Host: loopback,
+        "content-type": "application/json",
+        Authorization: `Bearer ${server.token}`,
+      },
       body: JSON.stringify({ text: "host ok" }),
     });
     expect(feedbackOk.status).toBe(200);
@@ -589,7 +619,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     });
     stop = server.stop;
 
-    const sess = await fetch(`${server.url}api/session`);
+    const sess = await mapApi(server, "api/session");
     expect(sess.status).toBe(200);
     const sessJson = (await sess.json()) as {
       initialized: boolean;
@@ -610,7 +640,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     }
     expect(sessJson.expandDepth).toBe(1);
 
-    const status = await fetch(`${server.url}api/map/status?allFields=1`);
+    const status = await mapApi(server, "api/map/status?allFields=1");
     expect(status.status).toBe(200);
     const statusJson = (await status.json()) as {
       initialized: boolean;
@@ -626,7 +656,7 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(statusCta.indexOf("skill")).toBeGreaterThanOrEqual(0);
     expect(statusCta.indexOf("skill")).toBeLessThan(statusCta.indexOf("snowshoe init"));
 
-    const mark = await fetch(`${server.url}api/map/mark`, {
+    const mark = await mapApi(server, "api/map/mark", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ slug: "root", kind: "detail" }),
@@ -639,12 +669,16 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
       String(markJson.error).indexOf("snowshoe init"),
     );
 
-    const file = await fetch(`${server.url}api/file?path=README.md&start=1&end=1`);
+    const file = await mapApi(server, "api/file?path=README.md&start=1&end=1");
     expect(file.status).toBe(400);
     const fileJson = (await file.json()) as { error?: string };
     expect(String(fileJson.error)).toMatch(/snowshoe init/i);
 
-    const created = await fetch(`${server.url}api/view`, { method: "POST" });
+    const created = await mapApi(server, "api/view", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+    });
     expect(created.ok).toBe(true);
 
     // Host check still applies when uninitialized
@@ -664,12 +698,12 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     });
     stop = server.stop;
 
-    const sess = await fetch(`${server.url}api/session`);
+    const sess = await mapApi(server, "api/session");
     const sessJson = (await sess.json()) as { initialized: boolean; repoRoot: string };
     expect(sessJson.initialized).toBe(true);
     expect(sessJson.repoRoot).toBe(repo);
 
-    const status = await fetch(`${server.url}api/map/status?allFields=1`);
+    const status = await mapApi(server, "api/map/status?allFields=1");
     const statusJson = (await status.json()) as {
       initialized: boolean;
       rootSlug: string;
