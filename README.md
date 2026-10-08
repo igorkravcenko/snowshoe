@@ -21,7 +21,7 @@ Use Bun 1.1+. npm may work, but it is untested. The PATH binary is **`snowshoe`*
 > [!IMPORTANT]
 > This project is `@igorkravcenko/snowshoe` on npm. Bare `snowshoe` without the scope is an unrelated package.
 
-Optional: `bun add -g snoe` / `npm i -g snoe` is a thin alias for the same CLI (`snoe` on PATH).
+Optional: `bun add -g @igorkravcenko/snoe` / `npm i -g @igorkravcenko/snoe` is a thin alias for the same CLI (`snoe` on PATH).
 
 ### 1. Put `snowshoe` on PATH
 

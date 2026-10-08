@@ -37,7 +37,7 @@ No Snowshoe ARR or user counts exist to cite. Do not invent them.
 
 ## Name
 
-[ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md). PATH bins: canonical **`snowshoe`**, short alias **`snoe`** (same entrypoint; package `bin`). npm package name is **`@igorkravcenko/snowshoe`** (bare `snowshoe` on npm is unrelated). Optional thin npm alias **`snoe`** depends on the scoped package and exposes only the `snoe` bin — not a second CLI. Informal *snow* is not CLI and not PATH. Skills/agents keep calling **`snowshoe`**. Backup **Catchmark** and “provisional” hedges are canon/agent-only — not README / CLI / UI / skills. Rejected naming angles stay in private maintainers docs (after overlay), not public canon.
+[ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md). PATH bins: canonical **`snowshoe`**, short alias **`snoe`** (same entrypoint; package `bin`). npm package name is **`@igorkravcenko/snowshoe`** (bare `snowshoe` on npm is unrelated). Optional thin npm alias **`@igorkravcenko/snoe`** depends on the scoped package and exposes only the `snoe` bin — not a second CLI. Bare unscoped `snoe` is not shippable (npm name-similarity reject). Informal *snow* is not CLI and not PATH. Skills/agents keep calling **`snowshoe`**. Backup **Catchmark** and “provisional” hedges are canon/agent-only — not README / CLI / UI / skills. Rejected naming angles stay in private maintainers docs (after overlay), not public canon.
 
 ## Now
 

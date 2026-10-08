@@ -1,8 +1,15 @@
 {
-  "name": "snoe",
+  "name": "@igorkravcenko/snoe",
   "version": "0.0.1",
   "license": "Apache-2.0",
   "description": "Snowshoe CLI alias (snoe). Don't let your agents outrun your understanding. Keep your footing. Thin wrapper around @igorkravcenko/snowshoe — https://github.com/igorkravcenko/snowshoe",
+  "keywords": [
+    "cli",
+    "snowshoe",
+    "snoe",
+    "alias",
+    "bun"
+  ],
   "type": "module",
   "bin": {
     "snoe": "./cli.ts"
