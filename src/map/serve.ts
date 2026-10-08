@@ -23,6 +23,10 @@ export function mapUiConfigPath(packageRoot = snowshoePackageRoot()): string {
   return join(packageRoot, "ui", "vite.config.ts");
 }
 
+function mapUiDistHtml(packageRoot: string): string {
+  return join(mapUiDistDir(packageRoot), "index.html");
+}
+
 function maxMtime(path: string): number {
   const st = statSync(path);
   if (!st.isDirectory()) return st.mtimeMs;
@@ -34,9 +38,32 @@ function maxMtime(path: string): number {
   return max;
 }
 
+/**
+ * Production `ui/dist` is present (not a Vite-dev index that points at /src/main.tsx).
+ * npm pack pins tarball mtimes to 1985-10-26; bun/npm install then rewrite mtimes in
+ * extract order, so sources can look newer than dist. Do not use mtimes here.
+ */
+export function isMapUiDistReady(packageRoot = snowshoePackageRoot()): boolean {
+  const distHtml = mapUiDistHtml(packageRoot);
+  if (!existsSync(distHtml)) return false;
+  return !readFileSync(distHtml, "utf8").includes("/src/main.tsx");
+}
+
+/**
+ * Contributor checkout after `bun install` (or `bun link` of that checkout).
+ * Installed packages never have Vite: it is a devDependency. Resolution must not
+ * walk parent `node_modules` (a global Vite would look "resolvable").
+ */
+export function canRebuildMapUi(packageRoot = snowshoePackageRoot()): boolean {
+  return (
+    existsSync(mapUiConfigPath(packageRoot)) &&
+    existsSync(join(packageRoot, "node_modules", "vite"))
+  );
+}
+
 /** True when index.html is missing or older than UI sources / Vite config / package.json. */
 export function isMapUiDistStale(packageRoot = snowshoePackageRoot()): boolean {
-  const distHtml = join(mapUiDistDir(packageRoot), "index.html");
+  const distHtml = mapUiDistHtml(packageRoot);
   if (!existsSync(distHtml)) return true;
   if (readFileSync(distHtml, "utf8").includes("/src/main.tsx")) return true;
   const distTime = statSync(distHtml).mtimeMs;
@@ -50,11 +77,15 @@ export function isMapUiDistStale(packageRoot = snowshoePackageRoot()): boolean {
 }
 
 export async function ensureMapUiBuilt(packageRoot = snowshoePackageRoot()): Promise<void> {
-  if (!isMapUiDistStale(packageRoot)) return;
-  const config = mapUiConfigPath(packageRoot);
-  if (!existsSync(config)) {
-    throw new CliError(`Map UI config missing at ${config}`, EXIT_INTERNAL);
+  if (!canRebuildMapUi(packageRoot)) {
+    if (isMapUiDistReady(packageRoot)) return;
+    throw new CliError(
+      "Map UI dist is missing from this install. Reinstall @igorkravcenko/snowshoe, " +
+        "or from a clone run `bun install` then `bun run build:ui`.",
+      EXIT_INTERNAL,
+    );
   }
+  if (!isMapUiDistStale(packageRoot)) return;
   const proc = Bun.spawnSync(["bun", "run", "build:ui"], {
     cwd: packageRoot,
     stdout: "pipe",

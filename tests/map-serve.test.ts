@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  canRebuildMapUi,
   DEFAULT_MAP_PORT,
   ensureMapUiBuilt,
+  isMapUiDistReady,
   isMapUiDistStale,
   snowshoePackageRoot,
   startMapServer,
@@ -242,6 +244,97 @@ describe("map serve HTTP twins (same read/mutation layer as CLI)", () => {
     expect(js).not.toContain("prose: ");
     expect(js).not.toContain("ledger.sqlite");
     expect(js).not.toContain("work complete");
+  });
+
+  function writeMapUiFixture(
+    root: string,
+    opts: {
+      distHtml?: string | null;
+      sources?: boolean;
+      localVite?: boolean;
+      buildScript?: string;
+    } = {},
+  ): void {
+    mkdirSync(join(root, "ui", "dist"), { recursive: true });
+    writeFileSync(
+      join(root, "package.json"),
+      JSON.stringify({
+        name: "snowshoe-ui-fixture",
+        scripts: { "build:ui": opts.buildScript ?? "echo BUILT > built.flag" },
+      }),
+    );
+    if (opts.distHtml !== null && opts.distHtml !== undefined) {
+      writeFileSync(join(root, "ui", "dist", "index.html"), opts.distHtml);
+    } else if (opts.distHtml === undefined) {
+      writeFileSync(
+        join(root, "ui", "dist", "index.html"),
+        `<!doctype html><html><head><title>map</title></head><body><div id="root"></div></body></html>\n`,
+      );
+    }
+    if (opts.sources !== false) {
+      mkdirSync(join(root, "ui", "src"), { recursive: true });
+      writeFileSync(join(root, "ui", "index.html"), "<html></html>\n");
+      writeFileSync(join(root, "ui", "vite.config.ts"), "export default {}\n");
+      writeFileSync(join(root, "ui", "src", "App.tsx"), "export {}\n");
+    }
+    if (opts.localVite) {
+      mkdirSync(join(root, "node_modules", "vite"), { recursive: true });
+      writeFileSync(join(root, "node_modules", "vite", "package.json"), `{"name":"vite"}\n`);
+    }
+  }
+
+  test("installed layout with newer sources does not run build:ui", async () => {
+    const root = mkdtempSync(join(tmpdir(), "snowshoe-ui-installed-"));
+    writeMapUiFixture(root);
+    const old = new Date("2020-01-01T00:00:00Z");
+    const neu = new Date("2026-10-08T00:00:00Z");
+    utimesSync(join(root, "ui", "dist", "index.html"), old, old);
+    utimesSync(join(root, "ui", "src", "App.tsx"), neu, neu);
+    utimesSync(join(root, "ui", "vite.config.ts"), neu, neu);
+    utimesSync(join(root, "package.json"), neu, neu);
+
+    expect(canRebuildMapUi(root)).toBe(false);
+    expect(isMapUiDistReady(root)).toBe(true);
+    expect(isMapUiDistStale(root)).toBe(true);
+
+    await ensureMapUiBuilt(root);
+    expect(existsSync(join(root, "built.flag"))).toBe(false);
+
+    const repo = makeGitRepo();
+    const server = await startMapServer({
+      cwd: repo,
+      port: 0,
+      hostname: "127.0.0.1",
+      open: false,
+      packageRoot: root,
+    });
+    stop = server.stop;
+    const page = await fetch(server.url);
+    expect(page.ok).toBe(true);
+    expect(await page.text()).toContain('id="root"');
+    expect(existsSync(join(root, "built.flag"))).toBe(false);
+  });
+
+  test("installed layout without dist errors clearly and does not spawn vite", async () => {
+    const root = mkdtempSync(join(tmpdir(), "snowshoe-ui-nodist-"));
+    writeMapUiFixture(root, { distHtml: null });
+    expect(canRebuildMapUi(root)).toBe(false);
+    expect(isMapUiDistReady(root)).toBe(false);
+    await expect(ensureMapUiBuilt(root)).rejects.toThrow(/Map UI dist is missing/);
+    expect(existsSync(join(root, "built.flag"))).toBe(false);
+  });
+
+  test("dev checkout with local vite rebuilds when dist is stale", async () => {
+    const root = mkdtempSync(join(tmpdir(), "snowshoe-ui-dev-"));
+    writeMapUiFixture(root, { localVite: true });
+    const old = new Date("2020-01-01T00:00:00Z");
+    const neu = new Date("2026-10-08T00:00:00Z");
+    utimesSync(join(root, "ui", "dist", "index.html"), old, old);
+    utimesSync(join(root, "ui", "src", "App.tsx"), neu, neu);
+    expect(canRebuildMapUi(root)).toBe(true);
+    expect(isMapUiDistStale(root)).toBe(true);
+    await ensureMapUiBuilt(root);
+    expect(existsSync(join(root, "built.flag"))).toBe(true);
   });
 
   test("isMapUiDistStale is true when dist is missing or older than ui/src", () => {

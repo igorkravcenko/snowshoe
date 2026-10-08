@@ -569,7 +569,7 @@ export const main = defineCommand({
   meta: {
     name: "snowshoe",
     description: "Don't let your agents outrun your understanding. Keep your footing.",
-    version: "0.0.1",
+    version: "0.0.2",
   },
   subCommands: {
     help: helpCmd,
