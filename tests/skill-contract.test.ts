@@ -93,8 +93,8 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(learn).toContain("SNOWSHOE_VIEW");
     expect(learn).toContain("SNOWSHOE_MAP_TOKEN");
     expect(learn).not.toContain("work complete");
+    expect(learn).not.toContain("work next");
     expect(learn).toContain("Combined mode");
-    expect(learn).toContain("work next --json --wait");
     expect(learn.toLowerCase()).not.toContain("quiz product");
   });
 
