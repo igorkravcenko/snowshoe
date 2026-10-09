@@ -1,6 +1,6 @@
 {
   "name": "@igorkravcenko/snowshoe",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "Apache-2.0",
   "description": "Snowshoe — don't let your agents outrun your understanding. Keep your footing. A git-native personal comprehension map of a repository — tracks what goes stale after pull.",
   "keywords": [
