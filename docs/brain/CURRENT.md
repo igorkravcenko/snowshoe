@@ -9,7 +9,7 @@ updated: 2026-10-08
 
 ## Product
 
-- **Working name:** Snowshoe (provisional; not final brand). **Backup:** Catchmark.
+- **Working name:** Snowshoe (provisional; not final brand).
 - **Subtitle:** Don't let your agents outrun your understanding. Keep your footing.
 - **Wedge:** git-native personal **comprehension map of a repository** (any clone; the *map/ledger* is personal/local, not “only personal GitHub repos”). After commits or `git pull`, show what went stale; the human chooses what to catch up on (agency). Structure exists so the human can explore and rank misunderstanding — not only consume an agent “red queue.”
 - **Form (intent):** CLI-first **orchestrator** (not a passive ledger, not a full agent harness). Owns git-anchored state, freshness, and verify protocol; pluggable agent backends are workers for map / explain / quiz. Dual entry: harness skills call `snowshoe …` (PATH binary **`snowshoe`**; informal *snow* is not PATH), or the CLI invokes a configured backend (e.g. a catch-up flow). Details: [ADR-2026-09-25-product-form-orchestrator.md](./DECISIONS/ADR-2026-09-25-product-form-orchestrator.md), [ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md).
@@ -37,7 +37,7 @@ No Snowshoe ARR or user counts exist to cite. Do not invent them.
 
 ## Name
 
-[ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md). PATH bin / install story: **`snowshoe`** via **`@igorkravcenko/snowshoe`** (bare `snowshoe` on npm is unrelated). README and the product skill document registry install first; clone/`bun link` is for contributors. Package `bin` may also expose short **`snoe`**, and a thin scoped package **`@igorkravcenko/snoe`** exists, but public install copy and skills do **not** advertise them — skills/agents call **`snowshoe`**. Bare unscoped `snoe` is not shippable (npm name-similarity reject). Informal *snow* is not CLI and not PATH. Backup **Catchmark** and “provisional” hedges are canon/agent-only — not README / CLI / UI / skills. Rejected naming angles stay in private maintainers docs (after overlay), not public canon.
+[ADR-2026-09-25-provisional-name-snowshoe.md](./DECISIONS/ADR-2026-09-25-provisional-name-snowshoe.md). PATH bin / install story: **`snowshoe`** via **`@igorkravcenko/snowshoe`** (bare `snowshoe` on npm is unrelated). README and the product skill document registry install first; clone/`bun link` is for contributors. Package `bin` may also expose short **`snoe`**, and a thin scoped package **`@igorkravcenko/snoe`** exists, but public install copy and skills do **not** advertise them — skills/agents call **`snowshoe`**. Bare unscoped `snoe` is not shippable (npm name-similarity reject). Informal *snow* is not CLI and not PATH. “Provisional / working title” hedges are canon/agent-only — not README / CLI / UI / skills. Rejected and retired naming angles stay in private maintainers docs (after overlay), not public canon.
 
 ## Now
 

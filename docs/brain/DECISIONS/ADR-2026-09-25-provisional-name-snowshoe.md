@@ -70,6 +70,15 @@ Former line *Catch up after pull* is retired as the positioning subtitle (may st
 
 Backup **Catchmark** and “provisional / working title” language stay in CURRENT, this ADR, positioning, and agent rules — not in README / CLI / UI / skills / package blurb. Dual branding on public install surfaces is a defect.
 
+## Amendment 2026-10-08: retire backup name from public tree
+
+**Catchmark** is no longer a public-repo product lock. Do not list it in CURRENT, positioning, `AGENTS.md`, Cursor rules, README, CLI, UI, or skills.
+
+- Working name remains **Snowshoe** (still provisional / not final brand in agent canon).
+- Subtitle lock unchanged.
+- Former backup-name history belongs in private maintainers docs (`docs/private/notes/naming-history-rejected.md` after overlay), not in live public surfaces.
+- This ADR retains the word only as decision history above; do not re-promote it.
+
 ## See also
 
 Rejected naming angles (history, not canon): private maintainers note

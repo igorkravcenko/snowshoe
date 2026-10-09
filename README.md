@@ -72,10 +72,10 @@ Other harnesses: pass their skills directory as `--skills-path`.
 2. **Start an agent in the map UI terminal** and invoke the Snowshoe skill in **combined** mode:
 
    ```
-   /snowshoe combined
+   /snowshoe combined en
    ```
 
-   Optionally specify the language you want in the prompt.
+   Use your language instead of `en` if you prefer (for example `ru` or `de`).
    Combined mode lets the agent be both a worker (building and expanding the mental map)
    and a tutor (talking with you and teaching).
    Do **not** start more than one worker at a time.

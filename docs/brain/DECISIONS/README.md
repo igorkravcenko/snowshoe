@@ -25,7 +25,7 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 
 | ADR | Status | One line |
 |---|---|---|
-| [ADR-2026-09-25-provisional-name-snowshoe](./ADR-2026-09-25-provisional-name-snowshoe.md) | accepted | Working name Snowshoe; backup Catchmark; subtitle lock; PATH/`install` `snowshoe` via `@igorkravcenko/snowshoe` (snoe not advertised) |
+| [ADR-2026-09-25-provisional-name-snowshoe](./ADR-2026-09-25-provisional-name-snowshoe.md) | accepted | Working name Snowshoe; subtitle lock; PATH/`install` `snowshoe` via `@igorkravcenko/snowshoe` (snoe not advertised); backup name retired from public tree |
 | [ADR-2026-09-25-monetization-ladder](./ADR-2026-09-25-monetization-ladder.md) | accepted | OSS core free forever; billing off; WTP/paid sketches private |
 | [ADR-2026-09-25-personal-state-gitignore](./ADR-2026-09-25-personal-state-gitignore.md) | accepted | Personal ledger gitignored / local by default |
 | [ADR-2026-09-25-product-form-orchestrator](./ADR-2026-09-25-product-form-orchestrator.md) | accepted | CLI-first orchestrator; agents are pluggable workers |
