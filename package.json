@@ -8,7 +8,10 @@
     "git",
     "comprehension-map",
     "codebase",
-    "agents",
+    "git-pull",
+    "stale",
+    "codebase-map",
+    "code-map",
     "bun",
     "snowshoe",
     "snoe"
