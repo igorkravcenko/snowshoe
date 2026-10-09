@@ -5,18 +5,17 @@
 
 **Don't let your agents outrun your understanding. Keep your footing.**
 
-Catch up after pull. That is the gist of what this project helps with.
-Snowshoe shows what in your personal understanding went stale after changes.
+Catch up after pull. Personal comprehension map that shows where your understanding went stale after changes.
 You choose what to catch up on. Agents can help.
 
 Your map lives in `.snowshoe/` and stays gitignored by default. Local, git-native,
 Apache-2.0. Not a team wiki. Not an agent control panel.
 
-![…](docs/assets/map-after-pull.png)
+![ui_screenshot](docs/assets/map-after-pull.png)
 
 ## Install
 
-Use Bun 1.1+. npm may work, but it is untested. The PATH binary is **`snowshoe`**.
+Use Bun 1.1+. npm may work, but it is untested. The PATH binary is **`snowshoe`**. Also, you'll need any agent harness, that can be run in a CLI.
 
 > [!IMPORTANT]
 > This project is `@igorkravcenko/snowshoe` on npm. Bare `snowshoe` without the scope is an unrelated package.
@@ -24,6 +23,8 @@ Use Bun 1.1+. npm may work, but it is untested. The PATH binary is **`snowshoe`*
 ### 1. Put `snowshoe` on PATH
 
 **From the registry** (preferred):
+
+Temporarily unavailable.
 
 ```bash
 bun add -g @igorkravcenko/snowshoe
@@ -109,7 +110,7 @@ server when you are done.
 
 Positioning: [docs/product/positioning.md](docs/product/positioning.md).
 
-If you're interested in a collaborative version of this for teams - let me know.
+If you're interested in a collaborative version of this for teams - [let me know](https://github.com/igorkravcenko/snowshoe/discussions).
 
 ## Docs
 
