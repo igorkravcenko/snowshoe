@@ -50,4 +50,4 @@ Compaction summaries push agents into terse status-telegram. For learn mode that
 
 ### Durable check-in memory
 
-Do not keep a separate Q&A transcript. If the human’s curriculum uses short retention check-ins: after each one, one line in STATE for done check-ins (topic + outcome); new misconceptions → retention cards in the same STATE file. Update immediately so compaction cannot wipe it. This is personal curriculum memory — not a Snowshoe quiz product. Skill labels stay English; local STATE may use any language the human prefers.
+Do not keep a separate Q&A transcript. If the human’s curriculum uses short retention check-ins: after each one, one line in STATE for done check-ins (topic + outcome); new misconceptions → retention cards in the same STATE file. Update immediately so compaction cannot wipe it. This is personal curriculum memory — not a built-in verification product. Skill labels stay English; local STATE may use any language the human prefers.
