@@ -3,6 +3,7 @@ export const BUN_FETCH_TIMEOUT_MS: number;
 export const BUN_LOCK_STALE_MS: number;
 export const RUNTIME_DIRNAME: ".runtime";
 export const MIN_NODE_MAJOR: 18;
+export const BUN_FETCH_SIZE_HINT: string;
 
 export function nodeMajor(version?: string): number;
 export function nodeEngineOk(version?: string): boolean;
@@ -78,6 +79,7 @@ export function resolveBun(
   opts: ResolveOpts & { packageRoot: string },
 ): { kind: "path" | "bundled"; bin: string } | null;
 
+export function lockWaitMs(timeoutMs?: number, staleMs?: number): number;
 export function acquireLock(
   lockDir: string,
   opts?: {

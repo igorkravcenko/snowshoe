@@ -38,7 +38,7 @@ When PATH bun is missing, **do not** `npm install bun` in the Snowshoe package d
 
 Instead:
 
-1. Take an **atomic mkdir lock** at `<packageRoot>/.runtime/lock` (stale after 180s). Waiters block on the lock and reuse `.runtime/current` when it appears.
+1. Take an **atomic mkdir lock** at `<packageRoot>/.runtime/lock` (stale after 180s, longer than the 120s fetch bound so a live download is not stolen). Waiters block for `max(fetch timeout, stale + 5s)` and reuse `.runtime/current` when it appears.
 2. Download **only** the matching `@oven/bun-<platform>@1.4.2` tarball from `npm_config_registry` (default `https://registry.npmjs.org`), verify `dist.integrity` (sha512), extract into a temp dir, **rename atomically** onto `.runtime/current`.
 3. Bound the whole fetch at **120s**. On timeout or failure, print a **short** reason (no npm stack) and the missing-Bun message; `snowshoe` exits 1.
 4. Pin matches app CI `bun-version`. Bump `BUN_FETCH_VERSION` in `bin/resolve-bun.js` when CI’s Bun pin moves.
@@ -79,7 +79,7 @@ Empty `@igorkravcenko/` after `npm uninstall -g` is npm’s scoped-package behav
 ## Consequences
 
 - CURRENT: Node 18+ required; `npm i -g` works without a prior Bun (one-time matching platform download into `.runtime/`); `bun add -g` uses PATH bun and does not download a second runtime; `--version` / `version` print `package.json` version.
-- README / `skills/snowshoe/install.md`: Node 18+; npm works without Bun (one-time download, approximate size); bun recommended if already in use; Linux/macOS, Windows best-effort; avoid sudo global if the user will run as non-root.
+- README / `skills/snowshoe/install.md` / first-run stderr: Node 18+; npm works without Bun (one-time download, ~40 MB compressed / ~80 MB unpacked on linux x64); bun recommended if already in use; Linux/macOS, Windows best-effort; avoid sudo global if the user will run as non-root.
 - Do not publish from this change. Do not add learning, hooks, or a Node port.
 
 ## Evidence

@@ -15,9 +15,12 @@ import { gunzipSync } from "node:zlib";
 /** Pinned oven-sh platform package. Match CI bun-version. */
 export const BUN_FETCH_VERSION = "1.4.2";
 export const BUN_FETCH_TIMEOUT_MS = 120_000;
+/** Must exceed the fetch bound so a live download is not stolen. */
 export const BUN_LOCK_STALE_MS = 180_000;
 export const RUNTIME_DIRNAME = ".runtime";
 export const MIN_NODE_MAJOR = 18;
+/** Approximate linux-x64 glibc oven-sh binary; README / first-run copy. */
+export const BUN_FETCH_SIZE_HINT = "~40 MB compressed / ~80 MB unpacked";
 
 const VERSION_PROBE_MS = 8_000;
 const LOCK_POLL_MS = 100;
@@ -68,7 +71,7 @@ export function missingBunMessage() {
     "",
     "Tried:",
     "- bun on PATH",
-    "- a Bun binary in this install's .runtime/ (one-time download when PATH bun is missing)",
+    `- a Bun binary in this install's .runtime/ (one-time download, ${BUN_FETCH_SIZE_HINT} on linux x64, when PATH bun is missing)`,
     "",
     "Install Bun: https://bun.sh",
     "  curl -fsSL https://bun.com/install | bash",
@@ -298,8 +301,13 @@ function mkdirLock(lockDir) {
   mkdirSync(lockDir);
 }
 
+/** Waiters must outlive staleMs so a crashed lock can be stolen. */
+export function lockWaitMs(timeoutMs = BUN_FETCH_TIMEOUT_MS, staleMs = BUN_LOCK_STALE_MS) {
+  return Math.max(timeoutMs, staleMs + 5_000);
+}
+
 export async function acquireLock(lockDir, opts = {}) {
-  const timeoutMs = opts.timeoutMs ?? BUN_FETCH_TIMEOUT_MS;
+  const timeoutMs = opts.timeoutMs ?? lockWaitMs();
   const staleMs = opts.staleMs ?? BUN_LOCK_STALE_MS;
   const now = opts.now ?? Date.now;
   const sleep = opts.sleep ?? sleepMs;
@@ -501,13 +509,14 @@ export async function ensureBun(opts) {
   const env = opts.env ?? process.env;
   if (installerIsBun(env)) return null;
   const timeoutMs = opts.timeoutMs ?? BUN_FETCH_TIMEOUT_MS;
+  const staleMs = opts.staleMs ?? BUN_LOCK_STALE_MS;
   const root = runtimeRoot(opts.packageRoot);
   const lockDir = join(root, "lock");
   try {
     ensureRuntimeParent(opts.packageRoot);
     await acquireLock(lockDir, {
-      timeoutMs,
-      staleMs: opts.staleMs ?? BUN_LOCK_STALE_MS,
+      timeoutMs: lockWaitMs(timeoutMs, staleMs),
+      staleMs,
       sleep: opts.sleep,
     });
   } catch (err) {
@@ -519,7 +528,7 @@ export async function ensureBun(opts) {
     const again = resolveBun(opts);
     if (again) return again.bin;
     process.stderr.write(
-      `Snowshoe: Bun is not on PATH; downloading @oven/${ovenPackageIds(opts.platform, opts.arch, opts.libc).ids[0] ?? "bun"}@${BUN_FETCH_VERSION} once into .runtime/…\n`,
+      `Snowshoe: Bun is not on PATH; downloading @oven/${ovenPackageIds(opts.platform, opts.arch, opts.libc).ids[0] ?? "bun"}@${BUN_FETCH_VERSION} once (${BUN_FETCH_SIZE_HINT}) into .runtime/…\n`,
     );
     if (opts.installBun) {
       await opts.installBun({

@@ -1,20 +1,31 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
+  acquireLock,
+  BUN_FETCH_SIZE_HINT,
   BUN_FETCH_VERSION,
   bundledBunCandidates,
   ensureBun,
   formatFetchReason,
   installerIsBun,
   isUsableBunBinary,
+  lockWaitMs,
   missingBunMessage,
   nodeEngineOk,
   ovenPackageIds,
   pathBunCandidates,
   permissionDeniedMessage,
+  releaseLock,
   resolveBun,
   runtimeCurrent,
   verifyIntegrity,
@@ -207,14 +218,48 @@ describe("ensureBun", () => {
     expect(results.every((b) => b === bundled)).toBe(true);
   });
 
-  test("missing-bun copy has install instructions and no stack dump", () => {
+  test("stale lock is stolen; fresh lock waits then times out", async () => {
+    expect(lockWaitMs(120_000, 180_000)).toBe(185_000);
+    const staleDir = mkdtempSync(join(tmpdir(), "snowshoe-stale-"));
+    const staleLock = join(staleDir, "lock");
+    mkdirSync(staleLock);
+    const old = Date.now() / 1000 - 10;
+    utimesSync(staleLock, old, old);
+    expect(await acquireLock(staleLock, { timeoutMs: 1000, staleMs: 100, pollMs: 20 })).toBe(true);
+    releaseLock(staleLock);
+
+    const freshDir = mkdtempSync(join(tmpdir(), "snowshoe-freshlock-"));
+    const freshLock = join(freshDir, "lock");
+    mkdirSync(freshLock);
+    const started = Date.now();
+    await expect(
+      acquireLock(freshLock, { timeoutMs: 250, staleMs: 60_000, pollMs: 40 }),
+    ).rejects.toThrow(/timed out/);
+    expect(Date.now() - started).toBeLessThan(2000);
+  });
+
+  test("missing-bun copy has install instructions, size hint, and no stack dump", () => {
     const text = missingBunMessage();
     expect(text).toContain("https://bun.sh");
+    expect(text).toContain(BUN_FETCH_SIZE_HINT);
     expect(text.toLowerCase()).not.toContain("error:");
     expect(text).not.toMatch(/at \S+ \(/);
     const perm = permissionDeniedMessage("/usr/lib/node_modules/@igorkravcenko/snowshoe/.runtime");
     expect(perm).toContain("sudo npm install -g");
     expect(perm).toContain("permission denied");
+  });
+});
+
+describe("install docs", () => {
+  test("README and skill install.md mention Node 18+ and one-time Bun download size", () => {
+    const readme = readFileSync(join(ROOT, "README.md"), "utf8");
+    const install = readFileSync(join(ROOT, "skills/snowshoe/install.md"), "utf8");
+    for (const text of [readme, install]) {
+      expect(text).toContain("Node.js 18+");
+      expect(text).toMatch(/downloads a matching Bun binary once/);
+      expect(text).toContain("~40 MB compressed");
+      expect(text).toContain("~80 MB unpacked");
+    }
   });
 });
 
