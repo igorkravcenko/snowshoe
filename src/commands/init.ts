@@ -33,9 +33,7 @@ export function ensureGitignore(repoRoot: string): boolean {
   const sep = current.length === 0 ? "" : current.endsWith("\n") ? "\n" : "\n\n";
   // Full commented block when neither pattern exists; otherwise append only missing lines.
   const addition =
-    missing.length === GITIGNORE_PATTERNS.length
-      ? GITIGNORE_BLOCK
-      : `${missing.join("\n")}\n`;
+    missing.length === GITIGNORE_PATTERNS.length ? GITIGNORE_BLOCK : `${missing.join("\n")}\n`;
   appendFileSync(gi, `${sep}${addition}`);
   return true;
 }
