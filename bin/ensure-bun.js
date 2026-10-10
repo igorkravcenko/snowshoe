@@ -1,7 +1,18 @@
 #!/usr/bin/env node
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ensureBun, installerIsBun, missingBunMessage } from "./resolve-bun.js";
+import {
+  ensureBun,
+  installerIsBun,
+  missingBunMessage,
+  nodeEngineMessage,
+  nodeEngineOk,
+} from "./resolve-bun.js";
+
+if (!nodeEngineOk()) {
+  process.stderr.write(`${nodeEngineMessage()}\n`);
+  process.exit(0);
+}
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 

@@ -1,15 +1,23 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import {
   BUN_FETCH_VERSION,
   bundledBunCandidates,
   ensureBun,
+  formatFetchReason,
   installerIsBun,
+  isUsableBunBinary,
   missingBunMessage,
+  nodeEngineOk,
   ovenPackageIds,
   pathBunCandidates,
+  permissionDeniedMessage,
   resolveBun,
+  runtimeCurrent,
+  verifyIntegrity,
 } from "../bin/resolve-bun.js";
 
 const ROOT = join(import.meta.dir, "..");
@@ -35,12 +43,15 @@ describe("npm-global launcher package shape", () => {
     expect(BUN_FETCH_VERSION).toMatch(/^\d+\.\d+\.\d+/);
     const launcher = readFileSync(join(ROOT, "bin/snowshoe.js"), "utf8");
     expect(launcher.startsWith("#!/usr/bin/env node\n")).toBe(true);
+    expect(nodeEngineOk("18.0.0")).toBe(true);
+    expect(nodeEngineOk("16.20.2")).toBe(false);
   });
 });
 
 describe("resolveBun", () => {
   test("PATH bun wins over a bundled copy", () => {
     const usable = new Set(["/home/me/.bun/bin/bun"]);
+    const bundled = join("/opt/snowshoe", ".runtime", "current", "bin", "bun.exe");
     const resolved = resolveBun({
       packageRoot: "/opt/snowshoe",
       pathEnv: "/home/me/.bun/bin:/usr/bin",
@@ -48,41 +59,31 @@ describe("resolveBun", () => {
       platform: "linux",
       arch: "x64",
       executableNames: ["bun"],
-      exists: (p: string) =>
-        p === "/home/me/.bun/bin/bun" || p === "/opt/snowshoe/node_modules/bun/bin/bun.exe",
+      exists: (p: string) => p === "/home/me/.bun/bin/bun" || p === bundled,
       isUsableBun: (p: string) => usable.has(p) || p.endsWith("bun.exe"),
     });
     expect(resolved).toEqual({ kind: "path", bin: "/home/me/.bun/bin/bun" });
   });
 
-  test("bundled bun.exe is used when PATH is empty", () => {
-    const bundled = "/opt/snowshoe/node_modules/bun/bin/bun.exe";
+  test("bundled bun is only resolved from .runtime/current", () => {
+    const bundled = join("/opt/snowshoe", ".runtime", "current", "bin", "bun");
     const resolved = resolveBun({
       packageRoot: "/opt/snowshoe",
       pathEnv: "",
       pathSep: ":",
       platform: "linux",
       arch: "x64",
-      exists: (p: string) => p === bundled,
+      exists: (p: string) => p === bundled || p === "/opt/snowshoe/node_modules/bun/bin/bun.exe",
       isUsableBun: (p: string) => p === bundled,
     });
     expect(resolved).toEqual({ kind: "bundled", bin: bundled });
-  });
-
-  test("skips a tiny placeholder and uses the oven platform package", () => {
-    const placeholder = "/opt/snowshoe/node_modules/bun/bin/bun.exe";
-    const oven = "/opt/snowshoe/node_modules/@oven/bun-linux-x64/bin/bun";
-    const resolved = resolveBun({
-      packageRoot: "/opt/snowshoe",
-      pathEnv: "/usr/bin",
-      pathSep: ":",
+    const candidates = bundledBunCandidates("/pkg", {
       platform: "linux",
       arch: "x64",
-      executableNames: ["bun"],
-      exists: (p: string) => p === placeholder || p === oven,
-      isUsableBun: (p: string) => p === oven,
+      libc: "glibc",
     });
-    expect(resolved).toEqual({ kind: "bundled", bin: oven });
+    expect(candidates.every((p) => p.startsWith(join("/pkg", ".runtime")))).toBe(true);
+    expect(candidates).not.toContain("/pkg/node_modules/bun/bin/bun.exe");
   });
 
   test("returns null when nothing is usable", () => {
@@ -98,15 +99,38 @@ describe("resolveBun", () => {
     expect(resolved).toBeNull();
   });
 
-  test("path and oven candidates cover linux x64 and darwin arm64", () => {
-    expect(pathBunCandidates({ pathEnv: "/a:/b", pathSep: ":", executableNames: ["bun"] })).toEqual(
-      ["/a/bun", "/b/bun"],
-    );
-    expect(ovenPackageIds("linux", "x64").ids).toContain("bun-linux-x64");
-    expect(ovenPackageIds("darwin", "arm64").ids).toContain("bun-darwin-aarch64");
-    expect(bundledBunCandidates("/pkg", { platform: "linux", arch: "x64" })).toContain(
-      "/pkg/node_modules/@oven/bun-linux-x64/bin/bun",
-    );
+  test("oven ids are one matching platform (no musl+glibc, no baseline)", () => {
+    expect(
+      pathBunCandidates({
+        pathEnv: "bin:/a",
+        pathSep: ":",
+        cwd: "/cwd",
+        executableNames: ["bun"],
+      }),
+    ).toEqual(["/cwd/bin/bun", "/a/bun"]);
+    const linuxGlibc = ovenPackageIds("linux", "x64", "glibc");
+    expect(linuxGlibc.ids).toEqual(["bun-linux-x64"]);
+    expect(linuxGlibc.ids.join()).not.toContain("musl");
+    expect(linuxGlibc.ids.join()).not.toContain("baseline");
+    expect(ovenPackageIds("linux", "x64", "musl").ids).toEqual(["bun-linux-x64-musl"]);
+    expect(ovenPackageIds("darwin", "arm64").ids).toEqual(["bun-darwin-aarch64"]);
+    expect(ovenPackageIds("android", "x64").ids).toEqual(["bun-linux-x64-android"]);
+    expect(ovenPackageIds("android", "arm64").ids).toEqual(["bun-linux-aarch64-android"]);
+  });
+});
+
+describe("isUsableBunBinary", () => {
+  test("always execs --version, even for files larger than 1MiB", () => {
+    const dir = mkdtempSync(join(tmpdir(), "snowshoe-usable-"));
+    const big = join(dir, "bun");
+    writeFileSync(big, Buffer.alloc(2 * 1024 * 1024));
+    const calls: string[][] = [];
+    const ok = isUsableBunBinary(big, (_file, args) => {
+      calls.push(args);
+      return { status: 0, stdout: "1.4.2\n" };
+    });
+    expect(calls).toEqual([["--version"]]);
+    expect(ok).toBe(true);
   });
 });
 
@@ -134,12 +158,13 @@ describe("ensureBun", () => {
     expect(bin).toBeNull();
   });
 
-  test("fetches the official bun package when PATH and bundled are missing", async () => {
-    const bundled = "/opt/snowshoe/node_modules/bun/bin/bun.exe";
+  test("fetches into .runtime/current when PATH and bundled are missing", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "snowshoe-fetch-"));
+    const bundled = join(runtimeCurrent(dir), "bin", "bun");
     const present = new Set<string>();
     let fetched = false;
     const bin = await ensureBun({
-      packageRoot: "/opt/snowshoe",
+      packageRoot: dir,
       pathEnv: "",
       exists: (p: string) => present.has(p),
       isUsableBun: (p: string) => present.has(p),
@@ -147,18 +172,77 @@ describe("ensureBun", () => {
       env: { npm_config_user_agent: "npm/10.9.7 node/v22.22.2 linux x64" },
       installBun: async () => {
         fetched = true;
+        mkdirSync(dirname(bundled), { recursive: true });
+        writeFileSync(bundled, "fake");
         present.add(bundled);
       },
     });
     expect(fetched).toBe(true);
     expect(bin).toBe(bundled);
+    expect(existsSync(join(dir, "node_modules", "@biomejs"))).toBe(false);
+    expect(existsSync(join(dir, "node_modules", "@vitejs"))).toBe(false);
+  });
+
+  test("concurrent first-run fetch takes the lock; waiters reuse the result", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "snowshoe-lock-"));
+    const bundled = join(runtimeCurrent(dir), "bin", "bun");
+    let installs = 0;
+    const run = () =>
+      ensureBun({
+        packageRoot: dir,
+        pathEnv: "",
+        exists: (p: string) => existsSync(p),
+        isUsableBun: (p: string) => p === bundled && existsSync(p),
+        installIfMissing: true,
+        env: { npm_config_user_agent: "npm/9.2.0 node/v18 linux x64" },
+        installBun: async () => {
+          installs += 1;
+          await new Promise((r) => setTimeout(r, 200));
+          mkdirSync(dirname(bundled), { recursive: true });
+          writeFileSync(bundled, "fake");
+        },
+      });
+    const results = await Promise.all([run(), run(), run(), run()]);
+    expect(installs).toBe(1);
+    expect(results.every((b) => b === bundled)).toBe(true);
   });
 
   test("missing-bun copy has install instructions and no stack dump", () => {
     const text = missingBunMessage();
     expect(text).toContain("https://bun.sh");
-    expect(text).toContain("npm install -g bun");
     expect(text.toLowerCase()).not.toContain("error:");
     expect(text).not.toMatch(/at \S+ \(/);
+    const perm = permissionDeniedMessage("/usr/lib/node_modules/@igorkravcenko/snowshoe/.runtime");
+    expect(perm).toContain("sudo npm install -g");
+    expect(perm).toContain("permission denied");
+  });
+});
+
+describe("integrity and fetch errors", () => {
+  test("verifyIntegrity accepts a matching sha512 and rejects a mismatch", () => {
+    const buf = Buffer.from("snowshoe-runtime");
+    const integrity = `sha512-${createHash("sha512").update(buf).digest("base64")}`;
+    expect(() => verifyIntegrity(buf, integrity)).not.toThrow();
+    expect(() =>
+      verifyIntegrity(
+        buf,
+        "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+      ),
+    ).toThrow(/integrity/);
+  });
+
+  test("formatFetchReason is a short line without a stack", () => {
+    const aborted = formatFetchReason(
+      Object.assign(new Error("This operation was aborted"), { name: "AbortError" }),
+    );
+    expect(aborted).toContain("timed out");
+    expect(aborted).not.toMatch(/at \S+ \(/);
+    const refused = formatFetchReason(
+      Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }),
+    );
+    expect(refused).toBe("connection refused");
+    const stacked = formatFetchReason(new Error("boom\n    at foo (bar.js:1:1)\n    at baz"));
+    expect(stacked).toBe("boom");
+    expect(stacked).not.toContain("at foo");
   });
 });

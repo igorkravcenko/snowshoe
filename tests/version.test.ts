@@ -7,17 +7,23 @@ const ROOT = join(import.meta.dir, "..");
 const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { version: string };
 
 describe("snowshoe --version", () => {
-  test("--version and version print package.json version and exit 0", async () => {
+  test("--version prints package.json version and exits 0", async () => {
     const repo = makeGitRepo();
     const viaFlag = await snowshoe(repo, ["--version"]);
     expect(viaFlag.exitCode).toBe(0);
     expect(viaFlag.stdout.trim()).toBe(pkg.version);
     expect(viaFlag.stderr).toBe("");
+  });
 
+  test("-V alias prints the same version and exits 0", async () => {
+    const repo = makeGitRepo();
     const viaV = await snowshoe(repo, ["-V"]);
     expect(viaV.exitCode).toBe(0);
     expect(viaV.stdout.trim()).toBe(pkg.version);
+  });
 
+  test("version subcommand prints the same version and exits 0", async () => {
+    const repo = makeGitRepo();
     const viaCmd = await snowshoe(repo, ["version"]);
     expect(viaCmd.exitCode).toBe(0);
     expect(viaCmd.stdout.trim()).toBe(pkg.version);

@@ -15,9 +15,9 @@ Apache-2.0. Not a team wiki. Not an agent control panel.
 
 ## Install
 
-The PATH binary is **`snowshoe`**. You'll also need an agent harness that can run in a CLI.
+The PATH binary is **`snowshoe`**. **Node.js 18+** is required (including after `bun add -g`). You'll also need an agent harness that can run in a CLI.
 
-`npm install -g` works without a prior Bun install (a Bun runtime is fetched when missing). Bun is still recommended if you already use it.
+`npm install -g` works without a prior Bun install: the first install or run downloads a matching Bun binary once (~40 MB compressed / ~80 MB unpacked on linux x64). Bun on PATH is still used when present, and is recommended if you already use it. Linux and macOS are supported; Windows is best-effort. Prefer an unprivileged npm prefix (`sudo npm i -g` leaves a root-owned install that a later non-root `snowshoe` cannot update).
 
 > [!IMPORTANT]
 > This project is `@igorkravcenko/snowshoe` on npm. Bare `snowshoe` without the scope is an unrelated package.
