@@ -25,9 +25,9 @@ Accepted. Closes a P0 on published `@igorkravcenko/snowshoe@0.0.2`: browsers do 
 
 HTML responses (`text/html`) send:
 
-`default-src 'self'; connect-src 'self' ws://127.0.0.1:<port> ws://localhost:<port> ws://[::1]:<port>; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; style-src-attr 'unsafe-inline'`
+`default-src 'self'; connect-src 'self' ws://127.0.0.1:<port> ws://localhost:<port> ws://[::1]:<port>; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; style-src 'self' 'unsafe-inline'`
 
-`style-src-attr 'unsafe-inline'` is required for React `style={{…}}` (column split, graph positions, Prism token colors). Script and style *elements* stay `'self'` (Vite emits `/assets/*` only). JSON `/api` keeps `frame-ancestors 'none'`. All responses send `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`. No CORS allow headers. Chrome may ignore `ws://[::1]:<port>` as a CSP host-source (IPv6 is outside the host-part grammar); `'self'` still covers same-origin `ws:` when the document is loaded on `[::1]`.
+`style-src 'self' 'unsafe-inline'` is required for Vite `/assets/*` CSS, React `style={{…}}` (column split, graph positions, Prism token colors), and **xterm** runtime `<style>` injection (theme, cell metrics, scrollbar). The 2026-10-08 first cut used only `style-src-attr 'unsafe-inline'`, which left style *elements* under `default-src 'self'` and broke sidebar PTY formatting — amended 2026-10-11. Scripts stay `'self'` via `default-src` (Vite emits `/assets/*` only). JSON `/api` keeps `frame-ancestors 'none'`. All responses send `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`. No CORS allow headers. Chrome may ignore `ws://[::1]:<port>` as a CSP host-source (IPv6 is outside the host-part grammar); `'self'` still covers same-origin `ws:` when the document is loaded on `[::1]`.
 
 ## Alternatives considered
 

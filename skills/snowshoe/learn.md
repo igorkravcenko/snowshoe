@@ -42,7 +42,7 @@ Prefer `bodyOverview` when scanning many nodes; use `bodyMd` / `--all-fields` wh
 Study sessions should use **`.snowshoe/learn/`** (gitignored; not the ledger).
 
 - **If absent:** briefly propose creating the scaffold (and offer to write it if they agree). Do not block a one-shot map question on this.
-- **If present:** start with `CURRENT.md`, then the active curriculum’s **`STATE.md`** (single learning journal: Now, retention cards, done check-ins, deferred). Read `PLAN.md` on phase shifts. **`discrepancies.md`** is the standing place for bugs, unwanted behavior, and product/code “should change” — keep it in the layout even when unused this session. `mines.md` is a class catalog (do not mark “seen” there — that belongs in STATE retention). Details: `.snowshoe/learn/README.md` when present.
+- **If present:** start with `CURRENT.md`, then the active curriculum’s **`STATE.md`** (single learning journal: Now, retention cards, done check-ins, deferred). Read `PLAN.md` on phase shifts. **`discrepancies.md`** — standing place for bugs / “should change” (not STATE retention); keep in the layout even if unused this session. Local/gitignored: when `agreed`/`open` should outlive the machine, **offer once** to mirror to the repo issue tracker; never file unprompted. `mines.md` is a class catalog (no “seen” marks — that is STATE retention). Details: `.snowshoe/learn/README.md` when present.
 
 ### Voice after compaction
 

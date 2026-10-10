@@ -63,6 +63,7 @@ import {
   slugFromHash,
   visibleSlugs,
 } from "./tree.ts";
+import { beginViewBoot, cancelViewBoot, failViewBoot, type ViewBootLatch } from "./view-boot.ts";
 
 type NavTab = "tree" | "graph" | "todos";
 const NAV_TAB_KEY = "snowshoe.navTab";
@@ -539,8 +540,12 @@ export function App(): ReactElement {
   const [visit, setVisit] = useState<VisitMirror>(() => emptyVisitMirror());
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const treePanelRef = useRef<HTMLDivElement | null>(null);
-  const viewBootstrapped = useRef(false);
+  const viewBootLatch = useRef<ViewBootLatch>({ claimed: false });
+  const viewIdRef = useRef<string | null>(null);
+  const selectedRef = useRef<string | null>(null);
   const skipHistoryPush = useRef(true);
+  viewIdRef.current = viewId;
+  selectedRef.current = selected;
 
   const reload = useCallback(async () => {
     setBusy(true);
@@ -620,35 +625,53 @@ export function App(): ReactElement {
   const prevSlug = visitPrevSlug(visit);
   const nextSlug = visitNextSlug(visit);
 
+  // Boot once when the read-model is ready. Do not depend on `selected`: reload
+  // sets model then selected, and cancelling the in-flight create left the old
+  // latch claimed with viewId still null ("Waiting for view id…").
   useEffect(() => {
-    if (viewBootstrapped.current || !model) return;
-    viewBootstrapped.current = true;
+    if (!model) return;
+    if (!beginViewBoot(viewBootLatch.current, true, viewIdRef.current)) return;
+    const ready = model;
     let cancelled = false;
     const boot = async () => {
-      const fromQuery = new URLSearchParams(window.location.search).get("v");
-      let id = fromQuery;
-      if (id) {
-        const ok = await fetchMapView(id);
-        if (!ok) id = null;
-      }
-      if (!id) id = await createMapView();
-      if (cancelled || !id) return;
-      setViewId(id);
-      const slug = slugFromHash(window.location.hash) || selected || model.rootSlug;
-      const known = slug && model.nodes.some((n) => n.slug === slug) ? slug : model.rootSlug;
-      if (known) {
-        skipHistoryPush.current = true;
-        history.replaceState({ slug: known }, "", mapViewHref(id, known));
-        skipHistoryPush.current = false;
-        setVisit({ stack: [known], index: 0 });
-        setSelected(known);
+      try {
+        const fromQuery = new URLSearchParams(window.location.search).get("v");
+        let id = fromQuery;
+        if (id) {
+          const ok = await fetchMapView(id);
+          if (!ok) id = null;
+        }
+        if (!id) id = await createMapView();
+        if (cancelled) return;
+        if (!id) {
+          failViewBoot(viewBootLatch.current);
+          setError("Failed to create map view");
+          return;
+        }
+        viewIdRef.current = id;
+        setViewId(id);
+        const slug = slugFromHash(window.location.hash) || selectedRef.current || ready.rootSlug;
+        const known = slug && ready.nodes.some((n) => n.slug === slug) ? slug : ready.rootSlug;
+        if (known) {
+          skipHistoryPush.current = true;
+          history.replaceState({ slug: known }, "", mapViewHref(id, known));
+          skipHistoryPush.current = false;
+          setVisit({ stack: [known], index: 0 });
+          setSelected(known);
+        }
+      } catch (err) {
+        failViewBoot(viewBootLatch.current);
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : String(err));
+        }
       }
     };
     void boot();
     return () => {
       cancelled = true;
+      cancelViewBoot(viewBootLatch.current, viewIdRef.current);
     };
-  }, [model, selected]);
+  }, [model]);
 
   useEffect(() => {
     if (!viewId) return;

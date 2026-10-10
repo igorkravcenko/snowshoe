@@ -7,10 +7,12 @@ function wsConnectSrc(port: number): string {
 }
 
 /**
- * HTML document CSP. `style-src-attr 'unsafe-inline'` is required for React
- * `style={{…}}` (split gutters, graph positions, Prism token colors). Script
- * and style *elements* stay `'self'` via default-src — Vite emits external
- * `/assets/*` only.
+ * HTML document CSP. `style-src 'self' 'unsafe-inline'` covers:
+ * - Vite `/assets/*` stylesheets (`'self'`)
+ * - React `style={{…}}` attributes (split gutters, graph, Prism)
+ * - xterm runtime `<style>` injection (theme, cell metrics, scrollbar)
+ *
+ * Scripts stay `'self'` via default-src (Vite emits external `/assets/*` only).
  */
 export function mapHtmlContentSecurityPolicy(port: number): string {
   return [
@@ -19,7 +21,7 @@ export function mapHtmlContentSecurityPolicy(port: number): string {
     "object-src 'none'",
     "base-uri 'none'",
     "frame-ancestors 'none'",
-    "style-src-attr 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
   ].join("; ");
 }
 
