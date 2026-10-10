@@ -76,4 +76,38 @@ describe("Bun fetch timeout", () => {
     expect(message).toMatch(/timed out after 2s|timed out after 1s/);
     expect(elapsed).toBeLessThan(8000);
   });
+
+  test("dead proxy npm pack fails fast with a one-line reason", async () => {
+    const started = Date.now();
+    let err: unknown;
+    try {
+      await fetchOvenBunTarball({
+        env: {
+          ...process.env,
+          HTTPS_PROXY: "http://127.0.0.1:1",
+          HTTP_PROXY: "http://127.0.0.1:1",
+          https_proxy: "http://127.0.0.1:1",
+          http_proxy: "http://127.0.0.1:1",
+          NO_PROXY: "",
+          no_proxy: "",
+          npm_config_registry: "https://registry.npmjs.org",
+        },
+        platform: "linux",
+        arch: "x64",
+        libc: "glibc",
+        avx2: true,
+        skipFiles: true,
+        timeoutMs: 8000,
+      });
+    } catch (e) {
+      err = e;
+    }
+    const elapsed = Date.now() - started;
+    expect(err).toBeInstanceOf(Error);
+    const message = err instanceof Error ? err.message : String(err);
+    expect(message).toMatch(/npm (view|pack) .+ (failed|timed out)|npm not found/);
+    expect(message).not.toMatch(/\n/);
+    expect(message.toLowerCase()).not.toContain("npm err");
+    expect(elapsed).toBeLessThan(20_000);
+  }, 25_000);
 });

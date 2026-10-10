@@ -369,19 +369,6 @@ function registryHost(registry) {
   }
 }
 
-function authForRegistry(npmrc, env, registry) {
-  const host = registryHost(registry);
-  const keys = [`//${host}/:_authToken`, `//${host}:_authToken`, "_authToken"];
-  for (const key of keys) {
-    if (npmrc[key]) return { type: "bearer", token: npmrc[key] };
-  }
-  const token = env.NODE_AUTH_TOKEN || env.NPM_TOKEN;
-  if (token) return { type: "bearer", token };
-  const basic = npmrc[`//${host}/:_auth`] || npmrc._auth;
-  if (basic) return { type: "basic", token: basic };
-  return null;
-}
-
 function proxyForRegistry(registry, env, npmrc) {
   const host = registryHost(registry);
   const noproxy = env.NO_PROXY || env.no_proxy || npmrc.noproxy || npmrc.no_proxy || "";
@@ -414,10 +401,11 @@ export function resolveNpmFetchConfig(opts = {}) {
   if (!opts.skipFiles) {
     const prefix = env.npm_config_prefix || env.PREFIX;
     const globalPath = prefix ? join(prefix, "etc", "npmrc") : join("/etc", "npmrc");
+    const userPath = env.npm_config_userconfig || join(home, ".npmrc");
     Object.assign(
       npmrc,
       readNpmrcIfPresent(globalPath, env),
-      readNpmrcIfPresent(join(home, ".npmrc"), env),
+      readNpmrcIfPresent(userPath, env),
       readNpmrcIfPresent(join(cwd, ".npmrc"), env),
     );
   }
@@ -425,17 +413,10 @@ export function resolveNpmFetchConfig(opts = {}) {
   const registry = String(
     envRegistry || npmrc["@oven:registry"] || npmrc.registry || DEFAULT_NPM_REGISTRY,
   ).replace(/\/+$/, "");
-  const auth = authForRegistry(npmrc, env, registry);
   const proxy = proxyForRegistry(registry, env, npmrc);
-  /** @type {Record<string, string>} */
-  const headers = {};
-  if (auth?.type === "bearer") headers.Authorization = `Bearer ${auth.token}`;
-  if (auth?.type === "basic") headers.Authorization = `Basic ${auth.token}`;
   return {
     registry,
-    auth,
     proxy,
-    headers,
     useNpmCli: Boolean(proxy),
   };
 }
@@ -547,14 +528,21 @@ export async function acquireLock(lockDir, opts = {}) {
   const start = now();
   let announced = false;
   while (now() - start < timeoutMs) {
+    const staging = `${lockDir}.${opts.pid ?? process.pid}.${randomBytes(3).toString("hex")}`;
     try {
-      mkdir(lockDir);
-      writeLockOwner(lockDir, opts);
+      mkdir(staging);
+      writeLockOwner(staging, opts);
+      renameSync(staging, lockDir);
       return true;
     } catch (err) {
+      try {
+        rm(staging);
+      } catch {
+        // ignore
+      }
       if (isPermissionError(err)) throw err;
       const code = err && typeof err === "object" && "code" in err ? err.code : "";
-      if (code !== "EEXIST") throw err;
+      if (code !== "EEXIST" && code !== "ENOTEMPTY") throw err;
       let steal = false;
       try {
         if (isLockOwnerDead(lockDir, opts)) {
@@ -596,7 +584,34 @@ export function releaseLock(lockDir) {
   }
 }
 
+const PACK_TMP_RE = /^snowshoe-npm-pack-(\d+)-/;
+
+export function sweepNpmPackTemps(base = tmpdir()) {
+  let names = [];
+  try {
+    names = readdirSync(base);
+  } catch {
+    return [];
+  }
+  /** @type {string[]} */
+  const removed = [];
+  for (const name of names) {
+    const match = PACK_TMP_RE.exec(name);
+    if (!match) continue;
+    const dir = join(base, name);
+    if (isPidAlive(Number(match[1]))) continue;
+    try {
+      rmSync(dir, { recursive: true, force: true });
+      removed.push(dir);
+    } catch {
+      // ignore
+    }
+  }
+  return removed;
+}
+
 export function sweepStaleTempDirs(runtimeDir, opts = {}) {
+  sweepNpmPackTemps();
   let names = [];
   try {
     names = readdirSync(runtimeDir);
@@ -667,7 +682,7 @@ export function extractNpmTgz(buf, dest) {
       offset += (size + 511) & ~511;
       continue;
     }
-    if (!/(^|\/)bin\/bun(\.exe)?$/.test(rel)) {
+    if (!/^bin\/bun(\.exe)?$/.test(rel)) {
       offset += (size + 511) & ~511;
       continue;
     }
@@ -731,11 +746,28 @@ export function assertNoHttpDowngrade(fromUrl, toUrl) {
   }
 }
 
-async function fetchFollowSafe(fetchImpl, url, init, registry) {
+/**
+ * Same-origin tarball, else rewrite to this registry's npm pack layout.
+ * `@oven/bun-*` is public: Node fetch never sends Authorization.
+ */
+export function ovenTarballUrl(registry, id, version, distTarball) {
+  const base = String(registry || "").replace(/\/+$/, "");
+  const fallback = `${base}/@oven/${id}/-/${id}-${version}.tgz`;
+  try {
+    const dist = new URL(String(distTarball));
+    const reg = new URL(`${base}/`);
+    if (dist.origin === reg.origin) return String(distTarball);
+  } catch {
+    // rewrite
+  }
+  return fallback;
+}
+
+async function fetchFollowSafe(fetchImpl, url, signal, registry) {
   let current = url;
   for (let hop = 0; hop < 5; hop++) {
     assertSafeDownloadUrl(current, registry);
-    const res = await fetchImpl(current, { ...init, redirect: "manual" });
+    const res = await fetchImpl(current, { signal, redirect: "manual" });
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get("location");
       if (!loc) throw new Error(`redirect ${res.status} without Location`);
@@ -771,23 +803,91 @@ function npmCommand(env) {
   return { bin: "npm", prefix: [] };
 }
 
-export function defaultRunNpm(args, opts = {}) {
+function npmFetchTimeoutMs(timeoutMs) {
+  return Math.max(1000, Math.min(timeoutMs, 10_000));
+}
+
+function npmFetchFlags(timeoutMs) {
+  return ["--fetch-retries=0", `--fetch-timeout=${npmFetchTimeoutMs(timeoutMs)}`];
+}
+
+function npmFetchEnv(env, timeoutMs) {
+  return {
+    ...env,
+    npm_config_fetch_retries: "0",
+    npm_config_fetch_timeout: String(npmFetchTimeoutMs(timeoutMs)),
+  };
+}
+
+function killChild(child) {
+  if (!child || child.killed) return;
+  try {
+    child.kill("SIGKILL");
+  } catch {
+    // already gone
+  }
+}
+
+/** Async `npm` so SIGTERM can kill the child; cwd must be the caller's mkdtemp. */
+export function runNpmAsync(args, opts = {}) {
   const env = opts.env ?? process.env;
+  const timeoutMs = opts.timeoutMs ?? BUN_FETCH_TIMEOUT_MS;
   const { bin, prefix } = npmCommand(env);
-  return spawnSync(bin, [...prefix, ...args], {
-    cwd: opts.cwd ?? process.cwd(),
-    env,
-    encoding: "utf8",
-    timeout: opts.timeoutMs ?? BUN_FETCH_TIMEOUT_MS,
-    maxBuffer: 16 * 1024 * 1024,
-    shell: false,
+  const cwd = opts.cwd;
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = spawn(bin, [...prefix, ...args], {
+        cwd,
+        env,
+        stdio: ["ignore", "pipe", "pipe"],
+        shell: false,
+      });
+    } catch (error) {
+      resolve({ status: 1, stdout: "", stderr: "", error });
+      return;
+    }
+    if (opts.onChild) opts.onChild(child);
+    let stdout = "";
+    let stderr = "";
+    child.stdout?.setEncoding("utf8");
+    child.stderr?.setEncoding("utf8");
+    child.stdout?.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr?.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+    const timer = setTimeout(
+      () => {
+        killChild(child);
+        finish({
+          status: 1,
+          stdout,
+          stderr,
+          error: Object.assign(new Error("timed out"), { code: "ETIMEDOUT" }),
+        });
+      },
+      Math.max(1, timeoutMs),
+    );
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      finish({ status: 1, stdout, stderr, error });
+    });
+    child.on("close", (status) => {
+      clearTimeout(timer);
+      finish({ status: status ?? 1, stdout, stderr, error: undefined });
+    });
   });
 }
 
 function npmShortFail(result, what) {
-  const errText = String(result.stderr || result.stdout || "").trim();
-  const first = errText.split("\n").find((l) => l.trim() && !/^npm (notice|warn)/i.test(l));
-  const hint = first ? first.slice(0, 200) : `exit ${result.status ?? "null"}`;
   if (result.error && result.error.code === "ENOENT") {
     return new Error(
       `HTTP(S)_PROXY or a custom npm transport needs npm on PATH (${what}; npm not found)`,
@@ -796,7 +896,7 @@ function npmShortFail(result, what) {
   if (result.error && /timed? ?out/i.test(result.error.message || "")) {
     return new Error(`${what} timed out`);
   }
-  return new Error(`${what} failed: ${hint}`);
+  return new Error(`${what} failed`);
 }
 
 export async function packOvenBunWithNpm(opts) {
@@ -811,13 +911,25 @@ export async function packOvenBunWithNpm(opts) {
   const version = opts.version ?? BUN_FETCH_VERSION;
   const timeoutMs = opts.timeoutMs ?? BUN_FETCH_TIMEOUT_MS;
   const spec = `@oven/${id}@${version}`;
-  const dest = opts.dest ?? mkdtempSync(join(tmpdir(), "snowshoe-npm-pack-"));
-  const createdDest = !opts.dest;
+  const work = mkdtempSync(join(tmpdir(), `snowshoe-npm-pack-${opts.pid ?? process.pid}-`));
+  writeFileSync(join(work, "package.json"), '{"name":"snowshoe-npm-pack","private":true}\n');
+  const dest = opts.dest ?? work;
   mkdirSync(dest, { recursive: true });
+  const flags = npmFetchFlags(timeoutMs);
+  const runEnv = npmFetchEnv(env, timeoutMs);
+  const runNpm = opts.runNpm ?? runNpmAsync;
+  const track = (child) => {
+    if (opts.state) opts.state.npmChild = child;
+  };
   try {
-    const runNpm = opts.runNpm ?? defaultRunNpm;
-    const cwd = opts.cwd ?? process.cwd();
-    const view = runNpm(["view", spec, "dist.integrity", "--json"], { env, cwd, timeoutMs });
+    const view = await Promise.resolve(
+      runNpm(["view", spec, "dist.integrity", "--json", ...flags], {
+        env: runEnv,
+        cwd: work,
+        timeoutMs,
+        onChild: track,
+      }),
+    );
     if (view.status !== 0) throw npmShortFail(view, `npm view ${spec}`);
     let integrity = String(view.stdout || "").trim();
     try {
@@ -828,11 +940,14 @@ export async function packOvenBunWithNpm(opts) {
     if (typeof integrity !== "string") {
       throw new Error(`npm view ${spec} did not return dist.integrity`);
     }
-    const pack = runNpm(["pack", spec, "--pack-destination", dest, "--ignore-scripts", "--json"], {
-      env,
-      cwd,
-      timeoutMs,
-    });
+    const pack = await Promise.resolve(
+      runNpm(["pack", spec, "--pack-destination", dest, "--ignore-scripts", "--json", ...flags], {
+        env: runEnv,
+        cwd: work,
+        timeoutMs,
+        onChild: track,
+      }),
+    );
     if (pack.status !== 0) throw npmShortFail(pack, `npm pack ${spec}`);
     const tgz = readdirSync(dest).find((name) => name.endsWith(".tgz"));
     if (!tgz) throw new Error(`npm pack ${spec} did not write a tarball`);
@@ -840,14 +955,19 @@ export async function packOvenBunWithNpm(opts) {
     verifyIntegrity(buf, integrity);
     return { id, version, buf, integrity };
   } finally {
-    if (createdDest) {
-      try {
-        rmSync(dest, { recursive: true, force: true });
-      } catch {
-        // ignore
-      }
+    if (opts.state) opts.state.npmChild = null;
+    try {
+      rmSync(work, { recursive: true, force: true });
+    } catch {
+      // ignore
     }
   }
+}
+
+function isNonNetworkFetchError(msg) {
+  return /integrity|refusing |registry returned|download returned|missing tarball|package metadata|could not reach|unsupported |invalid |too many redirects|no fetch/.test(
+    msg,
+  );
 }
 
 export async function fetchOvenBunTarball(opts) {
@@ -868,7 +988,7 @@ export async function fetchOvenBunTarball(opts) {
     skipFiles: opts.skipFiles,
   });
   if (cfg.useNpmCli) {
-    return packOvenBunWithNpm({ ...opts, env, timeoutMs });
+    return packOvenBunWithNpm({ ...opts, dest: undefined, env, timeoutMs });
   }
   const fetchImpl = opts.fetch ?? globalThis.fetch;
   if (typeof fetchImpl !== "function") {
@@ -876,11 +996,9 @@ export async function fetchOvenBunTarball(opts) {
   }
   const base = cfg.registry;
   const metaUrl = `${base}/@oven/${id}/${version}`;
-  const extra = Object.keys(cfg.headers).length ? { headers: cfg.headers } : {};
   try {
     return await withFetchDeadline(timeoutMs, async (signal) => {
-      const init = { ...extra, signal };
-      const metaRes = await fetchFollowSafe(fetchImpl, metaUrl, init, base);
+      const metaRes = await fetchFollowSafe(fetchImpl, metaUrl, signal, base);
       if (!metaRes.ok) {
         throw new Error(`registry returned ${metaRes.status} for @oven/${id}@${version}`);
       }
@@ -891,8 +1009,9 @@ export async function fetchOvenBunTarball(opts) {
           `registry metadata for @oven/${id}@${version} is missing tarball/integrity`,
         );
       }
-      assertSafeDownloadUrl(dist.tarball, base);
-      const tarRes = await fetchFollowSafe(fetchImpl, dist.tarball, init, base);
+      const tarballUrl = ovenTarballUrl(base, id, version, dist.tarball);
+      assertSafeDownloadUrl(tarballUrl, base);
+      const tarRes = await fetchFollowSafe(fetchImpl, tarballUrl, signal, base);
       if (!tarRes.ok) {
         throw new Error(`download returned ${tarRes.status} for @oven/${id}@${version}`);
       }
@@ -901,11 +1020,11 @@ export async function fetchOvenBunTarball(opts) {
       return { id, version, buf, integrity: dist.integrity };
     });
   } catch (err) {
-    const reason = formatFetchReason(err, timeoutMs);
     const msg = err instanceof Error ? err.message : String(err);
-    if (/^could not |^registry returned|^download returned|^refusing |^invalid /.test(msg)) {
+    if (isNonNetworkFetchError(msg)) {
       throw err instanceof Error ? err : new Error(msg);
     }
+    const reason = formatFetchReason(err, timeoutMs);
     throw new Error(`could not reach ${base} (${reason})`);
   }
 }
@@ -924,6 +1043,10 @@ function ensureRuntimeParent(packageRoot) {
 }
 
 function cleanupFetchState(state) {
+  if (state.npmChild) {
+    killChild(state.npmChild);
+    state.npmChild = null;
+  }
   if (state.tmp) {
     try {
       rmSync(state.tmp, { recursive: true, force: true });
@@ -1012,8 +1135,8 @@ export async function ensureBun(opts) {
   const staleMs = opts.staleMs ?? BUN_LOCK_STALE_MS;
   const root = runtimeRoot(opts.packageRoot);
   const lockDir = join(root, "lock");
-  /** @type {{ lockDir: string | null, tmp: string | null, runtimeDir: string }} */
-  const state = { lockDir: null, tmp: null, runtimeDir: root };
+  /** @type {{ lockDir: string | null, tmp: string | null, runtimeDir: string, npmChild: import("node:child_process").ChildProcess | null }} */
+  const state = { lockDir: null, tmp: null, runtimeDir: root, npmChild: null };
   const detachCleanup = installFetchCleanup(state);
   try {
     ensureRuntimeParent(opts.packageRoot);
