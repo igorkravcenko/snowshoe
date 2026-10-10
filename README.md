@@ -15,7 +15,7 @@ Apache-2.0. Not a team wiki. Not an agent control panel.
 
 ## Install
 
-Use Bun 1.1+. npm may work, but it is untested. The PATH binary is **`snowshoe`**. Also, you'll need any agent harness, that can be run in a CLI.
+Use Bun 1.1+. Also, you'll need any agent harness, that can be run in a CLI. The PATH binary is **`snowshoe`**.  
 
 > [!IMPORTANT]
 > This project is `@igorkravcenko/snowshoe` on npm. Bare `snowshoe` without the scope is an unrelated package.
@@ -26,7 +26,6 @@ Use Bun 1.1+. npm may work, but it is untested. The PATH binary is **`snowshoe`*
 
 ```bash
 bun add -g @igorkravcenko/snowshoe
-# or: npm install -g @igorkravcenko/snowshoe
 command -v snowshoe
 ```
 
