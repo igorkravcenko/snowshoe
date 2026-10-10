@@ -2,6 +2,7 @@ import type { ArgsDef, CommandDef } from "citty";
 import { renderUsage } from "citty";
 import { runHelp } from "./commands/help.ts";
 import { printJson } from "./json.ts";
+import { packageVersion } from "./package-version.ts";
 
 type AnyCommand = CommandDef<ArgsDef>;
 
@@ -31,6 +32,17 @@ export async function resolveSubCommand(
 
 export function wantsHelp(rawArgs: string[]): boolean {
   return rawArgs.includes("--help") || rawArgs.includes("-h");
+}
+
+export function wantsVersion(rawArgs: string[]): boolean {
+  if (rawArgs.includes("--version") || rawArgs.includes("-V")) return true;
+  const tokens = rawArgs.filter((a) => !a.startsWith("-"));
+  return tokens[0] === "version";
+}
+
+export function handleVersionArgs(): number {
+  process.stdout.write(`${packageVersion()}\n`);
+  return 0;
 }
 
 export function hasCommandToken(rawArgs: string[]): boolean {

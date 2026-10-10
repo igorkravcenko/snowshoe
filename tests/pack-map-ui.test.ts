@@ -33,6 +33,8 @@ describe("packed npm install map UI", () => {
     const listing = Bun.spawnSync(["tar", "-tf", tgz], { stdout: "pipe", stderr: "pipe" });
     const files = listing.stdout.toString();
     expect(files).toContain("package/ui/dist/index.html");
+    expect(files).toContain("package/bin/snowshoe.js");
+    expect(files).toContain("package/bin/resolve-bun.js");
     expect(files).not.toMatch(/package\/ui\/src\//);
     expect(files).not.toContain("package/ui/vite.config.ts");
     expect(files).not.toContain("package/ui/index.html");
