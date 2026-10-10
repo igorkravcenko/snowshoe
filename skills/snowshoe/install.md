@@ -10,7 +10,9 @@ The **canonical PATH binary** is `snowshoe`. Skills and agents should invoke
 `snowshoe`. The npm package name is scoped `@igorkravcenko/snowshoe`
 (bare npm `snowshoe` is a different, unrelated package).
 
-`npm install -g` works without a prior Bun install (a Bun runtime is fetched when missing). Bun is still recommended if you already use it.
+**Node.js 18+** is required on PATH (including after `bun add -g`).
+
+`npm install -g` works without a prior Bun install: the first install or run downloads a matching Bun binary once (~40 MB compressed / ~80 MB unpacked on linux x64). Bun on PATH is still used when present, and is recommended if you already use it. Linux and macOS are supported; Windows is best-effort. Prefer an unprivileged npm prefix (`sudo npm i -g` leaves a root-owned install that a later non-root `snowshoe` cannot update).
 
 ## From the registry (preferred)
 

@@ -18,6 +18,9 @@ Thumbs.db
 tmp/
 .tmp/
 
+# Isolated Bun runtime fetched by the Node launcher (not shipped)
+.runtime/
+
 # Accidental toolchain leftovers
 node_modules/
 __pycache__/
