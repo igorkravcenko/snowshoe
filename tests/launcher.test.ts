@@ -241,6 +241,12 @@ describe("integrity and fetch errors", () => {
       Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }),
     );
     expect(refused).toBe("connection refused");
+    const wrapped = formatFetchReason(
+      Object.assign(new Error("fetch failed"), {
+        cause: Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }),
+      }),
+    );
+    expect(wrapped).toBe("connection refused");
     const stacked = formatFetchReason(new Error("boom\n    at foo (bar.js:1:1)\n    at baz"));
     expect(stacked).toBe("boom");
     expect(stacked).not.toContain("at foo");

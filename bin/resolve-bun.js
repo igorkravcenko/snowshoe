@@ -275,9 +275,10 @@ export function registryBase(env = process.env) {
 
 export function formatFetchReason(err, timeoutMs = BUN_FETCH_TIMEOUT_MS) {
   if (!err) return "unknown error";
-  const name = err && typeof err === "object" && "name" in err ? String(err.name) : "";
-  const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
-  const msg = err instanceof Error ? err.message : String(err);
+  const nested = err && typeof err === "object" && "cause" in err && err.cause ? err.cause : err;
+  const name = nested && typeof nested === "object" && "name" in nested ? String(nested.name) : "";
+  const code = nested && typeof nested === "object" && "code" in nested ? String(nested.code) : "";
+  const msg = nested instanceof Error ? nested.message : String(nested);
   if (name === "AbortError" || code === "ABORT_ERR" || /aborted|timed out|timeout/i.test(msg)) {
     return `timed out after ${Math.round(timeoutMs / 1000)}s`;
   }
