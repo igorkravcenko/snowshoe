@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { mkdtempSync } from "node:fs";
 import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fetchOvenBunTarball, formatFetchReason } from "../bin/resolve-bun.js";
 
 describe("Bun fetch timeout", () => {
@@ -78,19 +81,21 @@ describe("Bun fetch timeout", () => {
   });
 
   test("dead proxy npm pack fails fast with a one-line reason", async () => {
+    const cache = mkdtempSync(join(tmpdir(), "snowshoe-npmcache-"));
+    const home = mkdtempSync(join(tmpdir(), "snowshoe-npmhome-"));
     const started = Date.now();
     let err: unknown;
     try {
       await fetchOvenBunTarball({
         env: {
-          ...process.env,
+          PATH: process.env.PATH,
+          HOME: home,
           HTTPS_PROXY: "http://127.0.0.1:1",
           HTTP_PROXY: "http://127.0.0.1:1",
           https_proxy: "http://127.0.0.1:1",
           http_proxy: "http://127.0.0.1:1",
-          NO_PROXY: "",
-          no_proxy: "",
           npm_config_registry: "https://registry.npmjs.org",
+          npm_config_cache: cache,
         },
         platform: "linux",
         arch: "x64",

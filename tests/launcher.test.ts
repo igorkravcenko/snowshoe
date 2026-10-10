@@ -518,7 +518,7 @@ describe("Node fetch never authenticates; mirror tarball origin", () => {
       libc: "glibc",
       avx2: true,
       skipFiles: true,
-      fetch: fetchImpl as typeof fetch,
+      fetch: fetchImpl as unknown as typeof fetch,
       timeoutMs: 5000,
     });
     expect(fetched.buf.equals(buf)).toBe(true);
@@ -558,7 +558,7 @@ describe("Node fetch never authenticates; mirror tarball origin", () => {
         libc: "glibc",
         avx2: true,
         skipFiles: true,
-        fetch: fetchImpl as typeof fetch,
+        fetch: fetchImpl as unknown as typeof fetch,
         timeoutMs: 5000,
       });
     } catch (e) {
