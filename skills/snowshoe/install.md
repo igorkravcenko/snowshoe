@@ -10,14 +10,14 @@ The **canonical PATH binary** is `snowshoe`. Skills and agents should invoke
 `snowshoe`. The npm package name is scoped `@igorkravcenko/snowshoe`
 (bare npm `snowshoe` is a different, unrelated package).
 
-Requires **Bun** (`>=1.1`).
+`npm install -g` works without a prior Bun install (a Bun runtime is fetched when missing). Bun is still recommended if you already use it.
 
 ## From the registry (preferred)
 
 ```bash
-bun add -g @igorkravcenko/snowshoe
-# or
 npm install -g @igorkravcenko/snowshoe
+# or, if you already use Bun:
+bun add -g @igorkravcenko/snowshoe
 command -v snowshoe
 snowshoe --help   # exit 0; command index (does not mutate the ledger)
 ```

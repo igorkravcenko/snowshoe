@@ -28,6 +28,7 @@ import { DEFAULT_WORK_BATCH_SIZE } from "./domain/types.ts";
 import { CliError, EXIT_USAGE } from "./errors.ts";
 import { printJson } from "./json.ts";
 import { parseMapExpandDepth, runMapServe } from "./map/serve.ts";
+import { packageVersion } from "./package-version.ts";
 
 function emit(result: { exitCode: number; body: Record<string, unknown> }, _json: boolean): number {
   printJson(result.body);
@@ -565,14 +566,23 @@ const helpCmd = defineCommand({
   },
 });
 
+const versionCmd = defineCommand({
+  meta: { name: "version", description: "Print the package version" },
+  run() {
+    process.stdout.write(`${packageVersion()}\n`);
+    return 0;
+  },
+});
+
 export const main = defineCommand({
   meta: {
     name: "snowshoe",
     description: "Don't let your agents outrun your understanding. Keep your footing.",
-    version: "0.0.4",
+    version: packageVersion(),
   },
   subCommands: {
     help: helpCmd,
+    version: versionCmd,
     init: initCmd,
     routine: routineCmd,
     work: workCmd,

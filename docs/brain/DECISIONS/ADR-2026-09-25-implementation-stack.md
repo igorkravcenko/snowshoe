@@ -19,7 +19,9 @@ Constraints in force: tiny budget; AI-agent-built; local-first; personal ledger 
 
 ### Runtime / language
 
-**TypeScript on Bun.** Ship the CLI with `bun build --compile` (macOS and Linux first; Windows is nice-to-have later).
+**TypeScript on Bun.** The CLI stays Bun (not a Node port).
+
+**Amendment 2026-10-10:** the npm ship path is **TypeScript source + a Node launcher**, not `bun build --compile`. `bin` is `bin/snowshoe.js` (`#!/usr/bin/env node`) which execs `src/index.ts` with PATH bun, else a Bun runtime fetched into the install prefix when missing. `bun add -g` uses PATH bun and does not download a second binary. Compile remains a possible later distribution; it is not this tarball. Windows remains best-effort. [npm-global-bun-runtime ADR](./ADR-2026-10-10-npm-global-bun-runtime.md).
 
 ### CLI framework
 
