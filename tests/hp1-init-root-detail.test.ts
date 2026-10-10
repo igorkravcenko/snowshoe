@@ -17,7 +17,9 @@ describe("HP1 cold init → root detail seed", () => {
     expect(init.json.rootSlug).toBe("root");
     expect(init.json.seededDetail).toBe(true);
     expect(existsSync(join(repo, ".snowshoe", "ledger.sqlite"))).toBe(true);
-    expect(readGitignore(repo)).toContain(".snowshoe/");
+    const gi = readGitignore(repo);
+    expect(gi).toMatch(/(^|\n)\.snowshoe(\n|$)/);
+    expect(gi).toMatch(/(^|\n)\.snowshoe\/(\n|$)/);
 
     const next = await snowshoe(repo, ["work", "next", "--json", "--batch-size", "5"]);
     expect(next.exitCode).toBe(0);

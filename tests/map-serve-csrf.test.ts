@@ -564,6 +564,8 @@ describe("map serve CSRF / CSWSH guards", () => {
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("base-uri 'none'");
     expect(csp).toContain("frame-ancestors 'none'");
+    // xterm injects <style> at runtime (theme / cell metrics); React uses style attrs.
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
     assertNoCors(page);
   });
 

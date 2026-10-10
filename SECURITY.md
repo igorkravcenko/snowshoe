@@ -30,6 +30,7 @@ upgrade.
   a body) require `Content-Type: application/json`; HEAD uses the same gates as
   GET
 - Map HTML: CSP `default-src 'self'` with loopback `ws:` `connect-src`,
+  `style-src 'self' 'unsafe-inline'` (Vite CSS, React attrs, xterm),
   `object-src 'none'`, `base-uri 'none'`, `frame-ancestors 'none'`;
   `Referrer-Policy: no-referrer`; no CORS allow headers
 - Day-1 CI hygiene (frozen lockfile, SHA-pinned Actions)
