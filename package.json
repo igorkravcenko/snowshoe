@@ -17,14 +17,15 @@
   ],
   "type": "module",
   "bin": {
-    "snowshoe": "./src/index.ts",
-    "snoe": "./src/index.ts"
+    "snowshoe": "./bin/snowshoe.js",
+    "snoe": "./bin/snowshoe.js"
   },
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
   },
   "files": [
+    "bin",
     "src",
     "ui/dist",
     "skills/snowshoe",
@@ -51,9 +52,11 @@
     "format": "biome check --write .",
     "check": "biome check .",
     "build:ui": "vite build --config ui/vite.config.ts",
-    "prepack": "bun run build:ui"
+    "prepack": "bun run build:ui",
+    "postinstall": "node ./bin/ensure-bun.js"
   },
   "engines": {
+    "node": ">=18",
     "bun": ">=1.1.0"
   },
   "dependencies": {

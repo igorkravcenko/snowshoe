@@ -10,14 +10,18 @@ The **canonical PATH binary** is `snowshoe`. Skills and agents should invoke
 `snowshoe`. The npm package name is scoped `@igorkravcenko/snowshoe`
 (bare npm `snowshoe` is a different, unrelated package).
 
-Requires **Bun** (`>=1.1`).
+**Node.js 18+** is required on PATH (including after `bun add -g`).
+
+`npm install -g` works without a prior Bun install: the first install or run downloads a matching Bun binary once (~40 MB compressed / ~80 MB unpacked on linux x64). Bun on PATH is still used when present, and is recommended if you already use it. Linux and macOS are supported; Windows is best-effort. Prefer an unprivileged npm prefix (`sudo npm i -g` leaves a root-owned install that a later non-root `snowshoe` cannot update).
+
+The download uses your npm registry (`npm_config_registry`, `npm_config_userconfig`, user/project/global `.npmrc`, and `@oven:registry`). `@oven/bun-*` is public: Node fetch never sends Authorization (including on redirects). A custom registry's tarball is fetched from that registry, then integrity-checked. For an authenticated private mirror, put bun on PATH or set `HTTP(S)_PROXY` so the launcher uses isolated `npm pack` (npm applies your auth; npm must be on PATH; no retries, short fetch timeout). Node's fetch does not honor `HTTP(S)_PROXY`.
 
 ## From the registry (preferred)
 
 ```bash
-bun add -g @igorkravcenko/snowshoe
-# or
 npm install -g @igorkravcenko/snowshoe
+# or, if you already use Bun:
+bun add -g @igorkravcenko/snowshoe
 command -v snowshoe
 snowshoe --help   # exit 0; command index (does not mutate the ledger)
 ```
