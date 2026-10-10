@@ -19,6 +19,8 @@ The PATH binary is **`snowshoe`**. **Node.js 18+** is required (including after 
 
 `npm install -g` works without a prior Bun install: the first install or run downloads a matching Bun binary once (~40 MB compressed / ~80 MB unpacked on linux x64). Bun on PATH is still used when present, and is recommended if you already use it. Linux and macOS are supported; Windows is best-effort. Prefer an unprivileged npm prefix (`sudo npm i -g` leaves a root-owned install that a later non-root `snowshoe` cannot update).
 
+The download uses your npm registry (`npm_config_registry`, user/project/global `.npmrc`, and `@oven:registry`) and sends `_authToken` as a Bearer header. Node's fetch does not honor `HTTP(S)_PROXY`; when a proxy applies (and the host is not in `NO_PROXY`), the launcher runs isolated `npm pack @oven/bun-<platform>@…` instead — npm must be on PATH for that path — and still checks the tarball integrity.
+
 > [!IMPORTANT]
 > This project is `@igorkravcenko/snowshoe` on npm. Bare `snowshoe` without the scope is an unrelated package.
 

@@ -1,21 +1,18 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  utimesSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { hostname, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { gzipSync } from "node:zlib";
 import {
   acquireLock,
+  assertNoHttpDowngrade,
+  assertSafeDownloadUrl,
   BUN_FETCH_SIZE_HINT,
   BUN_FETCH_VERSION,
   bundledBunCandidates,
   ensureBun,
+  extractNpmTgz,
   formatFetchReason,
   installerIsBun,
   isUsableBunBinary,
@@ -23,12 +20,16 @@ import {
   missingBunMessage,
   nodeEngineOk,
   ovenPackageIds,
+  parseNpmrc,
   pathBunCandidates,
   permissionDeniedMessage,
   releaseLock,
   resolveBun,
+  resolveNpmFetchConfig,
   runtimeCurrent,
+  sweepStaleTempDirs,
   verifyIntegrity,
+  writeLockOwner,
 } from "../bin/resolve-bun.js";
 
 const ROOT = join(import.meta.dir, "..");
@@ -119,11 +120,16 @@ describe("resolveBun", () => {
         executableNames: ["bun"],
       }),
     ).toEqual(["/cwd/bin/bun", "/a/bun"]);
-    const linuxGlibc = ovenPackageIds("linux", "x64", "glibc");
+    const linuxGlibc = ovenPackageIds("linux", "x64", "glibc", { avx2: true });
     expect(linuxGlibc.ids).toEqual(["bun-linux-x64"]);
     expect(linuxGlibc.ids.join()).not.toContain("musl");
     expect(linuxGlibc.ids.join()).not.toContain("baseline");
-    expect(ovenPackageIds("linux", "x64", "musl").ids).toEqual(["bun-linux-x64-musl"]);
+    expect(ovenPackageIds("linux", "x64", "glibc", { avx2: false }).ids).toEqual([
+      "bun-linux-x64-baseline",
+    ]);
+    expect(ovenPackageIds("linux", "x64", "musl", { avx2: true }).ids).toEqual([
+      "bun-linux-x64-musl",
+    ]);
     expect(ovenPackageIds("darwin", "arm64").ids).toEqual(["bun-darwin-aarch64"]);
     expect(ovenPackageIds("android", "x64").ids).toEqual(["bun-linux-x64-android"]);
     expect(ovenPackageIds("android", "arm64").ids).toEqual(["bun-linux-aarch64-android"]);
@@ -218,32 +224,59 @@ describe("ensureBun", () => {
     expect(results.every((b) => b === bundled)).toBe(true);
   });
 
-  test("stale lock is stolen; fresh lock waits then times out", async () => {
+  test("dead lock owner is stolen immediately; live owner waits", async () => {
     expect(lockWaitMs(120_000, 180_000)).toBe(185_000);
     const staleDir = mkdtempSync(join(tmpdir(), "snowshoe-stale-"));
     const staleLock = join(staleDir, "lock");
     mkdirSync(staleLock);
-    const old = Date.now() / 1000 - 10;
-    utimesSync(staleLock, old, old);
-    expect(await acquireLock(staleLock, { timeoutMs: 1000, staleMs: 100, pollMs: 20 })).toBe(true);
+    writeLockOwner(staleLock, { pid: 999_999_999, host: hostname() });
+    expect(await acquireLock(staleLock, { timeoutMs: 1000, staleMs: 60_000, pollMs: 20 })).toBe(
+      true,
+    );
     releaseLock(staleLock);
 
     const freshDir = mkdtempSync(join(tmpdir(), "snowshoe-freshlock-"));
     const freshLock = join(freshDir, "lock");
     mkdirSync(freshLock);
+    writeLockOwner(freshLock, { pid: process.pid, host: hostname() });
+    let waited = false;
     const started = Date.now();
     await expect(
-      acquireLock(freshLock, { timeoutMs: 250, staleMs: 60_000, pollMs: 40 }),
+      acquireLock(freshLock, {
+        timeoutMs: 250,
+        staleMs: 60_000,
+        pollMs: 40,
+        onWait: () => {
+          waited = true;
+        },
+      }),
     ).rejects.toThrow(/timed out/);
+    expect(waited).toBe(true);
     expect(Date.now() - started).toBeLessThan(2000);
+    releaseLock(freshLock);
+  });
+
+  test("sweepStaleTempDirs removes tmp-* whose PID is dead", () => {
+    const dir = mkdtempSync(join(tmpdir(), "snowshoe-sweep-"));
+    const dead = join(dir, "tmp-999999999-abcd");
+    const live = join(dir, `tmp-${process.pid}-ef00`);
+    mkdirSync(dead);
+    mkdirSync(live);
+    writeFileSync(join(dead, "x"), "x");
+    const removed = sweepStaleTempDirs(dir);
+    expect(removed).toContain(dead);
+    expect(existsSync(dead)).toBe(false);
+    expect(existsSync(live)).toBe(true);
   });
 
   test("missing-bun copy has install instructions, size hint, and no stack dump", () => {
     const text = missingBunMessage();
     expect(text).toContain("https://bun.sh");
     expect(text).toContain(BUN_FETCH_SIZE_HINT);
+    expect(text).not.toMatch(/install Node\.js 18/);
     expect(text.toLowerCase()).not.toContain("error:");
     expect(text).not.toMatch(/at \S+ \(/);
+    expect(missingBunMessage({ nodeVersion: "16.20.2" })).toMatch(/install Node\.js 18/);
     const perm = permissionDeniedMessage("/usr/lib/node_modules/@igorkravcenko/snowshoe/.runtime");
     expect(perm).toContain("sudo npm install -g");
     expect(perm).toContain("permission denied");
@@ -280,8 +313,15 @@ describe("integrity and fetch errors", () => {
     const aborted = formatFetchReason(
       Object.assign(new Error("This operation was aborted"), { name: "AbortError" }),
     );
-    expect(aborted).toContain("timed out");
-    expect(aborted).not.toMatch(/at \S+ \(/);
+    expect(aborted).toBe("aborted");
+    const deadline = formatFetchReason(
+      Object.assign(new Error("timed out after 120s"), {
+        name: "AbortError",
+        code: "SNOWSHOE_FETCH_DEADLINE",
+      }),
+    );
+    expect(deadline).toContain("timed out after 120s");
+    expect(deadline).not.toMatch(/at \S+ \(/);
     const refused = formatFetchReason(
       Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }),
     );
@@ -295,5 +335,81 @@ describe("integrity and fetch errors", () => {
     const stacked = formatFetchReason(new Error("boom\n    at foo (bar.js:1:1)\n    at baz"));
     expect(stacked).toBe("boom");
     expect(stacked).not.toContain("at foo");
+    const connect = formatFetchReason(
+      Object.assign(new Error("Connect Timeout Error"), { code: "UND_ERR_CONNECT_TIMEOUT" }),
+    );
+    expect(connect).toBe("connection timed out");
+    expect(connect).not.toContain("120");
   });
 });
+
+describe("npmrc and download URL safety", () => {
+  test("parses registry, scoped @oven registry, and proxy", () => {
+    const parsed = parseNpmrc(
+      "registry=https://corp.example/\n@oven:registry=https://oven.example/\nhttps-proxy=http://proxy:8080\n",
+    );
+    expect(parsed.registry).toBe("https://corp.example/");
+    expect(parsed["@oven:registry"]).toBe("https://oven.example/");
+    const cfg = resolveNpmFetchConfig({
+      env: {},
+      skipFiles: true,
+      npmrc: parsed,
+    });
+    expect(cfg.registry).toBe("https://oven.example");
+    expect(cfg.useNpmCli).toBe(true);
+    expect(cfg.proxy).toBe("http://proxy:8080");
+    const fromEnv = resolveNpmFetchConfig({
+      env: { npm_config_registry: "https://env.example/" },
+      skipFiles: true,
+      npmrc: parsed,
+    });
+    expect(fromEnv.registry).toBe("https://env.example");
+    const noProxy = resolveNpmFetchConfig({
+      env: { HTTPS_PROXY: "http://proxy:8080", NO_PROXY: "registry.npmjs.org" },
+      skipFiles: true,
+      npmrc: { registry: "https://registry.npmjs.org/" },
+    });
+    expect(noProxy.useNpmCli).toBe(false);
+  });
+
+  test("https registry rejects http tarball and https→http redirects", () => {
+    expect(() =>
+      assertSafeDownloadUrl("http://evil.example/x.tgz", "https://registry.npmjs.org"),
+    ).toThrow(/non-https/);
+    expect(() =>
+      assertSafeDownloadUrl("https://registry.npmjs.org/x.tgz", "https://registry.npmjs.org"),
+    ).not.toThrow();
+    expect(() =>
+      assertSafeDownloadUrl("http://127.0.0.1:1/x.tgz", "http://127.0.0.1:1"),
+    ).not.toThrow();
+    expect(() =>
+      assertNoHttpDowngrade("https://registry.npmjs.org/a", "http://evil.example/a"),
+    ).toThrow(/https→http/);
+  });
+
+  test("extractNpmTgz keeps only package/bin/bun*", () => {
+    const bun = ustarFile("package/bin/bun", "ELF");
+    const extra = ustarFile("package/README.md", "nope");
+    const tgz = gzipSync(Buffer.concat([bun, extra, Buffer.alloc(1024)]));
+    const dir = mkdtempSync(join(tmpdir(), "snowshoe-untar-"));
+    extractNpmTgz(tgz, dir);
+    expect(readFileSync(join(dir, "bin", "bun"), "utf8")).toBe("ELF");
+    expect(existsSync(join(dir, "README.md"))).toBe(false);
+  });
+});
+
+function ustarFile(name: string, content: string): Buffer {
+  const data = Buffer.from(content);
+  const size = (Math.ceil(data.length / 512) + 1) * 512;
+  const buf = Buffer.alloc(size);
+  buf.write(name);
+  const sizeOct = data.length.toString(8).padStart(11, "0");
+  buf.write(`${sizeOct} `, 124);
+  buf[156] = 48;
+  buf.write("        ", 148);
+  let sum = 0;
+  for (let i = 0; i < 512; i++) sum += buf[i];
+  buf.write(`${sum.toString(8).padStart(6, "0")}\0 `, 148);
+  data.copy(buf, 512);
+  return buf;
+}

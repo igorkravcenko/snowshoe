@@ -18,21 +18,13 @@ if (!nodeEngineOk()) {
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const entry = join(packageRoot, "src", "index.ts");
 
-const bunBin = await ensureBun({ packageRoot, installIfMissing: true });
-if (!bunBin) {
-  process.stderr.write(`${missingBunMessage()}\n`);
-  process.exit(1);
-}
-
-const child = spawnBun(bunBin, [entry, ...process.argv.slice(2)], {
-  stdio: "inherit",
-});
-
 const SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"];
 /** @type {Map<string, () => void>} */
 const handlers = new Map();
 /** @type {NodeJS.Signals | null} */
 let receivedSignal = null;
+/** @type {import("node:child_process").ChildProcess | null} */
+let child = null;
 
 function detachSignals() {
   for (const [signal, handler] of handlers) {
@@ -46,11 +38,13 @@ function exitForSignal(signal) {
   process.exit(typeof n === "number" ? 128 + n : 1);
 }
 
+// Install before ensureBun so Ctrl-C during the first Bun download is not lost.
+// ensureBun also registers cleanup (lock + tmp). If no child yet, let that run.
 for (const signal of SIGNALS) {
   const handler = () => {
     receivedSignal = signal;
-    detachSignals();
-    if (!child.killed) {
+    if (child && !child.killed) {
+      detachSignals();
       try {
         child.kill(signal);
       } catch {
@@ -61,6 +55,17 @@ for (const signal of SIGNALS) {
   handlers.set(signal, handler);
   process.on(signal, handler);
 }
+
+const bunBin = await ensureBun({ packageRoot, installIfMissing: true });
+if (!bunBin) {
+  process.stderr.write(`${missingBunMessage()}\n`);
+  if (receivedSignal) exitForSignal(receivedSignal);
+  process.exit(1);
+}
+
+child = spawnBun(bunBin, [entry, ...process.argv.slice(2)], {
+  stdio: "inherit",
+});
 
 child.on("error", (err) => {
   detachSignals();
