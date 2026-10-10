@@ -34,15 +34,19 @@ export function resolveNpmFetchConfig(opts?: {
   skipFiles?: boolean;
 }): {
   registry: string;
-  auth: { type: string; token: string } | null;
   proxy: string | null;
-  headers: Record<string, string>;
   useNpmCli: boolean;
 };
 export function registryBase(env?: NodeJS.ProcessEnv, opts?: object): string;
 export function formatFetchReason(err: unknown, timeoutMs?: number): string;
 export function assertSafeDownloadUrl(url: string, registry: string): URL;
 export function assertNoHttpDowngrade(fromUrl: string, toUrl: string): void;
+export function ovenTarballUrl(
+  registry: string,
+  id: string,
+  version: string,
+  distTarball: string,
+): string;
 
 export function spawnBun(
   bin: string,
@@ -130,8 +134,43 @@ export function acquireLock(
 ): Promise<boolean>;
 export function releaseLock(lockDir: string): void;
 export function sweepStaleTempDirs(runtimeDir: string, opts?: { staleMs?: number }): string[];
+export function sweepNpmPackTemps(base?: string): string[];
 export function verifyIntegrity(buf: Buffer, integrity: string): void;
 export function extractNpmTgz(buf: Buffer, dest: string): void;
+export function runNpmAsync(
+  args: string[],
+  opts?: {
+    env?: NodeJS.ProcessEnv;
+    cwd?: string;
+    timeoutMs?: number;
+    onChild?: (child: import("node:child_process").ChildProcess) => void;
+  },
+): Promise<{
+  status: number | null;
+  stdout: string;
+  stderr: string;
+  error?: NodeJS.ErrnoException;
+}>;
+export function packOvenBunWithNpm(opts: {
+  env?: NodeJS.ProcessEnv;
+  platform?: string;
+  arch?: string;
+  libc?: string;
+  version?: string;
+  timeoutMs?: number;
+  dest?: string;
+  pid?: number;
+  runNpm?: (
+    args: string[],
+    opts: {
+      env?: NodeJS.ProcessEnv;
+      cwd?: string;
+      timeoutMs?: number;
+      onChild?: (child: import("node:child_process").ChildProcess) => void;
+    },
+  ) => unknown;
+  state?: { npmChild?: import("node:child_process").ChildProcess | null };
+}): Promise<{ id: string; version: string; buf: Buffer; integrity: string }>;
 export function fetchOvenBunTarball(opts: {
   env?: NodeJS.ProcessEnv;
   platform?: string;
@@ -145,6 +184,7 @@ export function fetchOvenBunTarball(opts: {
   skipFiles?: boolean;
   dest?: string;
   avx2?: boolean;
+  state?: { npmChild?: import("node:child_process").ChildProcess | null };
 }): Promise<{ id: string; version: string; buf: Buffer; integrity: string }>;
 export function installOvenBun(
   packageRoot: string,
@@ -156,7 +196,7 @@ export function installOvenBun(
     timeoutMs?: number;
     fetch?: typeof fetch;
     cwd?: string;
-    state?: { tmp: string | null };
+    state?: { tmp: string | null; npmChild?: import("node:child_process").ChildProcess | null };
   },
 ): Promise<void>;
 export function ensureBun(opts: ResolveOpts & { packageRoot: string }): Promise<string | null>;

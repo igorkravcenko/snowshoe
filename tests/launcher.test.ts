@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { hostname, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { gzipSync } from "node:zlib";
@@ -13,6 +13,7 @@ import {
   bundledBunCandidates,
   ensureBun,
   extractNpmTgz,
+  fetchOvenBunTarball,
   formatFetchReason,
   installerIsBun,
   isUsableBunBinary,
@@ -20,13 +21,17 @@ import {
   missingBunMessage,
   nodeEngineOk,
   ovenPackageIds,
+  ovenTarballUrl,
+  packOvenBunWithNpm,
   parseNpmrc,
   pathBunCandidates,
   permissionDeniedMessage,
+  readLockOwner,
   releaseLock,
   resolveBun,
   resolveNpmFetchConfig,
   runtimeCurrent,
+  sweepNpmPackTemps,
   sweepStaleTempDirs,
   verifyIntegrity,
   writeLockOwner,
@@ -292,6 +297,8 @@ describe("install docs", () => {
       expect(text).toMatch(/downloads a matching Bun binary once/);
       expect(text).toContain("~40 MB compressed");
       expect(text).toContain("~80 MB unpacked");
+      expect(text).not.toMatch(/_authToken/);
+      expect(text).toMatch(/never sends Authorization/);
     }
   });
 });
@@ -370,6 +377,25 @@ describe("npmrc and download URL safety", () => {
       npmrc: { registry: "https://registry.npmjs.org/" },
     });
     expect(noProxy.useNpmCli).toBe(false);
+    expect(cfg).not.toHaveProperty("headers");
+    expect(cfg).not.toHaveProperty("auth");
+  });
+
+  test("honors npm_config_userconfig for registry lookup", () => {
+    const dir = mkdtempSync(join(tmpdir(), "snowshoe-userconfig-"));
+    const userRc = join(dir, "user.npmrc");
+    writeFileSync(
+      userRc,
+      "registry=https://from-userconfig.example/\n_authToken=should-be-ignored\n",
+    );
+    const cfg = resolveNpmFetchConfig({
+      env: { npm_config_userconfig: userRc, HOME: dir },
+      cwd: dir,
+      home: dir,
+    });
+    expect(cfg.registry).toBe("https://from-userconfig.example");
+    expect(cfg).not.toHaveProperty("headers");
+    expect(cfg).not.toHaveProperty("auth");
   });
 
   test("https registry rejects http tarball and https→http redirects", () => {
@@ -387,14 +413,236 @@ describe("npmrc and download URL safety", () => {
     ).toThrow(/https→http/);
   });
 
-  test("extractNpmTgz keeps only package/bin/bun*", () => {
+  test("extractNpmTgz keeps only package/bin/bun or bun.exe", () => {
     const bun = ustarFile("package/bin/bun", "ELF");
+    const exe = ustarFile("package/bin/bun.exe", "MZ");
     const extra = ustarFile("package/README.md", "nope");
-    const tgz = gzipSync(Buffer.concat([bun, extra, Buffer.alloc(1024)]));
+    const profile = ustarFile("package/bin/bun-profile", "nope");
+    const nested = ustarFile("package/lib/bin/bun", "nope");
+    const tgz = gzipSync(Buffer.concat([bun, extra, profile, nested, Buffer.alloc(1024)]));
     const dir = mkdtempSync(join(tmpdir(), "snowshoe-untar-"));
     extractNpmTgz(tgz, dir);
     expect(readFileSync(join(dir, "bin", "bun"), "utf8")).toBe("ELF");
     expect(existsSync(join(dir, "README.md"))).toBe(false);
+    expect(existsSync(join(dir, "bin", "bun-profile"))).toBe(false);
+    expect(existsSync(join(dir, "lib", "bin", "bun"))).toBe(false);
+    const win = mkdtempSync(join(tmpdir(), "snowshoe-untar-exe-"));
+    extractNpmTgz(gzipSync(Buffer.concat([exe, Buffer.alloc(1024)])), win);
+    expect(readFileSync(join(win, "bin", "bun.exe"), "utf8")).toBe("MZ");
+  });
+});
+
+function jsonResponse(url: string, body: unknown) {
+  return {
+    status: 200,
+    ok: true,
+    url,
+    headers: { get: () => null },
+    json: async () => body,
+    arrayBuffer: async () => new ArrayBuffer(0),
+  };
+}
+
+function bufResponse(url: string, buf: Buffer) {
+  return {
+    status: 200,
+    ok: true,
+    url,
+    headers: { get: () => null },
+    json: async () => ({}),
+    arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+  };
+}
+
+function redirectResponse(url: string, location: string) {
+  return {
+    status: 302,
+    ok: false,
+    url,
+    headers: {
+      get: (name: string) => (name.toLowerCase() === "location" ? location : null),
+    },
+    json: async () => ({}),
+    arrayBuffer: async () => new ArrayBuffer(0),
+  };
+}
+
+describe("Node fetch never authenticates; mirror tarball origin", () => {
+  test("ovenTarballUrl keeps same-origin dist and rewrites a foreign tarball", () => {
+    const id = "bun-linux-x64";
+    const version = "1.4.2";
+    const registry = "https://mirror.example/npm";
+    const same = "https://mirror.example/npm/@oven/bun-linux-x64/-/bun-linux-x64-1.4.2.tgz";
+    expect(ovenTarballUrl(registry, id, version, same)).toBe(same);
+    expect(
+      ovenTarballUrl(
+        registry,
+        id,
+        version,
+        "https://registry.npmjs.org/@oven/bun-linux-x64/-/bun-linux-x64-1.4.2.tgz",
+      ),
+    ).toBe("https://mirror.example/npm/@oven/bun-linux-x64/-/bun-linux-x64-1.4.2.tgz");
+  });
+
+  test("no Authorization header is ever sent (redirects, tarball, env tokens)", async () => {
+    const buf = Buffer.from("oven-tarball");
+    const integrity = `sha512-${createHash("sha512").update(buf).digest("base64")}`;
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const fetchImpl = async (url: string | URL, init?: RequestInit) => {
+      const href = String(url);
+      calls.push({ url: href, init });
+      if (href === "https://mirror.example/@oven/bun-linux-x64/1.4.2") {
+        return redirectResponse(href, "https://cdn.example/meta.json");
+      }
+      if (href === "https://cdn.example/meta.json") {
+        return jsonResponse(href, {
+          dist: {
+            tarball: "https://registry.npmjs.org/@oven/bun-linux-x64/-/bun-linux-x64-1.4.2.tgz",
+            integrity,
+          },
+        });
+      }
+      if (href === "https://mirror.example/@oven/bun-linux-x64/-/bun-linux-x64-1.4.2.tgz") {
+        return bufResponse(href, buf);
+      }
+      throw new Error(`unexpected fetch ${href}`);
+    };
+    const fetched = await fetchOvenBunTarball({
+      env: {
+        npm_config_registry: "https://mirror.example",
+        NPM_TOKEN: "secret-npm-token",
+        NODE_AUTH_TOKEN: "secret-node-token",
+      },
+      platform: "linux",
+      arch: "x64",
+      libc: "glibc",
+      avx2: true,
+      skipFiles: true,
+      fetch: fetchImpl as typeof fetch,
+      timeoutMs: 5000,
+    });
+    expect(fetched.buf.equals(buf)).toBe(true);
+    expect(calls.map((c) => c.url)).toEqual([
+      "https://mirror.example/@oven/bun-linux-x64/1.4.2",
+      "https://cdn.example/meta.json",
+      "https://mirror.example/@oven/bun-linux-x64/-/bun-linux-x64-1.4.2.tgz",
+    ]);
+    expect(calls.some((c) => c.url.includes("registry.npmjs.org"))).toBe(false);
+    for (const call of calls) {
+      expect(call.init?.headers).toBeUndefined();
+    }
+  });
+
+  test("integrity failure is not wrapped as could not reach", async () => {
+    const buf = Buffer.from("tampered");
+    const fetchImpl = async (url: string | URL, init?: RequestInit) => {
+      expect(init?.headers).toBeUndefined();
+      const href = String(url);
+      if (href.includes("/-/") || href.endsWith(".tgz")) {
+        return bufResponse(href, buf);
+      }
+      return jsonResponse(href, {
+        dist: {
+          tarball: "https://registry.npmjs.org/@oven/bun-linux-x64/-/bun-linux-x64-1.4.2.tgz",
+          integrity:
+            "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+        },
+      });
+    };
+    let err: unknown;
+    try {
+      await fetchOvenBunTarball({
+        env: { npm_config_registry: "https://mirror.example" },
+        platform: "linux",
+        arch: "x64",
+        libc: "glibc",
+        avx2: true,
+        skipFiles: true,
+        fetch: fetchImpl as typeof fetch,
+        timeoutMs: 5000,
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(Error);
+    const message = err instanceof Error ? err.message : String(err);
+    expect(message).toMatch(/integrity/);
+    expect(message).not.toMatch(/could not reach/);
+  });
+});
+
+describe("npm pack isolation", () => {
+  test("runs npm from a mkdtemp cwd with fetch-retries=0 and a one-line failure", async () => {
+    const buf = Buffer.from("packed-bytes");
+    const integrity = `sha512-${createHash("sha512").update(buf).digest("base64")}`;
+    const dest = mkdtempSync(join(tmpdir(), "snowshoe-packdest-"));
+    writeFileSync(join(dest, "bun-linux-x64-1.4.2.tgz"), buf);
+    const calls: { args: string[]; cwd?: string }[] = [];
+    const userCwd = process.cwd();
+    const result = await packOvenBunWithNpm({
+      platform: "linux",
+      arch: "x64",
+      libc: "glibc",
+      dest,
+      timeoutMs: 8000,
+      runNpm: (args: string[], opts: { cwd?: string }) => {
+        calls.push({ args, cwd: opts.cwd });
+        if (args[0] === "view") {
+          return { status: 0, stdout: JSON.stringify(integrity), stderr: "" };
+        }
+        return { status: 0, stdout: "[]", stderr: "" };
+      },
+    });
+    expect(result.buf.equals(buf)).toBe(true);
+    expect(calls).toHaveLength(2);
+    for (const call of calls) {
+      expect(call.cwd).toBeDefined();
+      expect(call.cwd).not.toBe(userCwd);
+      expect(call.args).toContain("--fetch-retries=0");
+      expect(call.args.some((a) => a.startsWith("--fetch-timeout="))).toBe(true);
+    }
+    let failed: unknown;
+    try {
+      await packOvenBunWithNpm({
+        platform: "linux",
+        arch: "x64",
+        libc: "glibc",
+        timeoutMs: 2000,
+        runNpm: () => ({
+          status: 1,
+          stdout: "",
+          stderr:
+            "npm ERR! code ECONNREFUSED\nnpm ERR! network request to http://127.0.0.1:1 failed",
+        }),
+      });
+    } catch (e) {
+      failed = e;
+    }
+    const message = failed instanceof Error ? failed.message : String(failed);
+    expect(message).toMatch(/^npm view .+ failed$/);
+    expect(message).not.toMatch(/\n/);
+    expect(message.toLowerCase()).not.toContain("npm err");
+  });
+
+  test("sweepNpmPackTemps removes dead-pid pack dirs", () => {
+    const base = mkdtempSync(join(tmpdir(), "snowshoe-packsweep-"));
+    const dead = join(base, "snowshoe-npm-pack-999999999-abcd");
+    const live = join(base, `snowshoe-npm-pack-${process.pid}-ef00`);
+    mkdirSync(dead);
+    mkdirSync(live);
+    const removed = sweepNpmPackTemps(base);
+    expect(removed).toContain(dead);
+    expect(existsSync(dead)).toBe(false);
+    expect(existsSync(live)).toBe(true);
+    rmSync(base, { recursive: true, force: true });
+  });
+
+  test("acquireLock exposes owner.json as soon as the lock exists", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "snowshoe-lockowner-"));
+    const lock = join(dir, "lock");
+    await acquireLock(lock, { timeoutMs: 1000, pid: process.pid, host: hostname() });
+    expect(readLockOwner(lock)?.pid).toBe(process.pid);
+    releaseLock(lock);
   });
 });
 

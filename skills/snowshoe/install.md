@@ -14,7 +14,7 @@ The **canonical PATH binary** is `snowshoe`. Skills and agents should invoke
 
 `npm install -g` works without a prior Bun install: the first install or run downloads a matching Bun binary once (~40 MB compressed / ~80 MB unpacked on linux x64). Bun on PATH is still used when present, and is recommended if you already use it. Linux and macOS are supported; Windows is best-effort. Prefer an unprivileged npm prefix (`sudo npm i -g` leaves a root-owned install that a later non-root `snowshoe` cannot update).
 
-The download uses your npm registry (`npm_config_registry`, user/project/global `.npmrc`, and `@oven:registry`) and sends `_authToken` as a Bearer header. Node's fetch does not honor `HTTP(S)_PROXY`; when a proxy applies (and the host is not in `NO_PROXY`), the launcher runs isolated `npm pack @oven/bun-<platform>@…` instead — npm must be on PATH for that path — and still checks the tarball integrity.
+The download uses your npm registry (`npm_config_registry`, `npm_config_userconfig`, user/project/global `.npmrc`, and `@oven:registry`). `@oven/bun-*` is public: Node fetch never sends Authorization (including on redirects). A custom registry's tarball is fetched from that registry, then integrity-checked. For an authenticated private mirror, put bun on PATH or set `HTTP(S)_PROXY` so the launcher uses isolated `npm pack` (npm applies your auth; npm must be on PATH; no retries, short fetch timeout). Node's fetch does not honor `HTTP(S)_PROXY`.
 
 ## From the registry (preferred)
 
