@@ -13,8 +13,7 @@
     "codebase-map",
     "code-map",
     "bun",
-    "snowshoe",
-    "snoe"
+    "snowshoe"
   ],
   "type": "module",
   "bin": {

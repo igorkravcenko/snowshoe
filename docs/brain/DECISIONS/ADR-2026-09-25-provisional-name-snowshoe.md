@@ -50,13 +50,9 @@ Bare npm name `snowshoe` is taken by an unrelated SnowShoe Stamp API client
 **`@igorkravcenko/snowshoe`**. PATH / install binary remains **`snowshoe`**.
 Do not document bare `npx snowshoe` or `npm i -g snowshoe` for this project.
 
-## Amendment 2026-10-08: npm alias package `snoe`
+## Amendment 2026-10-08: npm alias package `snoe` (retired 2026-10-10)
 
-Ship a **thin** package in `packages/snoe` that depends on `@igorkravcenko/snowshoe` at the same version and exposes **only** the `snoe` bin (re-exports the scoped CLI). It does **not** duplicate map/UI/skill code.
-
-**npm package name:** `@igorkravcenko/snoe` (scoped). Bare unscoped `snoe` was rejected by the registry as too similar to existing names (`snyk`, `sane`, `sade`, …) — do not retry unscoped `snoe`. PATH binary remains **`snoe`**.
-
-Primary (and only documented) install is `bun add -g @igorkravcenko/snowshoe` / `npm i -g @igorkravcenko/snowshoe`. The thin `@igorkravcenko/snoe` package may exist on the registry, but README and skills do **not** advertise it or the `snoe` PATH name — skills/agents call **`snowshoe`**. Do not publish bare `snowshoe`.
+Tried a thin npm alias for short install. Bare unscoped `snoe` was rejected by the registry as too similar to existing names (`snyk`, `sane`, `sade`, …). A scoped `@igorkravcenko/snoe` / `packages/snoe` wrapper was not worth a second package. **Dropped** — do not ship or republish `@igorkravcenko/snoe`. PATH `bin` on `@igorkravcenko/snowshoe` may still expose short **`snoe`**; install docs and skills call **`snowshoe`** only. Do not publish bare `snowshoe`.
 
 ## Amendment 2026-10-04: subtitle
 
