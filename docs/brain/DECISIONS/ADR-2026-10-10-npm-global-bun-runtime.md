@@ -38,12 +38,12 @@ When PATH bun is missing, **do not** `npm install bun` in the Snowshoe package d
 
 Instead:
 
-1. Take an **atomic mkdir lock** at `<packageRoot>/.runtime/lock` (stale after 180s, longer than the 120s fetch bound so a live download is not stolen). Waiters block for `max(fetch timeout, stale + 5s)` and reuse `.runtime/current` when it appears.
-2. Download **only** the matching `@oven/bun-<platform>@1.4.2` tarball from `npm_config_registry` (default `https://registry.npmjs.org`), verify `dist.integrity` (sha512), extract into a temp dir, **rename atomically** onto `.runtime/current`.
-3. Bound the whole fetch at **120s**. On timeout or failure, print a **short** reason (no npm stack) and the missing-Bun message; `snowshoe` exits 1.
+1. Take an **atomic mkdir lock** at `<packageRoot>/.runtime/lock` with `owner.json` (`pid` + `host`). A dead PID on this host is stale immediately; waiters print `waiting for another snowshoe to finish downloading Bun…` and reuse `.runtime/current`. mtime (180s) is only a fallback for another host. Ctrl-C / SIGTERM / SIGHUP are hooked **before** `ensureBun` and also inside it: release the lock, delete the in-flight tmp dir, exit `128+n`. Orphan `tmp-<pid>-*` dirs whose PID is dead are swept at install start.
+2. Download **only** the matching `@oven/bun-<platform>@1.4.2` tarball. Registry comes from env `npm_config_registry`, then `@oven:registry` / `registry` in global → user → project `.npmrc` (default `https://registry.npmjs.org`). `_authToken` is sent as a Bearer header. Verify `dist.integrity` (sha512). Extract **only** `package/bin/bun*`, **rename atomically** onto `.runtime/current`.
+3. Bound the whole fetch (headers **and** body: `json()` / `arrayBuffer()`) at **120s** with one AbortController. On timeout or failure, print a **short** actual cause (undici connect-timeout is not labeled as a 120s bound). Tarball URLs must be **https** unless the configured registry is `http:`; **https→http redirects are refused**.
 4. Pin matches app CI `bun-version`. Bump `BUN_FETCH_VERSION` in `bin/resolve-bun.js` when CI’s Bun pin moves.
-5. libc: glibc vs musl on Linux (`process.report` / `/etc/alpine-release`). No `*-baseline` aliases. Android uses `bun-linux-*-android`.
-6. Uses Node `fetch`, not the npm CLI (so “npm not on PATH” is not required for the download). Does **not** run oven-sh `bun` `install.js` (that script’s hardcoded registry fallback would bypass mirrors).
+5. libc: glibc vs musl on Linux (`process.report` / `/etc/alpine-release`). x64 without AVX2 (`/proc/cpuinfo`, macOS `sysctl`) uses oven-sh `*-baseline` ids. Android uses `bun-linux-*-android`.
+6. Default transport is Node `fetch` (npm not required). **HTTP(S)_PROXY / npmrc `proxy` / `https-proxy`**: Node fetch does not honor proxies; when a proxy applies and the registry host is not in `NO_PROXY`, fall back to isolated `npm pack @oven/<id>@<version>` (npm must be on PATH; still checks `dist.integrity`). Does **not** run oven-sh `bun` `install.js`.
 
 `postinstall` (`node ./bin/ensure-bun.js`) warms `.runtime/` on npm installs when PATH bun is missing. **`bun add -g`** blocks this package’s postinstall (untrusted lifecycle) and uses PATH bun. **`bun install` in a clone** no-ops when `npm_config_user_agent` contains `bun/`. `--ignore-scripts` delays the fetch until first `snowshoe`; the lock covers concurrent first runs.
 
@@ -79,7 +79,7 @@ Empty `@igorkravcenko/` after `npm uninstall -g` is npm’s scoped-package behav
 ## Consequences
 
 - CURRENT: Node 18+ required; `npm i -g` works without a prior Bun (one-time matching platform download into `.runtime/`); `bun add -g` uses PATH bun and does not download a second runtime; `--version` / `version` print `package.json` version.
-- README / `skills/snowshoe/install.md` / first-run stderr: Node 18+; npm works without Bun (one-time download, ~40 MB compressed / ~80 MB unpacked on linux x64); bun recommended if already in use; Linux/macOS, Windows best-effort; avoid sudo global if the user will run as non-root.
+- README / `skills/snowshoe/install.md` / first-run stderr: Node 18+; npm works without Bun (one-time download, ~40 MB compressed / ~80 MB unpacked on linux x64); bun recommended if already in use; Linux/macOS, Windows best-effort; avoid sudo global if the user will run as non-root; custom registry / `.npmrc` / `_authToken` honored; HTTP(S)_PROXY uses isolated `npm pack`.
 - Do not publish from this change. Do not add learning, hooks, or a Node port.
 
 ## Evidence
