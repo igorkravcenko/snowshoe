@@ -24,8 +24,6 @@ Use Bun 1.1+. npm may work, but it is untested. The PATH binary is **`snowshoe`*
 
 **From the registry** (preferred):
 
-Temporarily unavailable.
-
 ```bash
 bun add -g @igorkravcenko/snowshoe
 # or: npm install -g @igorkravcenko/snowshoe

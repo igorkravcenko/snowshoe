@@ -15,8 +15,8 @@ Do **not** file a public GitHub issue for a security vulnerability.
 ## Supported versions
 
 Security fixes land on **`main`** and the **latest npm** release of
-`@igorkravcenko/snowshoe` (lockstep `@igorkravcenko/snoe`). Older npm versions
-are not a supported train — upgrade.
+`@igorkravcenko/snowshoe`. Older npm versions are not a supported train —
+upgrade.
 
 ## In scope
 
