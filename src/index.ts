@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { runCommand } from "citty";
 import { main } from "./cli.ts";
-import { handleHelpArgs, wantsHelp } from "./cli-help.ts";
+import { handleHelpArgs, handleVersionArgs, wantsHelp, wantsVersion } from "./cli-help.ts";
 import { CliError, EXIT_INTERNAL, EXIT_USAGE } from "./errors.ts";
 import { printJson } from "./json.ts";
 
@@ -10,6 +10,9 @@ async function mainAsync(): Promise<number> {
   try {
     if (wantsHelp(rawArgs)) {
       return await handleHelpArgs(main, rawArgs);
+    }
+    if (wantsVersion(rawArgs)) {
+      return handleVersionArgs();
     }
     const { result } = await runCommand(main, { rawArgs });
     if (typeof result === "number") return result;

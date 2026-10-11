@@ -15,7 +15,11 @@ Apache-2.0. Not a team wiki. Not an agent control panel.
 
 ## Install
 
-Use Bun 1.1+. Also, you'll need any agent harness, that can be run in a CLI. The PATH binary is **`snowshoe`**.  
+The PATH binary is **`snowshoe`**. **Node.js 18+** is required (including after `bun add -g`). You'll also need an agent harness that can run in a CLI.
+
+`npm install -g` works without a prior Bun install: the first install or run downloads a matching Bun binary once (~40 MB compressed / ~80 MB unpacked on linux x64). Bun on PATH is still used when present, and is recommended if you already use it. Linux and macOS are supported; Windows is best-effort. Prefer an unprivileged npm prefix (`sudo npm i -g` leaves a root-owned install that a later non-root `snowshoe` cannot update).
+
+The download uses your npm registry (`npm_config_registry`, `npm_config_userconfig`, user/project/global `.npmrc`, and `@oven:registry`). `@oven/bun-*` is public: Node fetch never sends Authorization (including on redirects). A custom registry's tarball is fetched from that registry, then integrity-checked. For an authenticated private mirror, put bun on PATH or set `HTTP(S)_PROXY` so the launcher uses isolated `npm pack` (npm applies your auth; npm must be on PATH; no retries, short fetch timeout). Node's fetch does not honor `HTTP(S)_PROXY`.
 
 > [!IMPORTANT]
 > This project is `@igorkravcenko/snowshoe` on npm. Bare `snowshoe` without the scope is an unrelated package.
@@ -25,6 +29,8 @@ Use Bun 1.1+. Also, you'll need any agent harness, that can be run in a CLI. The
 **From the registry** (preferred):
 
 ```bash
+npm install -g @igorkravcenko/snowshoe
+# or, if you already use Bun:
 bun add -g @igorkravcenko/snowshoe
 command -v snowshoe
 ```
