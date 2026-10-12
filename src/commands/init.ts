@@ -8,9 +8,9 @@ import { gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
 import { EPOCHS_DIR, findRepoRoot, ledgerPath, MAP_NODES_DIR, snowshoeDir } from "../paths.ts";
 
-const GITIGNORE_COMMENT = "# Snowshoe personal ledger (local; do not commit)";
-/** Both: bare matches a symlink/file; trailing slash matches a directory. */
-const GITIGNORE_PATTERNS = [".snowshoe", ".snowshoe/"] as const;
+const GITIGNORE_COMMENT = "# Snowshoe personal ledger at repo root (local; do not commit)";
+/** Root-anchored: `/.snowshoe` matches a root symlink/file; `/.snowshoe/` a root dir. */
+const GITIGNORE_PATTERNS = ["/.snowshoe", "/.snowshoe/"] as const;
 
 const GITIGNORE_BLOCK = `${GITIGNORE_COMMENT}
 ${GITIGNORE_PATTERNS.join("\n")}
@@ -31,7 +31,6 @@ export function ensureGitignore(repoRoot: string): boolean {
   const missing = GITIGNORE_PATTERNS.filter((p) => !hasGitignoreLine(current, p));
   if (missing.length === 0) return false;
   const sep = current.length === 0 ? "" : current.endsWith("\n") ? "\n" : "\n\n";
-  // Full commented block when neither pattern exists; otherwise append only missing lines.
   const addition =
     missing.length === GITIGNORE_PATTERNS.length ? GITIGNORE_BLOCK : `${missing.join("\n")}\n`;
   appendFileSync(gi, `${sep}${addition}`);
