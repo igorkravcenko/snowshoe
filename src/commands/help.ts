@@ -10,6 +10,7 @@ export const AGENT_HELP = {
     "Pass --json and parse stdout.",
     "Do not write .snowshoe/ yourself.",
     "Entry for drain is work next.",
+    "Global --cwd <dir> is git -C (findRepoRoot start). Not --repo. Missing or non-directory is a usage error.",
     "If this repo has no snowshoe skill yet: snowshoe skill install --json --skills-path <harness-skills-dir> (e.g. .cursor/skills). Not part of init.",
   ],
   mark: "map mark|unmark or map detail mark|cancel only if this turn the human asked (named slug / this node / cancel that mark). Work kinds: detail (grow and/or rewrite), expand (grow), enrich (fields/body), fix (repair). Do not crawl unmarked nodes.",

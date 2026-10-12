@@ -1,0 +1,149 @@
+---
+name: snowshoe-scratch
+description: >-
+  Study a path that is not this repo's Snowshoe map. Keeps an ephemeral outline
+  at ~/.snowshoe/learn/<sha256(utf8(realpath))> (not the git ledger). Optional
+  read-only map status --cwd of a main checkout. Requires snowshoe on PATH for
+  atlas queries only. Do not drain, init, or write ledger.sqlite.
+---
+
+# Snowshoe-scratch
+
+Satellite of the product skill. **Not** the git-map wedge. Product drain/learn
+stays `skills/snowshoe/`. Do not add this as a third gate there.
+
+Assume **`snowshoe` is on PATH** when you query a map. Always pass `--json`.
+Global **`--cwd <dir>`** is git `-C` (discovery start). Not `--repo`.
+
+On an offered main-map root, the atlas **allowlist** is only:
+
+- `snowshoe map status --json --cwd <main> …`
+- optional `snowshoe help --json` (command index; `--cwd` not required)
+
+Do **not** run any other `snowshoe` command against that root. Do **not** write
+`ledger.sqlite`. Viewport files on disk win over map prose.
+
+Until install ships, using this skill **outside the Snowshoe clone** means
+copying `skills/snowshoe-scratch/` into the harness skills dir (not
+`snowshoe skill install`).
+
+## Hash recipe (reconstruct the dir from a path)
+
+Another chat must be able to open the same directory from the same target.
+
+1. `target` = the explicit path they named, else cwd.
+2. `realpath` = canonical absolute path (`realpath` / `os.path.realpath` /
+   `fs.realpathSync`). Follows symlinks.
+3. If `realpath` is not exactly `/`, strip **one** trailing `/` (keep `/` for
+   root). Do not strip any other characters.
+4. `id` = SHA-256 of the **UTF-8 bytes** of that string, lowercase hex
+   (64 characters).
+5. Directory: `$HOME/.snowshoe/learn/<id>/`.
+
+```bash
+python3 -c 'import hashlib, os, sys
+p = os.path.realpath(sys.argv[1])
+p = "/" if p == "/" else p.rstrip("/")
+print(hashlib.sha256(p.encode("utf-8")).hexdigest())' "$TARGET"
+```
+
+`$HOME/.snowshoe/learn/<id>/` is personal/local. It is not `.snowshoe/` in the
+target and not the ledger.
+
+## origin.md
+
+On bootstrap, write `origin.md` in the hashed dir:
+
+```markdown
+# origin
+
+- realpath: `/abs/path/to/target`
+- id: `<64 hex>`
+- mainRoot: `/abs/path/to/main/checkout`
+```
+
+`realpath` and `id` are required. Omit the `mainRoot` line until a read-only
+map was **offered and accepted**.
+
+## Layout
+
+| File | Role |
+|---|---|
+| `origin.md` | realpath, id, optional mainRoot |
+| `CURRENT.md` | Shallow outline tree of the target (ephemeral) |
+| `STATE.md` | Now / voice / journal |
+| `PLAN.md` | Plan; read on phase shifts |
+| `discrepancies.md` | Standing “should change” / bugs (not STATE) |
+
+No ledger. No `mines.md` requirement. Scratch `STATE.md` is a journal, not
+product-learn retention cards or check-ins.
+
+## Loop
+
+1. Resolve `target` → `realpath` → `id` → `$HOME/.snowshoe/learn/<id>/`.
+2. **If the hashed dir is missing, or it exists but `CURRENT.md` is missing
+   (partial bootstrap):** briefly propose creating the scaffold (and offer to
+   write it if they agree). On OK: create the five files; write a **shallow**
+   markdown tree (about two listing levels, notable files only — not a full
+   dump) into `CURRENT.md` **and** into the chat. Do **not** block a one-shot
+   question on scaffold. Do not resume a partial dir.
+3. **If the hashed dir exists and `CURRENT.md` is present:** read `CURRENT.md`,
+   then `STATE.md`. Voice after compaction: tutor prose in full sentences (not
+   a status telegram). Match `STATE.md` → Now → `voice` when present; persist
+   journal lines to `STATE.md` immediately so compaction cannot wipe them.
+   Local STATE may use any language the human prefers; this skill stays
+   English. Do not import product `learn.md` retention cards / check-ins.
+4. Stay on the atlas allowlist above. Do not write `ledger.sqlite`. Scratch is
+   not the git-map wedge.
+5. Drain-shaped prompt on the mapped checkout (drain / `work next` / catch up
+   the queue): one line pointing at product skill `skills/snowshoe/`
+   (`drain.md`). Stay on scratch for this path; do not hard-block, and do not
+   run drain commands from this skill.
+
+## Optional read-only atlas
+
+`GIT_C` = `$TARGET` if it is a directory, else the `dirname` of its realpath
+(file-shaped TARGET still offers the atlas for its containing checkout).
+
+```bash
+git -C "$GIT_C" rev-parse --path-format=absolute --git-common-dir
+```
+
+If `--path-format=absolute` is unavailable, `realpath` the printed common-dir
+relative to `$GIT_C` so a relative `.git` does not bind the agent cwd’s ledger.
+
+Resolve that to the **main checkout** (parent of the `.git` directory when the
+common dir ends in `.git`). If `<main>/.snowshoe/ledger.sqlite` exists, **ask
+once** whether to use it as a read-only atlas. On yes: set `mainRoot` in
+`origin.md`. If they decline, continue with viewport files only.
+
+### Slug from a filesystem path
+
+Do **not** dump `--all-fields` from `root`. Map TARGET (or the file under study)
+to `--slug`:
+
+1. `TOPLEVEL` = `git -C "$GIT_C" rev-parse --show-toplevel`. `rel` = path of
+   TARGET relative to that checkout toplevel (posix, no leading `./`) — not
+   relative to `<main>` on disk. Still query `--cwd <main>` (ledger lives there).
+2. If TARGET is a directory and `rel` is empty or `.` (this checkout’s root):
+   skip slug lookup. Do not pick a nested file as focus. If they already opted
+   in, you may query `--slug root` (default fields / neighborhood only). Do not
+   `--all-fields` from `root`.
+3. Otherwise: `snowshoe map status --json --cwd <main> --fields slug,anchors`
+   (tree, not `--all-fields`; `anchors[].path` is repo-relative).
+4. Match a node whose `anchors[].path` equals `rel`, or (directory TARGET)
+   whose anchor path is under `rel/`. Prefer the most specific match.
+5. If none match: **skip the atlas for that file**; keep the viewport.
+
+Then query only (allowlist):
+
+```bash
+snowshoe map status --json --cwd <main> --neighborhood --slug <focus>
+snowshoe map status --json --cwd <main> --fields title,type,leaf,children,refs,bodyOverview --slug <focus>
+```
+
+Neighborhood / `bodyOverview` for the files under study — not full
+`--all-fields` from `root`. Prefer the files you listed/read over map prose
+when they disagree; say so.
+
+Optional: `snowshoe help --json` (no `--cwd`).

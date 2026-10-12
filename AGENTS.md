@@ -30,6 +30,7 @@ Entrypoint for agents working in this repo.
 | `grill-me` | User says "grill me" / wants to be interviewed |
 | `grill-canon` | Audit CURRENT/ADRs for staleness or contradiction |
 | `snowshoe` | Product skill at `skills/snowshoe/` (Cursor: `.cursor/skills/snowshoe` symlink). Gate: PATH `snowshoe` (`install.md` only if missing), then `drain.md` (`work next`) or `learn.md`. Working repo without skill files: `snowshoe skill install --json --skills-path <harness-skills-dir>` |
+| `snowshoe-scratch` | Satellite skill at `skills/snowshoe-scratch/` (Cursor: `.cursor/skills/snowshoe-scratch` symlink). Path without the map: `~/.snowshoe/learn/<sha256(utf8(realpath))>`; optional atlas is `map status --json --cwd` only (optional `help --json`). Do not drain, init, or write the ledger. Copy the folder into a harness skills dir (not `skill install`). |
 | `.github/agents/auditor.agent.md` | Read-only consistency audit (CoS before merge) |
 
 Maintainer-only overlay lives in the sibling private repo `snowshoe-maintainers`. Link with `./scripts/link-private-overlay.sh` (or set `SNOWSHOE_MAINTAINERS`):
