@@ -13,7 +13,12 @@
     "codebase-map",
     "code-map",
     "bun",
-    "snowshoe"
+    "snowshoe",
+    "agent-skills",
+    "claude-skills",
+    "cursor-skills",
+    "codex-skills",
+    "skill-md"
   ],
   "type": "module",
   "bin": {

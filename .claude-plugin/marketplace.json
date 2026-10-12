@@ -1,0 +1,22 @@
+{
+  "name": "snowshoe",
+  "owner": { "name": "Igor Kravchenko", "email": "igorkravcenko.dev@gmail.com" },
+  "metadata": {
+    "description": "Snowshoe agent skill: a personal comprehension map of your repository.",
+    "version": "0.0.5"
+  },
+  "plugins": [
+    {
+      "name": "snowshoe",
+      "source": "./",
+      "description": "Personal comprehension map of a git repository: shows where your understanding went stale after a pull. Requires the snowshoe CLI.",
+      "version": "0.0.5",
+      "author": { "name": "Igor Kravchenko", "email": "igorkravcenko.dev@gmail.com" },
+      "homepage": "https://github.com/igorkravcenko/snowshoe",
+      "license": "Apache-2.0",
+      "category": "productivity",
+      "skills": ["./skills/snowshoe"],
+      "strict": false
+    }
+  ]
+}

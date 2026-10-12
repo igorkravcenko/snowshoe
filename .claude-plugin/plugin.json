@@ -1,0 +1,14 @@
+{
+  "name": "snowshoe",
+  "version": "0.0.5",
+  "description": "Personal comprehension map of a git repository: shows where your understanding went stale after a pull and lets an agent help you catch up. Requires the snowshoe CLI: bun add -g @igorkravcenko/snowshoe (or npm install -g @igorkravcenko/snowshoe).",
+  "author": {
+    "name": "Igor Kravchenko",
+    "email": "igorkravcenko.dev@gmail.com"
+  },
+  "homepage": "https://github.com/igorkravcenko/snowshoe",
+  "repository": "https://github.com/igorkravcenko/snowshoe",
+  "license": "Apache-2.0",
+  "keywords": ["agent-skills", "claude-skills", "git", "comprehension-map"],
+  "skills": ["./skills/snowshoe"]
+}
