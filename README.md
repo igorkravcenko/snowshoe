@@ -13,6 +13,9 @@ Apache-2.0. Not a team wiki. Not an agent control panel.
 
 ![ui_screenshot](docs/assets/map-after-pull.png)
 
+> **Why not just ask my agent what changed?**  
+> It doesn't know what you already understand, and it forgets when the chat ends. Snowshoe keeps that on disk, so each catch-up starts from where you left off.
+
 ## Install
 
 You can either just place the [skill directory](https://github.com/igorkravcenko/snowshoe/tree/main/skills/snowshoe) into your harness and trigger it from the repo of interest, or do the steps below.
