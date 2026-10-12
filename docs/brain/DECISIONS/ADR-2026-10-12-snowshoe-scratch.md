@@ -37,13 +37,14 @@ ledger vs file viewport.
    `id = sha256(utf8(realpath(target)))` (no trailing slash except `/`).
    Sidecar `origin.md`: realpath, id, optional `mainRoot` if a map was offered.
 4. Layout (subset of learn.md local state, no ledger): `origin.md`, `CURRENT.md`
-   (ephemeral shallow outline tree), `STATE.md` (Now / voice / journal),
-   `PLAN.md`, `discrepancies.md`. Create on agreed bootstrap. Resume only if the
-   hashed dir exists **and** `CURRENT.md` is present; a hashed dir without
-   `CURRENT.md` (partial bootstrap) is bootstrap, not resume. Hash recipe lives
-   in the skill so another chat can reconstruct the dir from a path. Scratch
-   `STATE.md` journal voice is inlined in the skill (tutor prose after
-   compaction); do not import product learn.md retention cards / check-ins.
+   (ephemeral mental map of the target — amendment below), `STATE.md` (Now /
+   voice / journal), `PLAN.md`, `discrepancies.md`. Create on agreed bootstrap.
+   Resume only if the hashed dir exists **and** `CURRENT.md` is present; a
+   hashed dir without `CURRENT.md` (partial bootstrap) is bootstrap, not resume.
+   Hash recipe lives in the skill so another chat can reconstruct the dir from
+   a path. Scratch `STATE.md` journal voice is inlined in the skill (tutor
+   prose after compaction); do not import product learn.md retention cards /
+   check-ins.
 5. Opt-in read-only atlas: `git -C` the target if it is a directory, else
    `dirname` of its realpath (file-shaped TARGET still offers the atlas).
    `git rev-parse --path-format=absolute --git-common-dir` (or `realpath` the
@@ -84,11 +85,26 @@ ledger vs file viewport.
 - Overlay write-back into the main ledger — rejected (out of scope).
 - `~/.snowshoe` index beyond `origin.md` — rejected (out of scope).
 
+## Amendment 2026-10-12: Scratch CURRENT.md is a mental map
+
+`CURRENT.md` in the hashed dir is the same job as the product map tree: a
+personal **mental model of the target** (file or directory). It is not `ls`,
+not a heading table of contents, and not coded labels that require jumping
+into the file (`Options A–F`). Node titles must be **readable without jumping**.
+Shallow (about two listing levels; group rather than dump). Posture is
+`skills/snowshoe/drain.md` (“the map is a mental model, not 1:1 with code”;
+avoid telegram bodies). Markdown-only; no ledger, slugs, or quiz.
+
+The earlier phrase “ephemeral shallow outline tree” was too easy to read as a
+file listing or a copied TOC. The skill section `CURRENT.md (mental map)` is
+the contract.
+
 ## Consequences
 
 - CURRENT: satellite `snowshoe-scratch` is not the wedge; home learn dir +
-  optional atlas allowlist (`map status --json --cwd` only; optional
-  `help --json`); global `--cwd` is git `-C`.
+  `CURRENT.md` as a mental map of the target (concepts, not ls/TOC; titles
+  readable without jumping); optional atlas allowlist (`map status --json --cwd`
+  only; optional `help --json`); global `--cwd` is git `-C`.
 - Plugin manifests, `skill.ts` packaged files, and npm `files` stay
   `skills/snowshoe` only. Tests that lock that exclusivity stay as they are.
 - No learning/quiz/verify product. Scratch `STATE.md` is a journal, not a quiz.

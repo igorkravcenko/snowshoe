@@ -1,8 +1,8 @@
 ---
 name: snowshoe-scratch
 description: >-
-  Study a path that is not this repo's Snowshoe map. Keeps an ephemeral outline
-  at ~/.snowshoe/learn/<sha256(utf8(realpath))> (not the git ledger). Optional
+  Study a path that is not this repo's Snowshoe map. Keeps an ephemeral mental
+  map at ~/.snowshoe/learn/<sha256(utf8(realpath))> (not the git ledger). Optional
   read-only map status --cwd of a main checkout. Requires snowshoe on PATH for
   atlas queries only. Do not drain, init, or write ledger.sqlite.
 ---
@@ -70,7 +70,7 @@ map was **offered and accepted**.
 | File | Role |
 |---|---|
 | `origin.md` | realpath, id, optional mainRoot |
-| `CURRENT.md` | Shallow outline tree of the target (ephemeral) |
+| `CURRENT.md` | Ephemeral mental map of the target (concepts, not files/TOC) |
 | `STATE.md` | Now / voice / journal |
 | `PLAN.md` | Plan; read on phase shifts |
 | `discrepancies.md` | Standing “should change” / bugs (not STATE) |
@@ -83,10 +83,10 @@ product-learn retention cards or check-ins.
 1. Resolve `target` → `realpath` → `id` → `$HOME/.snowshoe/learn/<id>/`.
 2. **If the hashed dir is missing, or it exists but `CURRENT.md` is missing
    (partial bootstrap):** briefly propose creating the scaffold (and offer to
-   write it if they agree). On OK: create the five files; write a **shallow**
-   markdown tree (about two listing levels, notable files only — not a full
-   dump) into `CURRENT.md` **and** into the chat. Do **not** block a one-shot
-   question on scaffold. Do not resume a partial dir.
+   write it if they agree). On OK: create the five files; write a **mental map**
+   of the target (section below) into `CURRENT.md` **and** into the chat (same
+   text). Do **not** block a one-shot question on scaffold. Do not resume a
+   partial dir.
 3. **If the hashed dir exists and `CURRENT.md` is present:** read `CURRENT.md`,
    then `STATE.md`. Voice after compaction: tutor prose in full sentences (not
    a status telegram). Match `STATE.md` → Now → `voice` when present; persist
@@ -99,6 +99,29 @@ product-learn retention cards or check-ins.
    the queue): one line pointing at product skill `skills/snowshoe/`
    (`drain.md`). Stay on scratch for this path; do not hard-block, and do not
    run drain commands from this skill.
+
+## CURRENT.md (mental map)
+
+Same job as the product map tree. `drain.md`: the map is a **mental model, not
+1:1 with code**. Scratch is markdown-only (no ledger, no slugs).
+
+- Nodes are concepts (responsibility, flow, decision, seam) — not files, not
+  the author's `##` headings.
+- Shallow: about two listing levels; a handful of first-level nodes. If the
+  honest list is huge, add a grouping layer (`drain.md` expand hop).
+- **Readable without jumping.** A title is a named thing or a claim in words.
+  A person scanning `CURRENT.md` must understand each node without opening the
+  target. Coded labels (`A–F`, `P1`, `§6`) may follow in parentheses only after
+  the words already stand alone. No telegram. Same posture as product entity
+  bodies (`drain.md` Body shape).
+- File TARGET: do not copy the table of contents. Directory TARGET: do not
+  `ls`. Related files are edges, not extra chapters.
+- Design-record scaffolding (tests, acceptance, canon touchpoints) is one
+  grouped node, or omit until they ask to implement.
+- Titles/tree match the human's session language. This skill file stays English.
+
+Anti-patterns: filesystem dump; heading TOC; titles that only make sense after
+opening the file (`Options A–F`, `Header`, `§8–14`).
 
 ## Optional read-only atlas
 
@@ -143,7 +166,7 @@ snowshoe map status --json --cwd <main> --fields title,type,leaf,children,refs,b
 ```
 
 Neighborhood / `bodyOverview` for the files under study — not full
-`--all-fields` from `root`. Prefer the files you listed/read over map prose
-when they disagree; say so.
+`--all-fields` from `root`. Prefer viewport files you actually read over map
+prose when they disagree; say so.
 
 Optional: `snowshoe help --json` (no `--cwd`).
