@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Ledger, runWithSqliteBusyRetry } from "../db/ledger.ts";
 import { parseLocaleInput } from "../domain/locale.ts";
@@ -8,9 +8,9 @@ import { gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
 import { EPOCHS_DIR, findRepoRoot, ledgerPath, MAP_NODES_DIR, snowshoeDir } from "../paths.ts";
 
-const GITIGNORE_COMMENT = "# Snowshoe personal ledger (local; do not commit)";
-/** Both: bare matches a symlink/file; trailing slash matches a directory. */
-const GITIGNORE_PATTERNS = [".snowshoe", ".snowshoe/"] as const;
+const GITIGNORE_COMMENT = "# Snowshoe personal ledger at repo root (local; do not commit)";
+/** Root-anchored: `/.snowshoe` matches a root symlink/file; `/.snowshoe/` a root dir. */
+const GITIGNORE_PATTERNS = ["/.snowshoe", "/.snowshoe/"] as const;
 
 const GITIGNORE_BLOCK = `${GITIGNORE_COMMENT}
 ${GITIGNORE_PATTERNS.join("\n")}
@@ -21,6 +21,13 @@ function hasGitignoreLine(content: string, line: string): boolean {
   return new RegExp(`(^|\\n)${escaped}(\\n|$)`).test(content);
 }
 
+/** Unanchored `.snowshoe` matches any directory named `.snowshoe`; rewrite to `/.snowshoe`. */
+function migrateUnanchoredSnowshoeIgnore(content: string): string {
+  return content
+    .replaceAll(/(^|\n)\.snowshoe\/(?=\n|$)/g, "$1/.snowshoe/")
+    .replaceAll(/(^|\n)\.snowshoe(?=\n|$)/g, "$1/.snowshoe");
+}
+
 export function ensureGitignore(repoRoot: string): boolean {
   const gi = join(repoRoot, ".gitignore");
   if (!existsSync(gi)) {
@@ -28,13 +35,19 @@ export function ensureGitignore(repoRoot: string): boolean {
     return true;
   }
   const current = readFileSync(gi, "utf8");
-  const missing = GITIGNORE_PATTERNS.filter((p) => !hasGitignoreLine(current, p));
-  if (missing.length === 0) return false;
-  const sep = current.length === 0 ? "" : current.endsWith("\n") ? "\n" : "\n\n";
-  // Full commented block when neither pattern exists; otherwise append only missing lines.
+  const migrated = migrateUnanchoredSnowshoeIgnore(current);
+  const missing = GITIGNORE_PATTERNS.filter((p) => !hasGitignoreLine(migrated, p));
+  if (missing.length === 0) {
+    if (migrated === current) return false;
+    writeFileSync(gi, migrated, "utf8");
+    return true;
+  }
+  const sep = migrated.length === 0 ? "" : migrated.endsWith("\n") ? "\n" : "\n\n";
   const addition =
-    missing.length === GITIGNORE_PATTERNS.length ? GITIGNORE_BLOCK : `${missing.join("\n")}\n`;
-  appendFileSync(gi, `${sep}${addition}`);
+    missing.length === GITIGNORE_PATTERNS.length && migrated === current
+      ? GITIGNORE_BLOCK
+      : `${missing.join("\n")}\n`;
+  writeFileSync(gi, `${migrated}${sep}${addition}`, "utf8");
   return true;
 }
 
