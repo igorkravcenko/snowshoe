@@ -15,6 +15,8 @@ Apache-2.0. Not a team wiki. Not an agent control panel.
 
 ## Install
 
+You can either just place the [skill directory](https://github.com/igorkravcenko/snowshoe/tree/main/skills/snowshoe) into your harness and trigger it from the repo of interest, or do the steps below.
+
 Use Bun 1.1+. Also, you'll need any agent harness, that can be run in a CLI. The PATH binary is **`snowshoe`**.  
 
 > [!IMPORTANT]
