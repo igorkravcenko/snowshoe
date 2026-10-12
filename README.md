@@ -13,8 +13,11 @@ Apache-2.0. Not a team wiki. Not an agent control panel.
 
 ![ui_screenshot](docs/assets/map-after-pull.png)
 
+> **Why do I need to understand what my agent wrote?**  
+> Mostly you don't. But for the parts that really matter, code that almost does what you meant is a time bomb, and you want to find it before it goes off.  
+>
 > **Why not just ask my agent what changed?**  
-> It doesn't know what you already understand, and it forgets when the chat ends. Snowshoe keeps that on disk, so each catch-up starts from where you left off.
+> It doesn't know what you already understand, and it forgets when the chat ends. Snowshoe keeps that on disk, so each catch-up starts from where you left off.  
 
 ## Install
 
