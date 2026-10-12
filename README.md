@@ -22,6 +22,21 @@ Use Bun 1.1+. Also, you'll need any agent harness, that can be run in a CLI. The
 > [!IMPORTANT]
 > This project is `@igorkravcenko/snowshoe` on npm. Bare `snowshoe` without the scope is an unrelated package.
 
+### Quick install as an agent skill
+
+```bash
+# Any harness (Claude Code, Cursor, Codex, OpenCode, …) via skills.sh
+npx skills add igorkravcenko/snowshoe
+```
+
+```text
+# Claude Code plugin marketplace
+/plugin marketplace add igorkravcenko/snowshoe
+/plugin install snowshoe@snowshoe
+```
+
+The skill drives the `snowshoe` CLI, so you still need step 1 below.
+
 ### 1. Put `snowshoe` on PATH
 
 **From the registry** (preferred):
