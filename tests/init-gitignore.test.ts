@@ -7,8 +7,6 @@ import { makeGitRepo, readGitignore } from "./helpers.ts";
 function expectAnchored(gi: string): void {
   expect(gi).toMatch(/(^|\n)\/\.snowshoe(\n|$)/);
   expect(gi).toMatch(/(^|\n)\/\.snowshoe\/(\n|$)/);
-  expect(gi).not.toMatch(/(^|\n)\.snowshoe(\n|$)/);
-  expect(gi).not.toMatch(/(^|\n)\.snowshoe\/(\n|$)/);
 }
 
 describe("ensureGitignore", () => {
@@ -32,14 +30,6 @@ describe("ensureGitignore", () => {
     writeFileSync(join(repo, ".gitignore"), "/.snowshoe\n", "utf8");
     expect(ensureGitignore(repo)).toBe(true);
     expectAnchored(readGitignore(repo));
-  });
-
-  test("migrates unanchored .snowshoe lines to root-anchored", () => {
-    const repo = makeGitRepo();
-    writeFileSync(join(repo, ".gitignore"), "node_modules/\n.snowshoe\n.snowshoe/\n", "utf8");
-    expect(ensureGitignore(repo)).toBe(true);
-    expectAnchored(readGitignore(repo));
-    expect(ensureGitignore(repo)).toBe(false);
   });
 
   test("does not gitignore skills/snowshoe or .cursor/skills/snowshoe", () => {

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Ledger, runWithSqliteBusyRetry } from "../db/ledger.ts";
 import { parseLocaleInput } from "../domain/locale.ts";
@@ -21,13 +21,6 @@ function hasGitignoreLine(content: string, line: string): boolean {
   return new RegExp(`(^|\\n)${escaped}(\\n|$)`).test(content);
 }
 
-/** Unanchored `.snowshoe` matches any directory named `.snowshoe`; rewrite to `/.snowshoe`. */
-function migrateUnanchoredSnowshoeIgnore(content: string): string {
-  return content
-    .replaceAll(/(^|\n)\.snowshoe\/(?=\n|$)/g, "$1/.snowshoe/")
-    .replaceAll(/(^|\n)\.snowshoe(?=\n|$)/g, "$1/.snowshoe");
-}
-
 export function ensureGitignore(repoRoot: string): boolean {
   const gi = join(repoRoot, ".gitignore");
   if (!existsSync(gi)) {
@@ -35,19 +28,12 @@ export function ensureGitignore(repoRoot: string): boolean {
     return true;
   }
   const current = readFileSync(gi, "utf8");
-  const migrated = migrateUnanchoredSnowshoeIgnore(current);
-  const missing = GITIGNORE_PATTERNS.filter((p) => !hasGitignoreLine(migrated, p));
-  if (missing.length === 0) {
-    if (migrated === current) return false;
-    writeFileSync(gi, migrated, "utf8");
-    return true;
-  }
-  const sep = migrated.length === 0 ? "" : migrated.endsWith("\n") ? "\n" : "\n\n";
+  const missing = GITIGNORE_PATTERNS.filter((p) => !hasGitignoreLine(current, p));
+  if (missing.length === 0) return false;
+  const sep = current.length === 0 ? "" : current.endsWith("\n") ? "\n" : "\n\n";
   const addition =
-    missing.length === GITIGNORE_PATTERNS.length && migrated === current
-      ? GITIGNORE_BLOCK
-      : `${missing.join("\n")}\n`;
-  writeFileSync(gi, `${migrated}${sep}${addition}`, "utf8");
+    missing.length === GITIGNORE_PATTERNS.length ? GITIGNORE_BLOCK : `${missing.join("\n")}\n`;
+  appendFileSync(gi, `${sep}${addition}`);
   return true;
 }
 
