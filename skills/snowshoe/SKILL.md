@@ -2,10 +2,13 @@
 name: snowshoe
 description: >-
   Snowshoe is a personal comprehension map of a git repository that shows where your
-  understanding went stale after a pull and helps you catch up. Requires the `snowshoe` CLI
-  (npm i -g @igorkravcenko/snowshoe; runs on Bun). Use after pull or catch-up to drain
-  pending map work (init / routine refresh / advance, then complete claimed steps), or when
-  studying the map (SNOWSHOE_MODE=learn) to discuss the tree via map view / map status.
+  understanding went stale after a pull and helps you catch up. Requires the `snowshoe`
+  CLI: bun add -g @igorkravcenko/snowshoe (or npm install -g @igorkravcenko/snowshoe).
+  After pull or catch-up: drain via work next (init / routine refresh / routine advance,
+  then complete claimed steps). In the map PTY or when studying the map
+  (SNOWSHOE_MODE=learn): talk about the tree using map view / map status. Combined mode
+  (map UI / UI terminal open while draining): read both drain.md and learn.md. Read
+  install.md only if the snowshoe binary is missing.
 ---
 
 # Snowshoe skill

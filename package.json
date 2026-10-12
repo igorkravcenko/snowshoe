@@ -15,10 +15,10 @@
     "bun",
     "snowshoe",
     "agent-skills",
-    "claude-code",
-    "cursor",
-    "codex",
-    "claude-skills"
+    "claude-skills",
+    "cursor-skills",
+    "codex-skills",
+    "skill-md"
   ],
   "type": "module",
   "bin": {
