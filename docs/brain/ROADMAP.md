@@ -29,6 +29,8 @@ Init, detail map, routine epoch, mixed queue, local `snowshoe map serve`, in-rep
 
 Publish skills into popular harness skill stores as an *entry* path (Orca-supported agents as a non-binding reference list). Skills teach the protocol; state stays with the CLI. Skills-overlap evidence is private maintainers (after overlay).
 
+Shipped: Claude Code plugin marketplace + skills.sh manifests as an additional entry ([ADR-2026-10-12-skill-store-install-path](./DECISIONS/ADR-2026-10-12-skill-store-install-path.md)); CLI `skill install` stays SoT. Remaining intent: community-catalog submissions and other harness stores.
+
 ## 4. Later (not now)
 
 Billing / paid layers / team seats are **out of scope** for the current slice. Intent sketches stay in private maintainers (`docs/private/notes/monetization-analogs-2026-09-25.md` after overlay). Public policy: OSS core free forever — [monetization ADR](./DECISIONS/ADR-2026-09-25-monetization-ladder.md).
