@@ -1,3 +1,5 @@
+import { realpathSync, statSync } from "node:fs";
+import { isAbsolute, resolve } from "node:path";
 import { defineCommand } from "citty";
 import { runFeedbackAdd, runFeedbackList, runFeedbackRemove } from "./commands/feedback.ts";
 import { runHelp } from "./commands/help.ts";
@@ -16,7 +18,7 @@ import {
 } from "./commands/map.ts";
 import { runMapView } from "./commands/map-view.ts";
 import { runRoutineAdvance, runRoutineRefresh, runRoutineStatus } from "./commands/routine.ts";
-import { withSession } from "./commands/session.ts";
+import { type Session, withSession } from "./commands/session.ts";
 import { runSkillCat, runSkillInstall, runSkillList } from "./commands/skill.ts";
 import {
   readStdinOrFlag,
@@ -33,6 +35,59 @@ function emit(result: { exitCode: number; body: Record<string, unknown> }, _json
   printJson(result.body);
   process.exitCode = result.exitCode;
   return result.exitCode;
+}
+
+function cwdRawFromArgv(argv: string[] = process.argv): { present: boolean; value?: string } {
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i]!;
+    if (a === "--cwd") {
+      const next = argv[i + 1];
+      if (next === undefined || next.startsWith("-")) return { present: true };
+      return { present: true, value: next };
+    }
+    if (a.startsWith("--cwd=")) return { present: true, value: a.slice("--cwd=".length) };
+  }
+  return { present: false };
+}
+
+/** Drop `--cwd` / `--cwd=` so citty does not treat the path as a subcommand token. */
+export function stripCwdArgs(rawArgs: string[]): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < rawArgs.length; i++) {
+    const a = rawArgs[i]!;
+    if (a === "--cwd") {
+      const next = rawArgs[i + 1];
+      if (next !== undefined && !next.startsWith("-")) i++;
+      continue;
+    }
+    if (a.startsWith("--cwd=")) continue;
+    out.push(a);
+  }
+  return out;
+}
+
+/** Git `-C`: discovery start for `findRepoRoot`. Missing/non-dir → usage. */
+export function resolveCliCwd(argv: string[] = process.argv): string {
+  const raw = cwdRawFromArgv(argv);
+  if (!raw.present) return process.cwd();
+  const value = raw.value?.trim() ?? "";
+  if (value === "" || value.includes("\0")) {
+    throw new CliError("--cwd requires an existing directory", EXIT_USAGE);
+  }
+  const abs = isAbsolute(value) ? resolve(value) : resolve(process.cwd(), value);
+  try {
+    if (!statSync(abs).isDirectory()) {
+      throw new CliError(`--cwd is not a directory: ${value}`, EXIT_USAGE);
+    }
+  } catch (err) {
+    if (err instanceof CliError) throw err;
+    throw new CliError(`--cwd is not a directory: ${value}`, EXIT_USAGE);
+  }
+  return realpathSync(abs);
+}
+
+function withCliSession<T>(fn: (s: Session) => T): T {
+  return withSession(fn, resolveCliCwd());
 }
 
 function batchSizeFromArgv(): string | undefined {
@@ -85,7 +140,7 @@ const initCmd = defineCommand({
   },
   run({ args }) {
     return emit(
-      runInit(process.cwd(), {
+      runInit(resolveCliCwd(), {
         locale: args.locale,
         uiLanguage: args["ui-language"] ?? args.uiLanguage,
       }),
@@ -101,7 +156,7 @@ const routineRefreshCmd = defineCommand({
     target: { type: "string", description: "Explicit target SHA or ref" },
   },
   run({ args }) {
-    return withSession((s) => emit(runRoutineRefresh(s, { target: args.target }), args.json));
+    return withCliSession((s) => emit(runRoutineRefresh(s, { target: args.target }), args.json));
   },
 });
 
@@ -111,7 +166,7 @@ const routineStatusCmd = defineCommand({
     json: { type: "boolean", description: "JSON output", default: false },
   },
   run({ args }) {
-    return withSession((s) => emit(runRoutineStatus(s), args.json));
+    return withCliSession((s) => emit(runRoutineStatus(s), args.json));
   },
 });
 
@@ -121,7 +176,7 @@ const routineAdvanceCmd = defineCommand({
     json: { type: "boolean", description: "JSON output", default: false },
   },
   run({ args }) {
-    return withSession((s) => emit(runRoutineAdvance(s), args.json));
+    return withCliSession((s) => emit(runRoutineAdvance(s), args.json));
   },
 });
 
@@ -168,7 +223,10 @@ const workNextCmd = defineCommand({
     const batchSize = parseBatchSize(args["batch-size"] ?? args.batchSize ?? args.budget);
     const waitTimeoutMs = parseWaitTimeout(args["wait-timeout"] ?? args.waitTimeout);
     const wait = Boolean(args.wait) || waitTimeoutMs > 0;
-    return emit(await runWorkNextFromCwd({ batchSize, wait, waitTimeoutMs }), args.json);
+    return emit(
+      await runWorkNextFromCwd({ batchSize, wait, waitTimeoutMs }, resolveCliCwd()),
+      args.json,
+    );
   },
 });
 
@@ -183,7 +241,7 @@ const workCompleteCmd = defineCommand({
   },
   async run({ args }) {
     const raw = await readStdinOrFlag(args.input);
-    return withSession((s) => emit(runWorkComplete(s, raw), args.json));
+    return withCliSession((s) => emit(runWorkComplete(s, raw), args.json));
   },
 });
 
@@ -198,7 +256,7 @@ const workFailCmd = defineCommand({
   },
   async run({ args }) {
     const raw = await readStdinOrFlag(args.input);
-    return withSession((s) => emit(runWorkFail(s, raw), args.json));
+    return withCliSession((s) => emit(runWorkFail(s, raw), args.json));
   },
 });
 
@@ -239,7 +297,7 @@ const mapStatusCmd = defineCommand({
     },
   },
   run({ args }) {
-    return withSession((s) =>
+    return withCliSession((s) =>
       emit(
         runMapStatus(
           s,
@@ -272,7 +330,7 @@ const mapMarkCmd = defineCommand({
     },
   },
   run({ args }) {
-    return withSession((s) =>
+    return withCliSession((s) =>
       emit(runMapMark(s, String(args.slug), args.kind ?? "expand"), args.json),
     );
   },
@@ -286,7 +344,7 @@ const mapUnmarkCmd = defineCommand({
     kind: { type: "string", description: "Mark kind to remove", required: true },
   },
   run({ args }) {
-    return withSession((s) => emit(runMapUnmark(s, String(args.slug), args.kind), args.json));
+    return withCliSession((s) => emit(runMapUnmark(s, String(args.slug), args.kind), args.json));
   },
 });
 
@@ -298,7 +356,7 @@ const mapLeafCmd = defineCommand({
     leaf: { type: "string", description: "true or false", required: true },
   },
   run({ args }) {
-    return withSession((s) =>
+    return withCliSession((s) =>
       emit(runMapSetLeaf(s, String(args.slug), parseLeafFlag(args.leaf)), args.json),
     );
   },
@@ -318,7 +376,7 @@ const mapMetricCmd = defineCommand({
     internals: { type: "string", description: "internals float in [0,1]" },
   },
   run({ args }) {
-    return withSession((s) =>
+    return withCliSession((s) =>
       emit(
         runMapMetric(
           s,
@@ -342,7 +400,7 @@ const mapDetailMarkCmd = defineCommand({
     slug: { type: "string", description: "Node slug", required: true },
   },
   run({ args }) {
-    return withSession((s) => emit(runMapDetailMark(s, String(args.slug)), args.json));
+    return withCliSession((s) => emit(runMapDetailMark(s, String(args.slug)), args.json));
   },
 });
 
@@ -353,7 +411,7 @@ const mapDetailCancelCmd = defineCommand({
     slug: { type: "string", description: "Node slug", required: true },
   },
   run({ args }) {
-    return withSession((s) => emit(runMapDetailCancel(s, String(args.slug)), args.json));
+    return withCliSession((s) => emit(runMapDetailCancel(s, String(args.slug)), args.json));
   },
 });
 
@@ -403,6 +461,7 @@ const mapServeCmd = defineCommand({
   async run({ args }) {
     const port = Number(args.port);
     const { body, server } = await runMapServe({
+      cwd: resolveCliCwd(),
       port: Number.isFinite(port) ? port : undefined,
       host: String(args.host),
       open: Boolean(args.open),
@@ -446,7 +505,7 @@ const feedbackAddCmd = defineCommand({
   },
   async run({ args }) {
     const raw = await readStdinOrFlag(args.input);
-    return emit(runFeedbackAdd(process.cwd(), raw), args.json);
+    return emit(runFeedbackAdd(resolveCliCwd(), raw), args.json);
   },
 });
 
@@ -457,7 +516,7 @@ const feedbackRemoveCmd = defineCommand({
     id: { type: "string", description: "Feedback entry id", required: true },
   },
   run({ args }) {
-    return emit(runFeedbackRemove(process.cwd(), String(args.id)), args.json);
+    return emit(runFeedbackRemove(resolveCliCwd(), String(args.id)), args.json);
   },
 });
 
@@ -467,7 +526,7 @@ const feedbackListCmd = defineCommand({
     json: { type: "boolean", description: "JSON output", default: false },
   },
   run({ args }) {
-    return emit(runFeedbackList(process.cwd()), args.json);
+    return emit(runFeedbackList(resolveCliCwd()), args.json);
   },
 });
 
@@ -486,7 +545,7 @@ const skillListCmd = defineCommand({
     json: { type: "boolean", description: "JSON output", default: false },
   },
   run({ args }) {
-    return emit(runSkillList(process.cwd()), args.json);
+    return emit(runSkillList(resolveCliCwd()), args.json);
   },
 });
 
@@ -504,7 +563,7 @@ const skillCatCmd = defineCommand({
     },
   },
   run({ args }) {
-    return emit(runSkillCat(String(args.file), process.cwd()), args.json);
+    return emit(runSkillCat(String(args.file), resolveCliCwd()), args.json);
   },
 });
 
@@ -536,7 +595,7 @@ const skillInstallCmd = defineCommand({
           skillsPath: args["skills-path"] ?? args.skillsPath,
           force: Boolean(args.force),
         },
-        process.cwd(),
+        resolveCliCwd(),
       ),
       args.json,
     );
@@ -561,7 +620,7 @@ const helpCmd = defineCommand({
     json: { type: "boolean", description: "JSON output", default: false },
   },
   run({ args }) {
-    return emit(runHelp(process.cwd()), args.json);
+    return emit(runHelp(resolveCliCwd()), args.json);
   },
 });
 

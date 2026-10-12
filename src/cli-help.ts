@@ -42,9 +42,13 @@ export function hasCommandToken(rawArgs: string[]): boolean {
  * Root → same JSON index as `snowshoe help`. Subcommand → citty usage only.
  * Uses stdout.write (not consola) so tests and pipes see usage.
  */
-export async function handleHelpArgs(mainCmd: AnyCommand, rawArgs: string[]): Promise<number> {
+export async function handleHelpArgs(
+  mainCmd: AnyCommand,
+  rawArgs: string[],
+  cwd = process.cwd(),
+): Promise<number> {
   if (!hasCommandToken(rawArgs)) {
-    const { body, exitCode } = runHelp();
+    const { body, exitCode } = runHelp(cwd);
     printJson(body);
     return exitCode;
   }

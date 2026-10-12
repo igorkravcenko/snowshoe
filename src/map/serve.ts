@@ -227,13 +227,14 @@ export async function runMapServe(opts: {
   host?: string;
   open?: boolean;
   expandDepth?: number;
+  cwd?: string;
 }): Promise<{ exitCode: number; body: Record<string, unknown>; server: MapServer }> {
   const portRaw = opts.port;
   if (portRaw !== undefined && (!Number.isInteger(portRaw) || portRaw < 0 || portRaw > 65535)) {
     throw new CliError("--port must be an integer 0–65535 (0 = ephemeral)", EXIT_USAGE);
   }
   const expandDepth = opts.expandDepth ?? DEFAULT_MAP_EXPAND_DEPTH;
-  const cwd = process.cwd();
+  const cwd = opts.cwd ?? process.cwd();
   const repoRoot = findRepoRoot(cwd);
   const server = await startMapServer({
     cwd,
