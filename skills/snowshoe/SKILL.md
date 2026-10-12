@@ -10,6 +10,7 @@ description: >-
   (map UI / UI terminal open while draining): read both drain.md and learn.md. Read
   install.md only if the snowshoe binary is missing.
 ---
+> **What this is (for humans):** Snowshoe keeps a local map of how well you understand each part of a git repo. After a pull it shows which parts changed under you, and your agent walks you through catching up — or you explore the map in a browser UI.
 
 # Snowshoe skill
 
