@@ -23,6 +23,18 @@ Accepted. Amends [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-
 - Agent-autonomous mark of every expandable node — rejected; agency.
 - Help only as markdown in the skill — rejected; CLI is the util contract.
 
+## Amendment 2026-10-15: Context “only the human (UI) marks” is historical
+
+That sentence in Context describes a *prior* default that this ADR already
+replaced. **Do not quote it as current truth.** Current rule is the Decision:
+the agent may mark/cancel **if this turn’s user text asked**. Autonomous
+tree-crawling marks stay rejected.
+
+**Mark is not color.** Mark kinds (`detail` / `expand` / `enrich` / `fix`)
+enqueue work. Node green/red is display over metric floats
+(`snowshoe map metric` — [ADR-2026-10-02-map-metric-cli](./ADR-2026-10-02-map-metric-cli.md)).
+Do not mash “only the human marks” into “only the human paints green.”
+
 ## Consequences
 
-CURRENT: human may ask the agent to mark this turn; `snowshoe help --json`. Skill-drain-loop: mark rule + help as index.
+CURRENT: human may ask the agent to mark this turn; `snowshoe help --json`. Skill-drain-loop: mark rule + help as index. The Context line “only the human (UI) marks” is historical, not a living claim.

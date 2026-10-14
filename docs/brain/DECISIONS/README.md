@@ -43,11 +43,11 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-09-27-work-next-wait](./ADR-2026-09-27-work-next-wait.md) | accepted | `work next --wait` blocks idle; not a daemon; skill opt-in |
 | [ADR-2026-09-29-map-pty-channel](./ADR-2026-09-29-map-pty-channel.md) | accepted | Loopback-peer PTY in map UI + `map view`; not chat/HITL/learning |
 | [ADR-2026-09-30-agent-feedback-inbox](./ADR-2026-09-30-agent-feedback-inbox.md) | accepted | Optional agent JSONL inbox in `.snowshoe/feedback/`; sidebar tab; not v1 |
-| [ADR-2026-09-30-user-asked-mark-and-help](./ADR-2026-09-30-user-asked-mark-and-help.md) | accepted | Agent mark if user asked this turn; `snowshoe help --json` |
+| [ADR-2026-09-30-user-asked-mark-and-help](./ADR-2026-09-30-user-asked-mark-and-help.md) | accepted | Agent mark if user asked this turn; `snowshoe help --json`; “only the human marks” is historical |
 | [ADR-2026-10-01-map-polish](./ADR-2026-10-01-map-polish.md) | accepted | Leaf stop-flag; expand/enrich/fix hops; durable anchors; narrower split |
 | [ADR-2026-10-02-map-nav-tabs](./ADR-2026-10-02-map-nav-tabs.md) | accepted | Left column tabs: Tree / Graph / human Todos (`learn`/`quiz`) |
 | [ADR-2026-10-02-map-local-graph](./ADR-2026-10-02-map-local-graph.md) | accepted | Radial ego Graph tab; one MapReadModel; History prev/next borders |
-| [ADR-2026-10-02-map-metric-cli](./ADR-2026-10-02-map-metric-cli.md) | accepted | `map metric` sets node floats; HTTP twin; not work next / not quiz |
+| [ADR-2026-10-02-map-metric-cli](./ADR-2026-10-02-map-metric-cli.md) | accepted | `map metric` sets floats (this-turn ask or assent); green = `solid` ≥ 0.75, not Mark |
 | [ADR-2026-10-02-detail-body-wiki](./ADR-2026-10-02-detail-body-wiki.md) | accepted | `detail` hop = expand∪enrich; `bodyOverview`; UI wiki `[[slug]]` |
 | [ADR-2026-10-02-apache-2-0-license](./ADR-2026-10-02-apache-2-0-license.md) | accepted | Product repo licensed Apache-2.0 (`LICENSE` + `NOTICE`) |
 | [ADR-2026-10-05-inbox-marks](./ADR-2026-10-05-inbox-marks.md) | accepted | System inbox marks `new`/`decayed`; Todos Inbox/Later; read on leave |
