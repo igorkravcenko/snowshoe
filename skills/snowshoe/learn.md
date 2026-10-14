@@ -34,7 +34,7 @@ Prefer `bodyOverview` when scanning many nodes; use `bodyMd` / `--all-fields` wh
 
 - Prefer **code** (and tests) over map/doc prose when they disagree; say so when you correct the map story.
 - End a teaching beat with a clear **next proposal** (or a pause). Short steering (“what’s next”, “go”, “use prose”) means take the proposed default or fix voice — not a ritual.
-- Do **not** write `ledger.sqlite` or run `map metric` unless they explicitly ask. Drafting a local metrics list is fine; apply only on OK.
+- Do **not** write `ledger.sqlite` yourself. **Green is not a Mark** — it is the UI `solid` band when a stored metric is ≥ 0.75. Run `snowshoe map metric --json --slug <slug> --overview 0.8` (and `--contracts` / `--internals` they agreed) when **this turn** they asked to set understanding **or** they accepted numbers you proposed this turn (OK / “green that” / set 0.8). Drafting a local metrics list is fine; apply on that assent. Do not raise unilaterally after explaining. Do not say only the human paints green (the map UI has no color picker).
 - Do **not** enrich the whole tree “because we talked.” Enrich when they ask, or offer a **small** set of nodes where the discussion changed the picture — then wait for assent.
 
 ## Local learn state (recommended default)

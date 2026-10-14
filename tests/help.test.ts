@@ -13,5 +13,10 @@ describe("snowshoe help", () => {
     expect(runs).toContain("snowshoe work next --json");
     expect(runs.some((x) => x.includes("map detail mark"))).toBe(true);
     expect(String(r.json.mark)).toContain("this turn");
+    const metric = (r.json.commands as Array<{ run: string; when: string }>).find((c) =>
+      c.run.includes("map metric"),
+    );
+    expect(metric?.when).toContain("not Mark");
+    expect(metric?.when).toContain("accepted numbers you proposed");
   });
 });

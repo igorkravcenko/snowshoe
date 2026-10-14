@@ -27,9 +27,21 @@ Metric floats live in SQLite (`overview` / `contracts` / `internals`, `0.0–1.0
 - Force all metric writes through `metric_decay` — rejected; that path is routine-only and cannot raise.
 - UI-only editor — deferred; CLI-first orchestrator.
 
+## Amendment 2026-10-15: Assent this turn; green is a band, not a mark
+
+Decision (5) “asked this turn to set understanding” includes **accepting
+numbers the agent proposed this turn** (OK / set 0.8 / “green that”). Then
+the skill **runs** `snowshoe map metric`. It does **not** mean “only the
+human paints green in the UI” — the map UI has no metric picker (UI editor
+still deferred).
+
+Forbidden: raising floats after an explanation with no this-turn assent.
+Display: band `solid` (green) is ≥ 0.75 over stored floats. Unrelated to
+Mark (work queue — [ADR-2026-09-30-user-asked-mark-and-help](./ADR-2026-09-30-user-asked-mark-and-help.md)).
+
 ## Consequences
 
-CURRENT lists `map metric`. Agents see it in `snowshoe help --json`. Map UI may call the HTTP twin later; not required in this change.
+CURRENT lists `map metric`. Agents see it in `snowshoe help --json`. Map UI may call the HTTP twin later; not required in this change. Skill raises on this-turn ask **or** assent to proposed numbers; green is the `solid` band, not a Mark.
 
 ## Evidence
 

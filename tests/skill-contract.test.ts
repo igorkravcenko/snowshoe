@@ -84,6 +84,10 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(drain).toContain("intermediate grouping");
     expect(drain).not.toContain("symbol is always a leaf");
     expect(drain).not.toContain("1–3");
+    expect(drain).toContain("work queue");
+    expect(drain).toContain("map metric --json");
+    expect(drain).toContain("solid");
+    expect(drain).toContain("Do not say only the human paints green");
   });
 
   test("learn.md is a map-conversation stub (no quiz; combined may wait)", () => {
@@ -96,6 +100,10 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(learn).not.toContain("work next");
     expect(learn).toContain("Combined mode");
     expect(learn.toLowerCase()).not.toContain("quiz product");
+    expect(learn).toContain("map metric --json");
+    expect(learn).toContain("0.75");
+    expect(learn).toContain("accepted numbers you proposed");
+    expect(learn).toContain("Do not say only the human paints green");
   });
 
   test("dry-run: documented work next → complete → map status", async () => {

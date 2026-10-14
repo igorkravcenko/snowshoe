@@ -234,7 +234,11 @@ The diff for these steps is `git diff --name-only <base>..<target>` (commits in 
 
 ## Map UI
 
-The human marks in the map UI, or **this turn** asks you to `map mark` / `map detail mark` / `cancel`. They reload the map. You complete claimed steps through the CLI. Reload in the UI lights up when the ledger moved (`work complete`, CLI mark, another tab); they still click Reload. They read entity bodies, follow `refs`, and preview code from anchors (whole file, scroll to `startLine`, highlight the line or `startLine`–`endLine`; `vscode://` is secondary).
+**Mark** is the work queue (`detail` / `expand` / `enrich` / `fix`), not node color. The human marks in the map UI, or **this turn** asks you to `map mark` / `map detail mark` / `cancel`. Do not walk the tree marking nodes. You complete claimed steps through the CLI.
+
+**Green** is the UI `solid` band when a metric float is ≥ 0.75 (`overview` / `contracts` / `internals`). Inspector pills are read-only. Writes go through `snowshoe map metric --json` (see `learn.md`). Drain `work complete` omits metric fields; new nodes seed at 0. `metric_decay` only lowers. Do not say only the human paints green.
+
+They reload the map. Reload in the UI lights up when the ledger moved (`work complete`, CLI mark, another tab); they still click Reload. They read entity bodies, follow `refs`, and preview code from anchors (whole file, scroll to `startLine`, highlight the line or `startLine`–`endLine`; `vscode://` is secondary).
 
 ```bash
 snowshoe map status --json

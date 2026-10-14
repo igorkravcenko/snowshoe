@@ -14,4 +14,4 @@ Manual try of [e2e-happy-path-no-learning.md](./e2e-happy-path-no-learning.md). 
 5. Mark detail on a child → pending badge → agent drains again → **Reload**.
 6. Click an anchor (any node, including non-leaf modules) → Code tab in the sidebar. `vscode://` is secondary “Open in editor”. Optional: pull/commit; agent `work next` will ask for `routine refresh`, then drain, then `routine advance` when idle → Reload.
 
-Do not commit `.snowshoe/`. The human marks, cancels, and reloads the map; the agent completes through the CLI.
+Do not commit `.snowshoe/`. The human (or the agent **this turn**, if asked) marks/cancels work-queue hops and reloads the map; the agent completes through the CLI. Marks are not metric color (`map metric` is a separate write).

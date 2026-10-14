@@ -61,7 +61,7 @@ export const AGENT_HELP = {
     },
     {
       run: "snowshoe map metric --json --slug <slug> --overview 0.8",
-      when: "Set node metric floats (overview/contracts/internals in [0,1]). Not work next. Only if they asked to set understanding.",
+      when: "Set understanding floats (raise or lower). Green is solid ≥ 0.75, not Mark. This turn: they asked, or they accepted numbers you proposed. Do not raise unilaterally.",
     },
     {
       run: "snowshoe map serve",
