@@ -88,6 +88,10 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(drain).toContain("map metric --json");
     expect(drain).toContain("solid");
     expect(drain).toContain("Do not say only the human paints green");
+    expect(drain).toContain("codeAnchors");
+    expect(drain).toContain("replaces ALL anchors");
+    expect(drain).toContain("omit the field to keep existing");
+    expect(drain).toContain("omit `leaf` stores `false`");
   });
 
   test("learn.md is a map-conversation stub (no quiz; combined may wait)", () => {

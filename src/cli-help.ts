@@ -1,6 +1,7 @@
 import type { ArgsDef, CommandDef } from "citty";
 import { renderUsage } from "citty";
 import { runHelp } from "./commands/help.ts";
+import { formatWorkCompleteHelpText, runWorkCompleteHelp } from "./commands/work-complete-help.ts";
 import { printJson } from "./json.ts";
 
 type AnyCommand = CommandDef<ArgsDef>;
@@ -37,9 +38,15 @@ export function hasCommandToken(rawArgs: string[]): boolean {
   return rawArgs.some((a) => !a.startsWith("-"));
 }
 
+export function isWorkCompleteHelp(rawArgs: string[]): boolean {
+  const tokens = rawArgs.filter((a) => !a.startsWith("-"));
+  return tokens[0] === "work" && tokens[1] === "complete";
+}
+
 /**
  * `--help` / `-h` never executes a command.
- * Root → same JSON index as `snowshoe help`. Subcommand → citty usage only.
+ * Root → same JSON index as `snowshoe help`.
+ * `work complete` → payload contract (JSON when `--json`); other subcommands → citty usage.
  * Uses stdout.write (not consola) so tests and pipes see usage.
  */
 export async function handleHelpArgs(
@@ -51,6 +58,17 @@ export async function handleHelpArgs(
     const { body, exitCode } = runHelp(cwd);
     printJson(body);
     return exitCode;
+  }
+  if (isWorkCompleteHelp(rawArgs)) {
+    if (rawArgs.includes("--json")) {
+      const { body, exitCode } = runWorkCompleteHelp(cwd);
+      printJson(body);
+      return exitCode;
+    }
+    const [cmd, parent] = await resolveSubCommand(mainCmd, rawArgs);
+    const usage = await renderUsage(cmd, parent);
+    process.stdout.write(`${usage}\n${formatWorkCompleteHelpText()}`);
+    return 0;
   }
   const [cmd, parent] = await resolveSubCommand(mainCmd, rawArgs);
   const text = await renderUsage(cmd, parent);
