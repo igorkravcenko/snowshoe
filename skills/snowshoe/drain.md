@@ -216,7 +216,7 @@ Same payload shape as expand. Intent: the marked area is wrong or stale — re-r
 
 The diff for these steps is `git diff --name-only <base>..<target>` (commits in that range only). Do not use the working tree, unstaged changes, or only the latest commit.
 
-**structure_sync** — cover that pinned range. Empty `ops` is OK when every path in `base..target` is already anchored or listed in `coverage.unmappedPaths`.
+**structure_sync** — cover that pinned range. Empty `ops` is OK when every path in `base..target` is already anchored or listed in `coverage.unmappedPaths`. On `upsert_node`, present `codeAnchors` replaces ALL anchors for that slug (omit the field to keep existing); omit `leaf` stores `false`.
 
 ```json
 {

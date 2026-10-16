@@ -3,7 +3,7 @@ import { gitHead } from "../git.ts";
 import { envelope } from "../json.ts";
 import { findRepoRoot } from "../paths.ts";
 
-/** Compact index for agents (`snowshoe help --json`). Payloads stay in drain.md / per-command --help. */
+/** Compact index for agents (`snowshoe help --json`). Payloads: drain.md / `work complete --help`. */
 export const AGENT_HELP = {
   audience: "agent",
   always: [
@@ -29,7 +29,7 @@ export const AGENT_HELP = {
     },
     {
       run: "snowshoe work complete --json",
-      when: "After a claimed step. Envelope on stdin or --input. See drain.md for payloads. Match item.kind (detail|expand|enrich|fix).",
+      when: "After a claimed step. Envelope on stdin or --input. Payloads: work complete --help (--json). Match item.kind (detail|expand|enrich|fix|structure_sync|…).",
     },
     {
       run: "snowshoe init --json",

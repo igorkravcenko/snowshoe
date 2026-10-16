@@ -18,5 +18,10 @@ describe("snowshoe help", () => {
     );
     expect(metric?.when).toContain("not Mark");
     expect(metric?.when).toContain("accepted numbers you proposed");
+    const complete = (r.json.commands as Array<{ run: string; when: string }>).find((c) =>
+      c.run.includes("work complete"),
+    );
+    expect(complete?.when).toContain("work complete --help");
+    expect(complete?.when).toContain("structure_sync");
   });
 });

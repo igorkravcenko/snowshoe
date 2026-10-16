@@ -41,4 +41,56 @@ describe("CLI --help / -h never executes", () => {
     expect(r.json.url).toBeUndefined();
     expect(r.json.port).toBeUndefined();
   });
+
+  test("work complete --help documents structure_sync replace-vs-omit", async () => {
+    const repo = makeGitRepo();
+    const r = await snowshoe(repo, ["work", "complete", "--help"]);
+    expect(r.exitCode).toBe(0);
+    const text = r.stdout + r.stderr;
+    expect(text).toMatch(/USAGE|complete/i);
+    expect(text).toContain("codeAnchors present");
+    expect(text).toContain("replaces ALL anchors");
+    expect(text).toContain("codeAnchors omitted");
+    expect(text).toContain("leaf omitted");
+    expect(text).toContain("stored as false");
+    expect(text).toContain('"op": "upsert_node"');
+    expect(text).toContain("src/pay.ts");
+    expect(text).toContain('"id": "cli"');
+    expect(text).not.toMatch(/"ops":\s*\[\]/);
+  });
+
+  test("work complete --help --json is the payload contract", async () => {
+    const repo = makeGitRepo();
+    const r = await snowshoe(repo, ["work", "complete", "--help", "--json"]);
+    expect(r.exitCode).toBe(0);
+    expect(r.json.command).toBe("work.complete.help");
+    expect(r.json.ok).toBe(true);
+    const sync = r.json.structure_sync as {
+      upsert_node: Record<string, string>;
+      example: { ops: Array<{ op: string; node: Record<string, unknown> }> };
+      exampleNotes: string[];
+    };
+    expect(sync.upsert_node.codeAnchors).toContain("replaces ALL anchors");
+    expect(sync.upsert_node.omitCodeAnchors).toContain("omitted");
+    expect(sync.upsert_node.leaf).toContain("false");
+    expect(sync.example.ops.length).toBeGreaterThanOrEqual(2);
+    const replace = sync.example.ops[0]!;
+    const omit = sync.example.ops[1]!;
+    expect(replace.op).toBe("upsert_node");
+    expect(Array.isArray(replace.node.codeAnchors)).toBe(true);
+    expect(replace.node.codeAnchors).not.toEqual([]);
+    expect(omit.op).toBe("upsert_node");
+    expect(omit.node.codeAnchors).toBeUndefined();
+    expect(omit.node.leaf).toBeUndefined();
+    expect(sync.exampleNotes.join(" ")).toMatch(/replace ALL/i);
+    expect(sync.exampleNotes.join(" ")).toMatch(/omitted/i);
+  });
+
+  test("work complete --json --help is the same JSON contract", async () => {
+    const repo = makeGitRepo();
+    const r = await snowshoe(repo, ["work", "complete", "--json", "--help"]);
+    expect(r.exitCode).toBe(0);
+    expect(r.json.command).toBe("work.complete.help");
+    expect(r.json.ok).toBe(true);
+  });
 });
