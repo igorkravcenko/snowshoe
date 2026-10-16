@@ -82,6 +82,15 @@ Working repos bootstrap via `snowshoe skill list|cat|install --skills-path <dir>
 
 When map UI / UI terminal / map PTY is open **and** the human wants keep-draining in the same session, the gate may read **both** `drain.md` and `learn.md`. One background `work next --json --wait` plus foreground learn/map conversation; still one waiter. Details: [ADR-2026-10-07-soft-init-combined-port](./ADR-2026-10-07-soft-init-combined-port.md).
 
+## Amendment 2026-10-16: Learn re-entry
+
+`learn.md` reprints the landed floor after a wiped-context break. Trigger is
+`re-entry` (optional leading `/`). Short steering and a landed floor are not
+that trigger. `STATE.md` holds a **Re-entry** block (Landed / Current / Next /
+Do not reopen). Quiet rewrite on landing a floor or stopping; chat reprint
+only on the trigger (or the short-auto case after compaction). Skill labels
+stay English; local STATE / CURRENT may use any language. Not quiz/verify.
+
 ## Evidence
 
 - [../notes/how-to-try-e2e.md](../notes/how-to-try-e2e.md)

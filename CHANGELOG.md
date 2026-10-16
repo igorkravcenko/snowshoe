@@ -12,6 +12,7 @@ Patch after [v0.0.5](https://github.com/igorkravcenko/snowshoe/releases/tag/v0.0
 - Satellite `snowshoe-scratch` skill and global `--cwd` (WIP; not on `skill install`, plugin manifests, or npm `files`) ([#22](https://github.com/igorkravcenko/snowshoe/pull/22))
 - `init` gitignore anchors to `/.snowshoe` so skill dirs stay trackable ([#23](https://github.com/igorkravcenko/snowshoe/pull/23))
 - Public PATH install is **`bun add -g @igorkravcenko/snowshoe`**; do not advertise `npm i -g` (bin shebang is Bun) ([#31](https://github.com/igorkravcenko/snowshoe/pull/31))
+- Learn / scratch **re-entry**: reprint the landed floor after a wiped-context break (`STATE.md` Re-entry block). Trigger is `re-entry`; short steering is not. Skill labels English; local STATE may use any language.
 
 ### CLI and map
 

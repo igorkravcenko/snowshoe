@@ -37,6 +37,8 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(gate).toContain("work next --json --wait");
     expect(gate).toContain("bun add -g @igorkravcenko/snowshoe");
     expect(gate).not.toMatch(/npm install -g/);
+    expect(gate).toContain("re-entry");
+    expect(gate).not.toMatch(/[А-Яа-яЁё]/);
   });
 
   test("install.md is bun add -g, not npm i -g", () => {
@@ -118,6 +120,10 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(learn).toContain("0.75");
     expect(learn).toContain("accepted numbers you proposed");
     expect(learn).toContain("Do not say only the human paints green");
+    expect(learn).toContain("## Re-entry");
+    expect(learn).toContain("re-entry");
+    expect(learn).toMatch(/Landed:/);
+    expect(learn).not.toMatch(/[А-Яа-яЁё]/);
   });
 
   test("dry-run: documented work next → complete → map status", async () => {

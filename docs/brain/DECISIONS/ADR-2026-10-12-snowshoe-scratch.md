@@ -99,15 +99,25 @@ The earlier phrase “ephemeral shallow outline tree” was too easy to read as 
 file listing or a copied TOC. The skill section `CURRENT.md (mental map)` is
 the contract.
 
+## Amendment 2026-10-16: Scratch re-entry
+
+Same `re-entry` protocol as product `learn.md` (trigger `re-entry`, optional
+leading `/`; Landed / Current / Next / Do not reopen; short steering is not
+the trigger). Scratch `STATE.md` layout is Now / Re-entry / voice / journal.
+Skill labels stay English; local STATE / CURRENT may use any language. Still
+not `skill install` / plugin / npm `files`.
+
 ## Consequences
 
 - CURRENT: satellite `snowshoe-scratch` is not the wedge; home learn dir +
-  `CURRENT.md` as a mental map of the target (concepts, not ls/TOC; titles
+   `CURRENT.md` as a mental map of the target (concepts, not ls/TOC; titles
   readable without jumping); optional atlas allowlist (`map status --json --cwd`
-  only; optional `help --json`); global `--cwd` is git `-C`.
+  only; optional `help --json`); global `--cwd` is git `-C`. Learn/scratch
+  `re-entry` reprints the landed floor (`STATE.md` Re-entry block).
 - Plugin manifests, `skill.ts` packaged files, and npm `files` stay
   `skills/snowshoe` only. Tests that lock that exclusivity stay as they are.
-- No learning/quiz/verify product. Scratch `STATE.md` is a journal, not a quiz.
+- No learning/quiz/verify product. Scratch `STATE.md` is a journal plus a
+  Re-entry block, not a quiz.
 
 ## Evidence
 
