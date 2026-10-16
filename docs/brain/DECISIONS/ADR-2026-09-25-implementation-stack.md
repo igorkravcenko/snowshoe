@@ -45,6 +45,16 @@ Thin framework. **Default recommendation: citty.** **commander** is an acceptabl
 
 CLI spelling is **`snowshoe …`**. Install / PATH: **`snowshoe`** via **`@igorkravcenko/snowshoe`**. Informal discussion shorthand *snow* is **not** a PATH command (Snowflake owns global `snow`). Skills/agents call **`snowshoe`** ([provisional-name ADR](./ADR-2026-09-25-provisional-name-snowshoe.md)).
 
+### Amendment 2026-10-16: public install is `bun add -g`
+
+The published `bin` is `./src/index.ts` with `#!/usr/bin/env bun`. Public copy
+(README, skill YAML, `install.md`, plugin description) is **`bun add -g
+@igorkravcenko/snowshoe`**. Do not document `npm install -g` as a working path:
+without Bun on PATH the package installs and `snowshoe` then fails (`env: bun:
+No such file or directory`). A Node launcher remains unshipped and is not
+promised. The tarball still lives on the npm registry; only the *command* to
+install it is Bun.
+
 ### Explicitly out of day-1
 
 - NestJS

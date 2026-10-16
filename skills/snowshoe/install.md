@@ -16,14 +16,14 @@ Requires **Bun** (`>=1.1`).
 
 ```bash
 bun add -g @igorkravcenko/snowshoe
-# or
-npm install -g @igorkravcenko/snowshoe
 command -v snowshoe
 snowshoe help --json   # exit 0; agent command index (does not mutate the ledger)
 ```
 
-Still do **not** use bare npm `snowshoe` (unrelated Stamp client).
-There is no Homebrew formula and no promise of bare `npx snowshoe`.
+Do **not** `npm install -g` — the published bin shebang is Bun; without Bun on
+PATH the install succeeds and `snowshoe` then fails. Still do **not** use bare
+npm `snowshoe` (unrelated Stamp client). There is no Homebrew formula and no
+promise of bare `npx snowshoe`.
 
 ## From a clone (contributors / local link)
 
@@ -41,12 +41,6 @@ snowshoe help --json
 link clone A, then `cd` to clone B and run `snowshoe map serve`, the **ledger**
 is B but the **map UI** is still A’s `ui/dist`. To serve B’s UI: `bun link`
 from B, or from B run `bun src/index.ts map serve`.
-
-Equivalent link via npm (still from this package root):
-
-```bash
-npm link
-```
 
 ## Skill files into a working repo (opt-in)
 

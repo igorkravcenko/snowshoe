@@ -24,4 +24,10 @@ describe(".claude-plugin manifests stay in lockstep with package.json", () => {
       expect(p.skills).toEqual(["./skills/snowshoe"]);
     }
   });
+
+  test("plugin description is bun add -g, not npm i -g", () => {
+    const desc = String(read(".claude-plugin/plugin.json").description);
+    expect(desc).toContain("bun add -g @igorkravcenko/snowshoe");
+    expect(desc).not.toMatch(/npm install -g/);
+  });
 });

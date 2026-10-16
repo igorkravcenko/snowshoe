@@ -35,6 +35,16 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(gate).toMatch(/drain\.md.*learn\.md|both/);
     expect(gate).toContain("at most");
     expect(gate).toContain("work next --json --wait");
+    expect(gate).toContain("bun add -g @igorkravcenko/snowshoe");
+    expect(gate).not.toMatch(/npm install -g/);
+  });
+
+  test("install.md is bun add -g, not npm i -g", () => {
+    const install = readFileSync(INSTALL, "utf8");
+    expect(install).toContain("bun add -g @igorkravcenko/snowshoe");
+    expect(install).not.toMatch(/# or\s*\nnpm install -g/);
+    expect(install).toMatch(/Do \*\*not\*\* `npm install -g`/);
+    expect(install).not.toMatch(/npm link/);
   });
 
   test("drain.md is repo-agnostic PATH snowshoe (no snowshoe-repo internals)", () => {

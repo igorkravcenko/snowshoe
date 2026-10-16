@@ -5,7 +5,7 @@ date: 2026-09-27
 
 # How to try the E2E
 
-Manual try of [e2e-happy-path-no-learning.md](./e2e-happy-path-no-learning.md). Put **`snowshoe` on PATH** (see `skills/snowshoe/install.md`: `bun link` / `npm link` from the package root). Then, in the repo you are mapping:
+Manual try of [e2e-happy-path-no-learning.md](./e2e-happy-path-no-learning.md). Put **`snowshoe` on PATH** (see `skills/snowshoe/install.md`: `bun add -g` or `bun link` from the package root). Then, in the repo you are mapping:
 
 1. `snowshoe init --json --locale en` (any BCP-47 tag; or start with `snowshoe work next --json` and follow `todo`, adding `--locale` on init)
 2. Load skill `skills/snowshoe/` (gate; Cursor uses `.cursor/skills/snowshoe` symlink). Ask it to drain Snowshoe work (`drain.md`).

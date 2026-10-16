@@ -27,9 +27,10 @@ repo-internal dev skills under `.cursor/skills/`.
    `npx skills add igorkravcenko/snowshoe` are **additional** skill install paths.
 3. `snowshoe skill install --json --skills-path <dir>` stays the **source of truth**
    bootstrap; the packaged `skills/snowshoe/` is the only skill SoT.
-4. Store copy always requires the CLI first (`bun add -g @igorkravcenko/snowshoe`;
-   `npm install -g @igorkravcenko/snowshoe` as alternative). README order: CLI on
-   PATH (step 1), then skill (step 2).
+4. Store copy always requires the CLI first (`bun add -g @igorkravcenko/snowshoe`).
+   Do **not** document `npm install -g` — the published bin shebang is Bun
+   (`engines.bun`); npm without Bun installs then fails at runtime. README order:
+   CLI on PATH (step 1), then skill (step 2).
 5. Manifest `version` mirrors `package.json` `version` (Claude Code uses it for update
    detection); a test enforces lockstep.
 
