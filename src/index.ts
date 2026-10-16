@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { runCommand } from "citty";
-import { main, resolveCliCwd, stripCwdArgs } from "./cli.ts";
+import { foldNegativeNumberArgs, main, resolveCliCwd, stripCwdArgs } from "./cli.ts";
 import {
   handleHelpArgs,
   handleVersionArgs,
@@ -14,7 +14,7 @@ import { CliError, EXIT_INTERNAL, EXIT_USAGE } from "./errors.ts";
 import { printJson } from "./json.ts";
 
 async function mainAsync(): Promise<number> {
-  const rawArgs = stripCwdArgs(process.argv.slice(2));
+  const rawArgs = foldNegativeNumberArgs(stripCwdArgs(process.argv.slice(2)));
   try {
     if (wantsHelp(rawArgs)) {
       return await handleHelpArgs(main, rawArgs, resolveCliCwd());

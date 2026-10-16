@@ -2,7 +2,12 @@ import { loopbackOriginsForPort } from "./loopback.ts";
 
 function wsConnectSrc(port: number): string {
   const httpOrigins = loopbackOriginsForPort(port);
-  const ws = [...httpOrigins].map((origin) => origin.replace(/^http:/, "ws:"));
+  const ws = [...httpOrigins]
+    .map((origin) => origin.replace(/^http:/, "ws:"))
+    // CSP host-source grammar has no IPv6. Chrome logs
+    // `ws://[::1]:<port>` as an invalid source and ignores it.
+    // `'self'` still allows same-origin `ws:` when the page is on `[::1]`.
+    .filter((origin) => !origin.includes("["));
   return ["'self'", ...ws].join(" ");
 }
 
