@@ -19,7 +19,7 @@ bun add -g @igorkravcenko/snowshoe
 # or
 npm install -g @igorkravcenko/snowshoe
 command -v snowshoe
-snowshoe --help   # exit 0; command index (does not mutate the ledger)
+snowshoe help --json   # exit 0; agent command index (does not mutate the ledger)
 ```
 
 Still do **not** use bare npm `snowshoe` (unrelated Stamp client).
@@ -34,7 +34,7 @@ bun install --frozen-lockfile
 bun link
 # ensure ~/.bun/bin is on PATH (bun link alone does not edit your shell PATH)
 command -v snowshoe
-snowshoe --help
+snowshoe help --json
 ```
 
 `bun link` is **one global** symlink. It does not follow git worktrees. If you

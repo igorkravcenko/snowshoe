@@ -37,4 +37,4 @@ Do not mash “only the human marks” into “only the human paints green.”
 
 ## Consequences
 
-CURRENT: human may ask the agent to mark this turn; `snowshoe help --json`. Skill-drain-loop: mark rule + help as index. The Context line “only the human (UI) marks” is historical, not a living claim.
+CURRENT: human may ask the agent to mark this turn; `snowshoe help --json`. Skill-drain-loop: mark rule + help as index. The Context line “only the human (UI) marks” is historical, not a living claim. Root `--help` / no-args is a human postcard, not this index — [ADR-2026-10-16-root-help-human](./ADR-2026-10-16-root-help-human.md).

@@ -1,7 +1,15 @@
 #!/usr/bin/env bun
 import { runCommand } from "citty";
 import { main, resolveCliCwd, stripCwdArgs } from "./cli.ts";
-import { handleHelpArgs, handleVersionArgs, wantsHelp, wantsVersion } from "./cli-help.ts";
+import {
+  handleHelpArgs,
+  handleVersionArgs,
+  hasCommandToken,
+  printAgentHelp,
+  printRootUsage,
+  wantsHelp,
+  wantsVersion,
+} from "./cli-help.ts";
 import { CliError, EXIT_INTERNAL, EXIT_USAGE } from "./errors.ts";
 import { printJson } from "./json.ts";
 
@@ -13,6 +21,10 @@ async function mainAsync(): Promise<number> {
     }
     if (wantsVersion(rawArgs)) {
       return handleVersionArgs();
+    }
+    if (!hasCommandToken(rawArgs)) {
+      if (rawArgs.includes("--json")) return printAgentHelp(resolveCliCwd());
+      if (rawArgs.length === 0) return printRootUsage();
     }
     const { result } = await runCommand(main, { rawArgs });
     if (typeof result === "number") return result;

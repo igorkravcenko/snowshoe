@@ -20,7 +20,7 @@ The install binary is **`snowshoe`** (call this).
 
 If this working repo is missing the skill files under the harness skills dir, run
 `snowshoe skill install --json --skills-path <harness-skills-dir>` (e.g. `.cursor/skills`
-for Cursor). Opt-in; not part of `init`. Prefer `snowshoe help --json` over guessing flags.
+for Cursor). Opt-in; not part of `init`. Prefer `snowshoe help --json` over guessing flags. Root `--help` is human usage, not the agent index.
 
 Drive the CLI. Do not write the ledger yourself. Do not start `map serve` unless the human asked.
 
