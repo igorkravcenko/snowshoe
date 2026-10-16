@@ -452,7 +452,11 @@ const mapServeCmd = defineCommand({
       description: "Loopback bind only (default 127.0.0.1; localhost / ::1 also ok)",
       default: "127.0.0.1",
     },
-    open: { type: "boolean", description: "Open the system browser", default: false },
+    open: {
+      type: "boolean",
+      description: "Open the system browser (still prints url if it cannot)",
+      default: false,
+    },
     "expand-depth": {
       type: "string",
       description: "Tree levels expanded at start (0 = root collapsed; default 1 = root open)",

@@ -8,6 +8,11 @@ import { findRepoRoot, snowshoePackageRoot } from "../paths.ts";
 import { generateMapAccessToken, mapUiUrl } from "./access-token.ts";
 import { handleMapHttp } from "./http.ts";
 import { httpOriginForBind, isLoopbackHost } from "./loopback.ts";
+import {
+  BROWSER_OPEN_FAILED_HINT,
+  type BrowserOpenResult,
+  tryOpenBrowser,
+} from "./open-browser.ts";
 import { mapPtyWebsocket, type PtyWsData, tryUpgradeMapPty } from "./pty.ts";
 import { createMapViewStore } from "./views.ts";
 
@@ -98,20 +103,8 @@ export async function ensureMapUiBuilt(packageRoot = snowshoePackageRoot()): Pro
   }
 }
 
-function openBrowser(url: string): void {
-  const cmd =
-    process.platform === "darwin" ? "open" : process.platform === "win32" ? "cmd" : "xdg-open";
-  const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
-  try {
-    Bun.spawn([cmd, ...args], {
-      stdout: "ignore",
-      stderr: "ignore",
-      stdin: "ignore",
-    });
-  } catch {
-    // Opening the system browser is best-effort; the server still runs.
-  }
-}
+export const MAP_SERVE_HINT =
+  "Mapped repo is cwd. UI is uiDist. Open url (fragment holds a per-launch token). GET /api/view/:id is RAM focus. Loopback PTY at /api/pty (Origin + token).";
 
 export type MapServer = {
   /** API base (`http://127.0.0.1:<port>/`) — no fragment. */
@@ -123,6 +116,8 @@ export type MapServer = {
   packageRoot: string;
   uiDist: string;
   token: string;
+  /** Set when `--open` was requested. Failure does not stop the server. */
+  browserOpen?: BrowserOpenResult;
   stop: () => void;
 };
 
@@ -140,6 +135,8 @@ export async function startMapServer(opts: {
   port?: number;
   hostname?: string;
   open?: boolean;
+  /** Test seam; production uses `tryOpenBrowser`. */
+  openBrowser?: (url: string) => BrowserOpenResult;
   buildUi?: boolean;
   packageRoot?: string;
   expandDepth?: number;
@@ -208,7 +205,7 @@ export async function startMapServer(opts: {
   const origin = httpOriginForBind(hostname, boundPort);
   const url = `${origin}/`;
   const uiUrl = mapUiUrl(origin, token);
-  if (opts.open) openBrowser(uiUrl);
+  const browserOpen = opts.open ? (opts.openBrowser ?? tryOpenBrowser)(uiUrl) : undefined;
 
   return {
     url,
@@ -218,6 +215,7 @@ export async function startMapServer(opts: {
     packageRoot,
     uiDist,
     token,
+    browserOpen,
     stop: () => server.stop(true),
   };
 }
@@ -228,6 +226,8 @@ export async function runMapServe(opts: {
   open?: boolean;
   expandDepth?: number;
   cwd?: string;
+  buildUi?: boolean;
+  openBrowser?: (url: string) => BrowserOpenResult;
 }): Promise<{ exitCode: number; body: Record<string, unknown>; server: MapServer }> {
   const portRaw = opts.port;
   if (portRaw !== undefined && (!Number.isInteger(portRaw) || portRaw < 0 || portRaw > 65535)) {
@@ -241,8 +241,11 @@ export async function runMapServe(opts: {
     port: portRaw,
     hostname: opts.host ?? "127.0.0.1",
     open: Boolean(opts.open),
+    openBrowser: opts.openBrowser,
+    buildUi: opts.buildUi,
     expandDepth,
   });
+  const openFailed = server.browserOpen !== undefined && !server.browserOpen.opened;
   const body = envelope("map.serve", repoRoot, gitHead(repoRoot), {
     ok: true,
     url: server.uiUrl,
@@ -251,7 +254,13 @@ export async function runMapServe(opts: {
     expandDepth,
     packageRoot: server.packageRoot,
     uiDist: server.uiDist,
-    hint: "Mapped repo is cwd. UI is uiDist. Open url (fragment holds a per-launch token). GET /api/view/:id is RAM focus. Loopback PTY at /api/pty (Origin + token).",
+    hint: openFailed ? `${BROWSER_OPEN_FAILED_HINT} ${MAP_SERVE_HINT}` : MAP_SERVE_HINT,
+    ...(server.browserOpen
+      ? {
+          browserOpened: server.browserOpen.opened,
+          ...(!server.browserOpen.opened ? { browserOpenError: server.browserOpen.error } : {}),
+        }
+      : {}),
   });
   return { exitCode: 0, body, server };
 }
