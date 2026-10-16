@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
+import { foldNegativeNumberArgs } from "../src/cli.ts";
 import { completeEnvelope, detailPayload, makeGitRepo, snowshoe } from "./helpers.ts";
 
 async function seedNamedChild(repo: string, slug: string): Promise<void> {
@@ -80,5 +81,17 @@ describe("global --cwd (git -C)", () => {
     expect(empty.exitCode).toBe(2);
     expect(empty.json.ok).toBe(false);
     expect(String(empty.json.error)).toMatch(/cwd/i);
+  });
+});
+
+describe("foldNegativeNumberArgs", () => {
+  test("joins --flag -<number> so citty does not drop the value", () => {
+    expect(foldNegativeNumberArgs(["map", "metric", "--overview", "-0.1"])).toEqual([
+      "map",
+      "metric",
+      "--overview=-0.1",
+    ]);
+    expect(foldNegativeNumberArgs(["--overview", "0.5"])).toEqual(["--overview", "0.5"]);
+    expect(foldNegativeNumberArgs(["--overview=-0.1"])).toEqual(["--overview=-0.1"]);
   });
 });

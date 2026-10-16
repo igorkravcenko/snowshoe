@@ -54,6 +54,43 @@ describe("map metric", () => {
     ]);
     expect(bad.exitCode).not.toBe(0);
 
+    const negEq = await snowshoe(repo, [
+      "map",
+      "metric",
+      "--json",
+      "--slug",
+      "cli",
+      "--overview=-0.1",
+    ]);
+    expect(negEq.exitCode).not.toBe(0);
+    expect(String(negEq.json.error)).toMatch(/\[0, 1\]/);
+
+    const negSpace = await snowshoe(repo, [
+      "map",
+      "metric",
+      "--json",
+      "--slug",
+      "cli",
+      "--overview",
+      "-0.1",
+    ]);
+    expect(negSpace.exitCode).not.toBe(0);
+    expect(String(negSpace.json.error)).toMatch(/\[0, 1\]/);
+
+    const negSkipped = await snowshoe(repo, [
+      "map",
+      "metric",
+      "--json",
+      "--slug",
+      "cli",
+      "--overview",
+      "-0.2",
+      "--contracts",
+      "0.5",
+    ]);
+    expect(negSkipped.exitCode).not.toBe(0);
+    expect(String(negSkipped.json.error)).toMatch(/\[0, 1\]/);
+
     const setHigh = await snowshoe(repo, [
       "map",
       "metric",

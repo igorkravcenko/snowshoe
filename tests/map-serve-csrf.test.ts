@@ -560,7 +560,7 @@ describe("map serve CSRF / CSWSH guards", () => {
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain(`ws://127.0.0.1:${server.port}`);
     expect(csp).toContain(`ws://localhost:${server.port}`);
-    expect(csp).toContain(`ws://[::1]:${server.port}`);
+    expect(csp).not.toContain("[::1]");
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("base-uri 'none'");
     expect(csp).toContain("frame-ancestors 'none'");

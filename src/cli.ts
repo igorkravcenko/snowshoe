@@ -51,6 +51,33 @@ function cwdRawFromArgv(argv: string[] = process.argv): { present: boolean; valu
   return { present: false };
 }
 
+/**
+ * Citty treats a following token that starts with `-` as another flag, so
+ * `--overview -0.1` never reaches parseMetricFloat and is silently dropped.
+ * Fold `--flag -<number>` into `--flag=-<number>` before citty.
+ */
+const NEGATIVE_NUMBER = /^-(\d+(\.\d*)?|\.\d+)$/;
+
+export function foldNegativeNumberArgs(rawArgs: string[]): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < rawArgs.length; i++) {
+    const a = rawArgs[i]!;
+    const next = rawArgs[i + 1];
+    if (
+      a.startsWith("--") &&
+      !a.includes("=") &&
+      next !== undefined &&
+      NEGATIVE_NUMBER.test(next)
+    ) {
+      out.push(`${a}=${next}`);
+      i++;
+      continue;
+    }
+    out.push(a);
+  }
+  return out;
+}
+
 /** Drop `--cwd` / `--cwd=` so citty does not treat the path as a subcommand token. */
 export function stripCwdArgs(rawArgs: string[]): string[] {
   const out: string[] = [];
