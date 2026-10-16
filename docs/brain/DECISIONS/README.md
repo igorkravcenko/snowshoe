@@ -38,7 +38,7 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-09-27-app-ci-biome](./ADR-2026-09-27-app-ci-biome.md) | accepted | App CI: typecheck, bun test, Biome; keep brain-docs; no lefthook |
 | [ADR-2026-09-27-map-ui-and-skill](./ADR-2026-09-27-map-ui-and-skill.md) | accepted | Tryable local map UI (`map serve`) + drain skill; A/B stay proposed |
 | [ADR-2026-09-27-ci-supply-chain-hygiene](./ADR-2026-09-27-ci-supply-chain-hygiene.md) | accepted | Pin Actions SHA + frozen-lockfile CI + SECURITY.md; no paid scanners |
-| [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md) | accepted | Skill at `skills/snowshoe/` (+ Cursor symlink); `work next` gates; PATH `snowshoe`; batch 5 |
+| [ADR-2026-09-27-skill-drain-loop](./ADR-2026-09-27-skill-drain-loop.md) | accepted | Skill at `skills/snowshoe/` (+ Cursor symlink); `work next` gates; PATH `snowshoe`; batch 5; learn re-entry |
 | [ADR-2026-09-27-detail-children-refs](./ADR-2026-09-27-detail-children-refs.md) | accepted | Detail `children`/`refs`; parent enrich; retire/clearEdges in subtree |
 | [ADR-2026-09-27-work-next-wait](./ADR-2026-09-27-work-next-wait.md) | accepted | `work next --wait` blocks idle; not a daemon; skill opt-in |
 | [ADR-2026-09-29-map-pty-channel](./ADR-2026-09-29-map-pty-channel.md) | accepted | Loopback-peer PTY in map UI + `map view`; not chat/HITL/learning |
@@ -55,5 +55,5 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-10-07-soft-init-combined-port](./ADR-2026-10-07-soft-init-combined-port.md) | accepted | Soft-init map serve; skill combined drain+learn; default port 3232 |
 | [ADR-2026-10-08-map-serve-origin-token](./ADR-2026-10-08-map-serve-origin-token.md) | accepted | Map serve CSWSH/CSRF: Origin + token + JSON CT; HTML CSP + Referrer-Policy |
 | [ADR-2026-10-12-skill-store-install-path](./ADR-2026-10-12-skill-store-install-path.md) | accepted | Claude plugin marketplace / skills.sh as additional skill install path; CLI `skill install` stays SoT |
-| [ADR-2026-10-12-snowshoe-scratch](./ADR-2026-10-12-snowshoe-scratch.md) | accepted | Satellite `snowshoe-scratch` (home mental map, not the map wedge) + global `--cwd` (git `-C`) |
+| [ADR-2026-10-12-snowshoe-scratch](./ADR-2026-10-12-snowshoe-scratch.md) | accepted | Satellite `snowshoe-scratch` (home mental map, not the map wedge) + global `--cwd` (git `-C`); re-entry |
 | [ADR-2026-10-16-root-help-human](./ADR-2026-10-16-root-help-human.md) | accepted | Root `--help` / no-args human postcard; `help --json` stays agent index |

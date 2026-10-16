@@ -16,4 +16,11 @@ describe("snowshoe-scratch skill contract", () => {
     expect(text).not.toContain("shallow outline tree");
     expect(text).not.toContain("Shallow outline tree of the target");
   });
+
+  test("re-entry reprints the landed floor; labels stay English", () => {
+    expect(text).toContain("## Re-entry");
+    expect(text).toContain("re-entry");
+    expect(text).toMatch(/Landed:/);
+    expect(text).not.toMatch(/[А-Яа-яЁё]/);
+  });
 });

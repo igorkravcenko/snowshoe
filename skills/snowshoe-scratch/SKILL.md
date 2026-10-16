@@ -4,7 +4,8 @@ description: >-
   Study a path that is not this repo's Snowshoe map. Keeps an ephemeral mental
   map at ~/.snowshoe/learn/<sha256(utf8(realpath))> (not the git ledger). Optional
   read-only map status --cwd of a main checkout. Requires snowshoe on PATH for
-  atlas queries only. Do not drain, init, or write ledger.sqlite.
+  atlas queries only. Do not drain, init, or write ledger.sqlite. re-entry
+  reprints the landed floor after a wiped-context break.
 ---
 
 # Snowshoe-scratch
@@ -71,12 +72,12 @@ map was **offered and accepted**.
 |---|---|
 | `origin.md` | realpath, id, optional mainRoot |
 | `CURRENT.md` | Ephemeral mental map of the target (concepts, not files/TOC) |
-| `STATE.md` | Now / voice / journal |
+| `STATE.md` | Now / Re-entry / voice / journal |
 | `PLAN.md` | Plan; read on phase shifts |
 | `discrepancies.md` | Standing “should change” / bugs (not STATE) |
 
-No ledger. No `mines.md` requirement. Scratch `STATE.md` is a journal, not
-product-learn retention cards or check-ins.
+No ledger. No `mines.md` requirement. Scratch `STATE.md` is a journal plus a
+**Re-entry** block (not product-learn retention cards or check-ins).
 
 ## Loop
 
@@ -88,17 +89,81 @@ product-learn retention cards or check-ins.
    text). Do **not** block a one-shot question on scaffold. Do not resume a
    partial dir.
 3. **If the hashed dir exists and `CURRENT.md` is present:** read `CURRENT.md`,
-   then `STATE.md`. Voice after compaction: tutor prose in full sentences (not
-   a status telegram). Match `STATE.md` → Now → `voice` when present; persist
-   journal lines to `STATE.md` immediately so compaction cannot wipe them.
-   Local STATE may use any language the human prefers; this skill stays
-   English. Do not import product `learn.md` retention cards / check-ins.
+   then `STATE.md`. If this turn is **re-entry** (section below), do that beat
+   before any new slice. Voice after compaction: tutor prose in full sentences
+   (not a status telegram). Match `STATE.md` → Now → `voice` when present;
+   persist journal and Re-entry lines to `STATE.md` immediately so compaction
+   cannot wipe them. Local STATE may use any language the human prefers; this
+   skill stays English. Do not import product `learn.md` retention cards /
+   check-ins.
 4. Stay on the atlas allowlist above. Do not write `ledger.sqlite`. Scratch is
    not the git-map wedge.
 5. Drain-shaped prompt on the mapped checkout (drain / `work next` / catch up
    the queue): one line pointing at product skill `skills/snowshoe/`
    (`drain.md`). Stay on scratch for this path; do not hard-block, and do not
    run drain commands from this skill.
+
+## Teaching
+
+- If something in the viewport **looks wrong, incomplete, or an eye-catcher**:
+  **raise it in the chat this turn**. Do not swallow it to stay on the lesson.
+  Do not start a fix unless they ask. If they agree it should change, one line
+  in `discrepancies.md`.
+- When a beat is about a real fragment, cite **repo-relative `path:line`**
+  (compiler style — opens the editor). Prose first. Keep `CURRENT.md`
+  readable without jumping — paths belong in chat / discrepancies, not as the
+  map’s spine.
+- If they ask to review local / agent patches mid-learn: do that, then return
+  to the slice. If the picture of the target changed, refresh `CURRENT.md`.
+  Patch review is not re-entry.
+- End a teaching beat with a **next proposal** (or a pause). Short steering
+  (“what’s next”, “go”, “use prose”) means take that default or fix voice —
+  not re-entry.
+- Landing a floor is progress, not re-entry. Quietly rewrite `STATE.md` →
+  **Re-entry** (Landed / Current / Next / Do not reopen) and keep teaching —
+  next-proposal as usual. Do not reprint the floor in chat.
+- Stopping (they say they are leaving, ending the day, parking the session):
+  same quiet rewrite. Then stop. Do not open a new slice. Still not the chat
+  ritual unless they also typed `re-entry`.
+
+## Re-entry
+
+Assume wipe. Do not continue the last telegram.
+
+**Trigger (one branch):** they type `re-entry` (optional leading `/`). Do not
+treat short steering (“what’s next” / “go” / “ok”), a confirmation that the
+floor landed, or a landed floor itself as this.
+
+**Short auto:** first teaching turn after compaction, hashed dir already has a
+journal, and this turn is not a content question about a named fragment. Then
+print Landed / Current / Do not reopen in a few sentences and wait. A named
+fragment question: answer it; do not dump the floor.
+
+**Explicit `re-entry`:**
+
+1. Read `CURRENT.md` and `STATE.md` → **Re-entry**. If that block is missing,
+   reconstruct from Now + last journal lines + CURRENT first-level nodes, write
+   it, then speak.
+2. Chat in tutor prose (no file tree, no CURRENT dump):
+   - what already landed (the floor), in words
+   - the open slice
+   - what not to reopen
+   - **one** check question on the **current** slice only
+3. Do not start the next slice until they confirm the floor is back or name
+   the fog. Missed check → reprint that floor; do not go deeper.
+
+`STATE.md` → Re-entry shape:
+
+```markdown
+## Re-entry
+
+- Landed:
+- Current:
+- Next:
+- Do not reopen:
+```
+
+Skill labels stay English. Local STATE / CURRENT may use any language the human prefers.
 
 ## CURRENT.md (mental map)
 

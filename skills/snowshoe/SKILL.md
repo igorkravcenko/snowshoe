@@ -2,11 +2,12 @@
 name: snowshoe
 description: >-
   Snowshoe is a personal comprehension map of a git repository that shows where your
-  understanding went stale after a pull and helps you catch up. Requires the `snowshoe`
-  CLI: bun add -g @igorkravcenko/snowshoe.
+  understanding went stale after a pull and helps you catch up. Requires Bun.
+  Install the `snowshoe` CLI: bun add -g @igorkravcenko/snowshoe.
   After pull or catch-up: drain via work next (init / routine refresh / routine advance,
   then complete claimed steps). In the map PTY or when studying the map
-  (SNOWSHOE_MODE=learn): talk about the tree using map view / map status. Combined mode
+  (SNOWSHOE_MODE=learn): talk about the tree using map view / map status. Learn
+  re-entry reprints the landed floor after a wiped-context break. Combined mode
   (map UI / UI terminal open while draining): read both drain.md and learn.md. Read
   install.md only if the snowshoe binary is missing.
 ---
@@ -49,7 +50,7 @@ Classify in this order:
 
 | Drain-adjacent | Learn | Combined |
 |---|---|---|
-| after pull, catch up, drain, `work next`, marked nodes, complete queue | study / explain the map, “what is this node”, look at the map, map PTY agent | map UI open / UI terminal + keep draining while studying/learning in the **same** session |
+| after pull, catch up, drain, `work next`, marked nodes, complete queue | study / explain the map, “what is this node”, look at the map, map PTY agent, `re-entry` | map UI open / UI terminal + keep draining while studying/learning in the **same** session |
 | | `SNOWSHOE_MODE=learn` when (1)–(2) are empty | same-session foreground learn/map conversation **and** background `work next --wait` |
 
 Explicit drain in the prompt beats env **unless** combined signals apply.
