@@ -56,3 +56,4 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-10-08-map-serve-origin-token](./ADR-2026-10-08-map-serve-origin-token.md) | accepted | Map serve CSWSH/CSRF: Origin + token + JSON CT; HTML CSP + Referrer-Policy |
 | [ADR-2026-10-12-skill-store-install-path](./ADR-2026-10-12-skill-store-install-path.md) | accepted | Claude plugin marketplace / skills.sh as additional skill install path; CLI `skill install` stays SoT |
 | [ADR-2026-10-12-snowshoe-scratch](./ADR-2026-10-12-snowshoe-scratch.md) | accepted | Satellite `snowshoe-scratch` (home mental map, not the map wedge) + global `--cwd` (git `-C`) |
+| [ADR-2026-10-16-root-help-human](./ADR-2026-10-16-root-help-human.md) | accepted | Root `--help` / no-args human postcard; `help --json` stays agent index |

@@ -45,6 +45,7 @@ describe("snowshoe --version", () => {
 
     const rootHelp = await snowshoe(repo, ["--help"]);
     expect(rootHelp.exitCode).toBe(0);
-    expect(rootHelp.json.command).toBe("help");
+    expect(rootHelp.stdout.trim()).not.toBe(pkg.version);
+    expect(rootHelp.json.command).not.toBe("help");
   });
 });

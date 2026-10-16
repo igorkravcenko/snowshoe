@@ -2,8 +2,32 @@ import type { ArgsDef, CommandDef } from "citty";
 import { renderUsage } from "citty";
 import { runHelp } from "./commands/help.ts";
 import { formatWorkCompleteHelpText, runWorkCompleteHelp } from "./commands/work-complete-help.ts";
+import { EXIT_OK } from "./errors.ts";
 import { printJson } from "./json.ts";
 import { packageVersion } from "./package-version.ts";
+
+/** Short human postcard for `snowshoe` / `--help` / `-h` (not the agent index). */
+export const ROOT_USAGE = `Snowshoe — don't let your agents outrun your understanding. Keep your footing.
+
+  snowshoe map serve --open
+  snowshoe skill install --json --skills-path .cursor/skills
+  snowshoe work next --json
+  snowshoe --version
+
+Agents: snowshoe help --json
+More:   snowshoe <command> --help
+`;
+
+export function printRootUsage(): number {
+  process.stdout.write(ROOT_USAGE);
+  return EXIT_OK;
+}
+
+export function printAgentHelp(cwd = process.cwd()): number {
+  const { body, exitCode } = runHelp(cwd);
+  printJson(body);
+  return exitCode;
+}
 
 type AnyCommand = CommandDef<ArgsDef>;
 
@@ -55,7 +79,7 @@ export function isWorkCompleteHelp(rawArgs: string[]): boolean {
 
 /**
  * `--help` / `-h` never executes a command.
- * Root → same JSON index as `snowshoe help`.
+ * Root → human postcard unless `--json` (then the agent index).
  * `work complete` → payload contract (JSON when `--json`); other subcommands → citty usage.
  * Uses stdout.write (not consola) so tests and pipes see usage.
  */
@@ -65,9 +89,8 @@ export async function handleHelpArgs(
   cwd = process.cwd(),
 ): Promise<number> {
   if (!hasCommandToken(rawArgs)) {
-    const { body, exitCode } = runHelp(cwd);
-    printJson(body);
-    return exitCode;
+    if (rawArgs.includes("--json")) return printAgentHelp(cwd);
+    return printRootUsage();
   }
   if (isWorkCompleteHelp(rawArgs)) {
     if (rawArgs.includes("--json")) {
