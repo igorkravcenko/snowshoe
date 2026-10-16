@@ -49,6 +49,8 @@ Bare npm name `snowshoe` is taken by an unrelated SnowShoe Stamp API client
 (`snowshoestamp/snowshoe_node`). The registry package for this product is
 **`@igorkravcenko/snowshoe`**. PATH / install binary remains **`snowshoe`**.
 Do not document bare `npx snowshoe` or `npm i -g snowshoe` for this project.
+Do not document `npm i -g @igorkravcenko/snowshoe` either — that install is not
+a supported runtime path (bin shebang is Bun).
 
 ## Amendment 2026-10-08: npm alias package `snoe` (retired 2026-10-10)
 

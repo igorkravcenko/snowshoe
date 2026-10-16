@@ -1,7 +1,7 @@
 {
   "name": "snowshoe",
   "version": "0.0.5",
-  "description": "Personal comprehension map of a git repository: shows where your understanding went stale after a pull and lets an agent help you catch up. Requires the snowshoe CLI: bun add -g @igorkravcenko/snowshoe (or npm install -g @igorkravcenko/snowshoe).",
+  "description": "Personal comprehension map of a git repository: shows where your understanding went stale after a pull and lets an agent help you catch up. Requires the snowshoe CLI: bun add -g @igorkravcenko/snowshoe.",
   "author": {
     "name": "Igor Kravchenko",
     "email": "igorkravcenko.dev@gmail.com"
