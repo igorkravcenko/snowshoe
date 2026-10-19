@@ -124,6 +124,9 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(learn).toContain("re-entry");
     expect(learn).toMatch(/Landed:/);
     expect(learn).not.toMatch(/[А-Яа-яЁё]/);
+    expect(learn).toContain("`sessions.md`");
+    expect(learn).toContain("Do **not** read `sessions.md` in the teaching loop");
+    expect(learn).not.toContain("CURSOR_CONVERSATION_ID");
   });
 
   test("dry-run: documented work next → complete → map status", async () => {

@@ -84,7 +84,19 @@ Skill labels stay English. Local STATE / CURRENT may use any language the human 
 Study sessions should use **`.snowshoe/learn/`** (gitignored; not the ledger). For a path without this repo’s map, use satellite skill `snowshoe-scratch` (`skills/snowshoe-scratch/`) instead of draining or writing the ledger.
 
 - **If absent:** briefly propose creating the scaffold (and offer to write it if they agree). Do not block a one-shot map question on this.
-- **If present:** start with `CURRENT.md`, then the active curriculum’s **`STATE.md`** (Now, Re-entry, retention cards, done check-ins, deferred). If this turn is **re-entry**, do that beat before any new slice. Read `PLAN.md` on phase shifts. **`discrepancies.md`** — standing place for bugs / “should change” (not STATE retention); keep in the layout even if unused this session. Local/gitignored: when `agreed`/`open` should outlive the machine, **offer once** to mirror to the repo issue tracker; never file unprompted. `mines.md` is a class catalog (no “seen” marks — that is STATE retention). Details: `.snowshoe/learn/README.md` when present.
+- **If present:** if a host chat id is visible and not already listed, append it to `sessions.md` (create the file if needed). Then start with `CURRENT.md`, then the active curriculum’s **`STATE.md`** (Now, Re-entry, retention cards, done check-ins, deferred). If this turn is **re-entry**, do that beat before any new slice. Read `PLAN.md` on phase shifts. **`discrepancies.md`** — standing place for bugs / “should change” (not STATE retention); keep in the layout even if unused this session. Local/gitignored: when `agreed`/`open` should outlive the machine, **offer once** to mirror to the repo issue tracker; never file unprompted. `mines.md` is a class catalog (no “seen” marks — that is STATE retention). Details: `.snowshoe/learn/README.md` when present.
+
+### Host chats (`sessions.md`)
+
+The same `.snowshoe/learn/` dir is reused across chats. Keep host conversation/session ids out of STATE / CURRENT.
+
+`sessions.md` is an append-only list in that dir. When this turn has a host conversation or session id (the opaque string the host already uses to name this chat; look in the environment): if that id is not already in the file, append one UTC line. Do not invent URLs. No id → skip; do not call host APIs.
+
+```markdown
+- 2026-10-19: `<id>`
+```
+
+Do **not** read `sessions.md` in the teaching loop (CURRENT / STATE / PLAN). Read it only to check/append, or when they ask to find a prior chat.
 
 ### Voice after compaction
 

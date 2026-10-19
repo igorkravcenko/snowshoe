@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Learn / scratch: append host conversation/session ids to `sessions.md` (not STATE). Do not read that file in the teaching loop.
+
 ## 0.0.6 — 2026-10-16
 
 Patch after [v0.0.5](https://github.com/igorkravcenko/snowshoe/releases/tag/v0.0.5). Merged PRs **#19** onward.
