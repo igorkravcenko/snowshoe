@@ -23,4 +23,12 @@ describe("snowshoe-scratch skill contract", () => {
     expect(text).toMatch(/Landed:/);
     expect(text).not.toMatch(/[А-Яа-яЁё]/);
   });
+
+  test("sessions.md records host chat ids without a vendor name", () => {
+    expect(text).toContain("`sessions.md`");
+    expect(text).toContain("Do **not** read `sessions.md` in the teaching loop");
+    expect(text).toContain("Do not invent URLs");
+    expect(text).not.toContain("CURSOR_CONVERSATION_ID");
+    expect(text).not.toContain("five files");
+  });
 });

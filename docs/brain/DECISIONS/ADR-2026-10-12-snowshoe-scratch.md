@@ -37,8 +37,9 @@ ledger vs file viewport.
    `id = sha256(utf8(realpath(target)))` (no trailing slash except `/`).
    Sidecar `origin.md`: realpath, id, optional `mainRoot` if a map was offered.
 4. Layout (subset of learn.md local state, no ledger): `origin.md`, `CURRENT.md`
-   (ephemeral mental map of the target — amendment below), `STATE.md` (Now /
-   voice / journal), `PLAN.md`, `discrepancies.md`. Create on agreed bootstrap.
+    (ephemeral mental map of the target — amendment below), `STATE.md` (Now /
+   voice / journal), `PLAN.md`, `discrepancies.md`, `sessions.md` (host chat
+   ids; amendment 2026-10-19). Create on agreed bootstrap.
    Resume only if the hashed dir exists **and** `CURRENT.md` is present; a
    hashed dir without `CURRENT.md` (partial bootstrap) is bootstrap, not resume.
    Hash recipe lives in the skill so another chat can reconstruct the dir from
@@ -99,6 +100,15 @@ The earlier phrase “ephemeral shallow outline tree” was too easy to read as 
 file listing or a copied TOC. The skill section `CURRENT.md (mental map)` is
 the contract.
 
+## Amendment 2026-10-19: Host chats (`sessions.md`)
+
+Learn and scratch dirs are reused across chats. Record the host
+conversation/session id (opaque string the host already uses; look in the
+environment) in `sessions.md` in that dir — append-only UTC date + id. Do not
+put ids in STATE / CURRENT / origin. Do not invent product URLs. Do not name a
+vendor in the skill. Missing id: skip. Do not read `sessions.md` in the teaching
+loop. Same rule in product `learn.md` (`.snowshoe/learn/sessions.md`).
+
 ## Amendment 2026-10-16: Scratch re-entry
 
 Same `re-entry` protocol as product `learn.md` (trigger `re-entry`, optional
@@ -113,7 +123,8 @@ not `skill install` / plugin / npm `files`.
    `CURRENT.md` as a mental map of the target (concepts, not ls/TOC; titles
   readable without jumping); optional atlas allowlist (`map status --json --cwd`
   only; optional `help --json`); global `--cwd` is git `-C`. Learn/scratch
-  `re-entry` reprints the landed floor (`STATE.md` Re-entry block).
+  `re-entry` reprints the landed floor (`STATE.md` Re-entry block). Host chat
+  ids live in `sessions.md` (append-only; not teaching context).
 - Plugin manifests, `skill.ts` packaged files, and npm `files` stay
   `skills/snowshoe` only. Tests that lock that exclusivity stay as they are.
 - No learning/quiz/verify product. Scratch `STATE.md` is a journal plus a

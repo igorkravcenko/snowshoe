@@ -75,22 +75,42 @@ map was **offered and accepted**.
 | `STATE.md` | Now / Re-entry / voice / journal |
 | `PLAN.md` | Plan; read on phase shifts |
 | `discrepancies.md` | Standing “should change” / bugs (not STATE) |
+| `sessions.md` | Host chat ids for this dir (append-only; not teaching context) |
 
 No ledger. No `mines.md` requirement. Scratch `STATE.md` is a journal plus a
 **Re-entry** block (not product-learn retention cards or check-ins).
+
+## Host chats (`sessions.md`)
+
+The same hashed dir is reused across chats. Keep host conversation/session ids
+out of STATE / CURRENT / origin.
+
+`sessions.md` is an append-only list. When this turn has a host conversation
+or session id (the opaque string the host already uses to name this chat;
+look in the environment): if that id is not already in the file, append one
+UTC line. Do not invent URLs. No id → skip; do not call host APIs.
+
+```markdown
+- 2026-10-19: `<id>`
+```
+
+Do **not** read `sessions.md` in the teaching loop (CURRENT / STATE / PLAN).
+Read it only to check/append, or when they ask to find a prior chat.
 
 ## Loop
 
 1. Resolve `target` → `realpath` → `id` → `$HOME/.snowshoe/learn/<id>/`.
 2. **If the hashed dir is missing, or it exists but `CURRENT.md` is missing
    (partial bootstrap):** briefly propose creating the scaffold (and offer to
-   write it if they agree). On OK: create the five files; write a **mental map**
-   of the target (section below) into `CURRENT.md` **and** into the chat (same
-   text). Do **not** block a one-shot question on scaffold. Do not resume a
-   partial dir.
-3. **If the hashed dir exists and `CURRENT.md` is present:** read `CURRENT.md`,
-   then `STATE.md`. If this turn is **re-entry** (section below), do that beat
-   before any new slice. Voice after compaction: tutor prose in full sentences
+   write it if they agree). On OK: create the layout files (including
+   `sessions.md`); write a **mental map** of the target (section below) into
+   `CURRENT.md` **and** into the chat (same text). Append this chat’s host id
+   if present. Do **not** block a one-shot question on scaffold. Do not resume
+   a partial dir.
+3. **If the hashed dir exists and `CURRENT.md` is present:** if a host chat id
+   is visible and not already listed, append it to `sessions.md`. Read
+   `CURRENT.md`, then `STATE.md`. If this turn is **re-entry** (section below),
+   do that beat before any new slice. Voice after compaction: tutor prose in full sentences
    (not a status telegram). Match `STATE.md` → Now → `voice` when present;
    persist journal and Re-entry lines to `STATE.md` immediately so compaction
    cannot wipe them. Local STATE may use any language the human prefers; this
