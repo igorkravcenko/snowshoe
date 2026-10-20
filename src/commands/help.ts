@@ -21,7 +21,7 @@ export const AGENT_HELP = {
     },
     {
       run: "snowshoe work next --json",
-      when: "Drain entry. Follow todo, then items. Repeat until idle (unless they asked --wait).",
+      when: "Drain entry. Follow todo (do not complete across refresh), then items, else leased. Repeat until idle (unless they asked --wait).",
     },
     {
       run: "snowshoe work next --json --wait",
@@ -29,7 +29,7 @@ export const AGENT_HELP = {
     },
     {
       run: "snowshoe work complete --json",
-      when: "After a claimed step. Envelope on stdin or --input. Payloads: work complete --help (--json). Match item.kind (detail|expand|enrich|fix|structure_sync|…).",
+      when: "After a claimed step. Envelope on stdin or --input. Payloads: work complete --help (--json). Match item.kind (detail|expand|enrich|fix|structure_sync|blast_radius|metric_decay).",
     },
     {
       run: "snowshoe init --json",

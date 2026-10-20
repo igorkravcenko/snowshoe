@@ -65,6 +65,43 @@ function claimable(step: StepRow, now: number): boolean {
   return false;
 }
 
+function isRoutineKind(kind: string): boolean {
+  return (ROUTINE_KINDS as readonly string[]).includes(kind);
+}
+
+/** Map hops always; routine steps only for the current open epoch. */
+function isQueueVisible(session: Session, step: StepRow): boolean {
+  if (isMapHopKind(step.kind)) return true;
+  if (isRoutineKind(step.kind)) {
+    const open = session.ledger.getOpenEpoch();
+    return Boolean(open && step.epoch_id === open.epoch_id);
+  }
+  return false;
+}
+
+function isLiveLease(step: StepRow, now: number): boolean {
+  return (
+    step.status === "leased" &&
+    Boolean(step.lease_token) &&
+    step.lease_expires_at != null &&
+    step.lease_expires_at > now
+  );
+}
+
+function sortQueue(a: StepRow, b: StepRow): number {
+  const pk = KIND_PRIORITY[a.kind] - KIND_PRIORITY[b.kind];
+  if (pk !== 0) return pk;
+  return a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id);
+}
+
+/** Omit leaf on an existing node keeps the stored flag; new node omit → false. */
+function resolveUpsertLeaf(
+  explicit: boolean | undefined,
+  existing: { leaf: number } | null | undefined,
+): boolean {
+  return explicit ?? (existing ? existing.leaf === 1 : false);
+}
+
 function requiredRoutinePending(session: Session): boolean {
   const open = session.ledger.getOpenEpoch();
   if (!open) return false;
@@ -112,6 +149,7 @@ function gatedNext(
   head: string | null,
   batchSize: number,
   locale: string | null = null,
+  leased: unknown[] = [],
 ): { exitCode: number; body: Record<string, unknown> } {
   return {
     exitCode: EXIT_OK,
@@ -119,6 +157,7 @@ function gatedNext(
       action,
       todo: WORK_NEXT_TODO[action],
       items: [],
+      leased,
       stop: true,
       remaining: 0,
       batchSize,
@@ -128,11 +167,27 @@ function gatedNext(
 }
 
 function hasOpenWork(session: Session): boolean {
-  return (
-    session.ledger.listSteps({
+  return session.ledger
+    .listSteps({
       statuses: ["pending", "leased", "failed"],
-    }).length > 0
-  );
+    })
+    .some((s) => isQueueVisible(session, s));
+}
+
+function visibleOpenSteps(session: Session): StepRow[] {
+  return session.ledger
+    .listSteps({
+      statuses: ["pending", "leased", "failed"],
+    })
+    .filter((s) => isQueueVisible(session, s));
+}
+
+function formatLiveLeftovers(session: Session, now: number): unknown[] {
+  const open = session.ledger.getOpenEpoch();
+  return visibleOpenSteps(session)
+    .filter((s) => isLiveLease(s, now))
+    .sort(sortQueue)
+    .map((step) => formatWorkItem(session, step, open?.epoch_id ?? step.epoch_id));
 }
 
 function isIdleNext(result: { body: Record<string, unknown> }): boolean {
@@ -229,22 +284,24 @@ export function runWorkNext(
 ): { exitCode: number; body: Record<string, unknown> } {
   const batchSize = Math.max(1, opts.batchSize ?? DEFAULT_WORK_BATCH_SIZE);
   const locale = session.ledger.getMeta("locale");
+  const now = Date.now();
   if (refreshRequired(session)) {
-    return gatedNext("refresh", session.repoRoot, session.gitHead, batchSize, locale);
+    return gatedNext(
+      "refresh",
+      session.repoRoot,
+      session.gitHead,
+      batchSize,
+      locale,
+      formatLiveLeftovers(session, now),
+    );
   }
 
-  const now = Date.now();
   const open = session.ledger.getOpenEpoch();
-  const all = session.ledger.listSteps({
-    statuses: ["pending", "leased", "failed"],
-  });
-  const ranked = all
+  const visible = visibleOpenSteps(session);
+  const leftovers = visible.filter((s) => isLiveLease(s, now)).sort(sortQueue);
+  const ranked = visible
     .filter((s) => claimable(s, now) && dependenciesMet(session, s))
-    .sort((a, b) => {
-      const pk = KIND_PRIORITY[a.kind] - KIND_PRIORITY[b.kind];
-      if (pk !== 0) return pk;
-      return a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id);
-    });
+    .sort(sortQueue);
 
   const take = ranked.slice(0, batchSize);
   const items = session.ledger.transaction(() => {
@@ -267,15 +324,20 @@ export function runWorkNext(
     return out;
   });
 
+  const leased = leftovers.map((step) =>
+    formatWorkItem(session, step, open?.epoch_id ?? step.epoch_id),
+  );
   const remaining = Math.max(0, ranked.length - take.length);
-  if (items.length > 0) {
+  const stop = leased.length === 0 && remaining === 0;
+  if (items.length > 0 || leased.length > 0) {
     return {
       exitCode: EXIT_OK,
       body: envelope("work.next", session.repoRoot, session.gitHead, {
         action: "work",
         todo: null,
         items,
-        stop: remaining === 0,
+        leased,
+        stop,
         remaining,
         batchSize,
         locale,
@@ -289,7 +351,8 @@ export function runWorkNext(
         action: "work",
         todo: null,
         items: [],
-        stop: remaining === 0,
+        leased: [],
+        stop,
         remaining,
         batchSize,
         locale,
@@ -305,6 +368,7 @@ export function runWorkNext(
       action: "idle",
       todo: null,
       items: [],
+      leased: [],
       stop: true,
       remaining: 0,
       batchSize,
@@ -671,7 +735,7 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
     }
     for (const node of payload.nodes) {
       const existed = session.ledger.getNode(node.slug);
-      const leaf = Boolean(node.leaf);
+      const leaf = resolveUpsertLeaf(node.leaf, existed);
       session.ledger.upsertNode({
         slug: node.slug,
         title: node.title ?? existed?.title ?? node.slug,
@@ -838,7 +902,7 @@ function applyStructureOps(
       const slug = resolveStructureSlug(op)!;
       const existing = session.ledger.getNode(slug);
       const type = resolveStructureType(op) ?? existing?.type ?? "module";
-      const leaf = Boolean(op.node.leaf);
+      const leaf = resolveUpsertLeaf(op.node.leaf, existing);
       session.ledger.upsertNode({
         slug,
         title: op.node.title ?? existing?.title ?? slug,

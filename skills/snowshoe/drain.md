@@ -14,10 +14,11 @@ snowshoe work next --json
 |---|---|
 | `action` | `init` · `refresh` · `advance` · `work` · `idle` |
 | `todo` | Exact command to run when gated (`init` / `refresh` / `advance`). `null` otherwise. |
-| `items` | Claimed steps. Empty unless `action` is `work` and there is claimable work. |
+| `items` | This call’s new claims. May be nonempty while `leased` is also nonempty. |
+| `leased` | Queue-visible live leftovers not minted this call (same tokens). Always present. |
 | `locale` | BCP-47 UI language from ledger meta (`en`, `en-US`, …), or `null` if unset. |
 
-Until `todo` is null, **run only that unlock command**, then call `work next` again. Do not look for other work, do not complete steps, do not skip the gate.
+Until `todo` is null, **run only that unlock command**, then call `work next` again. Do not look for other work, do not complete steps (including `leased`), do not skip the gate. Do **not** complete across refresh.
 
 ```
 # outer: re-fetch the batch every cycle
@@ -26,22 +27,32 @@ loop:
   batch ← nextCmd
   if batch.todo is set:
     run batch.todo exactly
-    continue                         # do not assume the queue is empty
+    continue                         # do not complete across refresh
   if batch.waitTimedOut: STOP and report
-  if batch.items is empty:           # action is idle (or work with nothing claimable)
-    if interactive map drain:
-      nextCmd ← snowshoe work next --json --wait
-      continue
-    STOP
-  # inner: current batch
-  for step in batch.items:
-    do the work for step.kind
-    snowshoe work complete --json    # envelope on stdin or --input
-    if result is hard reject: STOP and report reasons
-    if operator interrupt: STOP and report
-  nextCmd ← snowshoe work next --json
-  # next outer cycle — refresh the batch; finishing these tickets ≠ queue empty
+  if batch.items is nonempty:
+    for step in batch.items:
+      do the work for step.kind
+      snowshoe work complete --json    # envelope on stdin or --input
+      if result is hard reject: STOP and report reasons
+      if operator interrupt: STOP and report
+    # if this chat still holds leftover tokens that appear in batch.leased, complete those too
+    nextCmd ← snowshoe work next --json
+    continue
+  if batch.leased is nonempty:
+    for step in batch.leased:        # crash recovery / hanging batch
+      do the work for step.kind
+      snowshoe work complete --json
+      if result is hard reject: STOP and report reasons
+      if operator interrupt: STOP and report
+    nextCmd ← snowshoe work next --json
+    continue
+  if interactive map drain:
+    nextCmd ← snowshoe work next --json --wait
+    continue
+  STOP
 ```
+
+A second drain should take `items` and leave `leased` unless `items` is empty. Do not steal another worker’s leftovers while new claimable work exists.
 
 `--batch-size` is optional; the CLI default is already a small batch.
 
@@ -216,7 +227,7 @@ Same payload shape as expand. Intent: the marked area is wrong or stale — re-r
 
 The diff for these steps is `git diff --name-only <base>..<target>` (commits in that range only). Do not use the working tree, unstaged changes, or only the latest commit.
 
-**structure_sync** — cover that pinned range. Empty `ops` is OK when every path in `base..target` is already anchored or listed in `coverage.unmappedPaths`. On `upsert_node`, present `codeAnchors` replaces ALL anchors for that slug (omit the field to keep existing); omit `leaf` stores `false`.
+**structure_sync** — cover that pinned range. Empty `ops` is OK when every path in `base..target` is already anchored or listed in `coverage.unmappedPaths`. On `upsert_node`, present `codeAnchors` replaces ALL anchors for that slug (omit the field to keep existing); omit `leaf` on an existing node keeps the stored flag (new node omit → `false`; send an explicit boolean to change it). Payloads: `snowshoe work complete --help --json`.
 
 ```json
 {
@@ -228,9 +239,9 @@ The diff for these steps is `git diff --name-only <base>..<target>` (commits in 
 }
 ```
 
-**blast_radius** — empty `nodes` is legal when nothing in `base..target` hits anchors. Non-empty rows need `evidence`.
+**blast_radius** — empty `nodes` is legal when nothing in `base..target` hits anchors. Non-empty rows need `evidence`. Caps and reject codes: `work complete --help --json`.
 
-**metric_decay** — exactly one `updates[]` row matching the claimed `(nodeId, level)`. Do not raise the stored value.
+**metric_decay** — exactly one `updates[]` row matching the claimed `(nodeId, level)`. Do not raise the stored value. Caps and reject codes: `work complete --help --json`.
 
 ## Map UI
 
@@ -246,7 +257,7 @@ snowshoe map status --json
 
 ## Stop
 
-- `work next` returns empty `items` and no `todo` (`action: idle`) and you are **not** in interactive `--wait` mode
+- `work next` returns no `todo`, empty `items`, and empty `leased` (`action: idle`) and you are **not** in interactive `--wait` mode
 - `waitTimedOut: true`
 - hard reject on complete (bad lease, invalid payload, missing anchors, …)
 - operator interrupt or budget exhausted

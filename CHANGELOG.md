@@ -3,6 +3,9 @@
 ## Unreleased
 
 - Learn / scratch: append host conversation/session ids to `sessions.md` (not STATE). Do not read that file in the teaching loop.
+- `work next` echoes live leftovers in `leased[]` (same tokens; mint while leftovers exist is allowed). Queue-visible work is map hops plus the open epoch’s routine steps. Refresh `todo` wins — do not complete across refresh ([#16](https://github.com/igorkravcenko/snowshoe/issues/16)).
+- `work complete --help` documents `blast_radius` and `metric_decay` payloads, reject codes, and severity caps ([#36](https://github.com/igorkravcenko/snowshoe/issues/36)).
+- Omit `leaf` on an existing upsert keeps the stored flag; a new node omit still stores `false` ([#37](https://github.com/igorkravcenko/snowshoe/issues/37)).
 
 ## 0.0.6 — 2026-10-16
 

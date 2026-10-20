@@ -23,5 +23,12 @@ describe("snowshoe help", () => {
     );
     expect(complete?.when).toContain("work complete --help");
     expect(complete?.when).toContain("structure_sync");
+    expect(complete?.when).toContain("blast_radius");
+    expect(complete?.when).toContain("metric_decay");
+    const workNext = (r.json.commands as Array<{ run: string; when: string }>).find(
+      (c) => c.run === "snowshoe work next --json",
+    );
+    expect(workNext?.when).toContain("leased");
+    expect(workNext?.when).toContain("refresh");
   });
 });

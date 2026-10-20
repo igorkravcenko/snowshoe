@@ -72,7 +72,13 @@ describe("CLI --help / -h never executes", () => {
     expect(text).toContain("replaces ALL anchors");
     expect(text).toContain("codeAnchors omitted");
     expect(text).toContain("leaf omitted");
+    expect(text).toContain("existing node");
     expect(text).toContain("stored as false");
+    expect(text).toContain("blast_radius");
+    expect(text).toContain("metric_decay");
+    expect(text).toContain("empty_blast_illegal_intersecting_anchors");
+    expect(text).toContain("value_exceeds_cap");
+    expect(text).toContain("Wrap the payload in completions[]");
     expect(text).toContain('"op": "upsert_node"');
     expect(text).toContain("src/pay.ts");
     expect(text).toContain('"id": "cli"');
@@ -92,6 +98,7 @@ describe("CLI --help / -h never executes", () => {
     };
     expect(sync.upsert_node.codeAnchors).toContain("replaces ALL anchors");
     expect(sync.upsert_node.omitCodeAnchors).toContain("omitted");
+    expect(sync.upsert_node.leaf).toContain("existing node");
     expect(sync.upsert_node.leaf).toContain("false");
     expect(sync.example.ops.length).toBeGreaterThanOrEqual(2);
     const replace = sync.example.ops[0]!;
@@ -104,6 +111,31 @@ describe("CLI --help / -h never executes", () => {
     expect(omit.node.leaf).toBeUndefined();
     expect(sync.exampleNotes.join(" ")).toMatch(/replace ALL/i);
     expect(sync.exampleNotes.join(" ")).toMatch(/omitted/i);
+    expect(sync.exampleNotes.join(" ")).toMatch(/new slug/i);
+    expect(r.json.wrap).toContain("completions[]");
+    const blast = r.json.blast_radius as {
+      example: { nodes: unknown; completions?: unknown };
+      requiredLevels: Record<string, string[]>;
+      severityCaps: Record<string, Record<string, number | null>>;
+      rejectReasons: string[];
+    };
+    expect(blast.example.completions).toBeUndefined();
+    expect(Array.isArray(blast.example.nodes)).toBe(true);
+    expect(blast.requiredLevels.nit).toEqual(["internals"]);
+    expect(blast.severityCaps.nit.internals).toBe(0.85);
+    expect(blast.rejectReasons).toContain("empty_blast_illegal_intersecting_anchors");
+    const metric = r.json.metric_decay as {
+      example: { updates: unknown; completions?: unknown };
+      rejectReasons: string[];
+      requiredLevels: Record<string, string[]>;
+      severityCaps: Record<string, Record<string, number | null>>;
+    };
+    expect(metric.example.completions).toBeUndefined();
+    expect(Array.isArray(metric.example.updates)).toBe(true);
+    expect(metric.rejectReasons.some((s) => s.startsWith("value_exceeds_cap"))).toBe(true);
+    expect(metric.rejectReasons).toContain("metric_step_expects_one_update");
+    expect(metric.requiredLevels.behavior).toEqual(["internals", "contracts"]);
+    expect(metric.severityCaps.boundary.overview).toBe(0.3);
   });
 
   test("work complete --json --help is the same JSON contract", async () => {

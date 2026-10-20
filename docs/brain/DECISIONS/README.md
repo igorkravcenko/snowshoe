@@ -57,3 +57,5 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-10-12-skill-store-install-path](./ADR-2026-10-12-skill-store-install-path.md) | accepted | Claude plugin marketplace / skills.sh as additional skill install path; CLI `skill install` stays SoT |
 | [ADR-2026-10-12-snowshoe-scratch](./ADR-2026-10-12-snowshoe-scratch.md) | accepted | Satellite `snowshoe-scratch` (home mental map, not the map wedge) + global `--cwd` (git `-C`); re-entry; `sessions.md` |
 | [ADR-2026-10-16-root-help-human](./ADR-2026-10-16-root-help-human.md) | accepted | Root `--help` / no-args human postcard; `help --json` stays agent index |
+| [ADR-2026-10-20-work-next-live-lease](./ADR-2026-10-20-work-next-live-lease.md) | accepted | `work next` echoes live leftovers in `leased[]`; mint while live OK; queue-visible = map hops + open-epoch routine |
+| [ADR-2026-10-20-upsert-omit-leaf](./ADR-2026-10-20-upsert-omit-leaf.md) | accepted | Omit `leaf` on existing upsert keeps the stored flag; new node omit → false |

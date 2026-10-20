@@ -20,7 +20,7 @@ Notes that say epoch detect is only on skill→CLI hit (no util daemon) stay tru
 ## Decision
 
 - Flag: `snowshoe work next --json --wait`. Optional `--wait-timeout <ms>` (`0` = wait forever, the default when `--wait` is set).
-- `--wait` delays **only** a result whose `action` is `idle`. `init` / `refresh` / `advance` / `work` return on the first pass (including `work` with empty `items` because nothing is claimable yet).
+- `--wait` delays **only** a result whose `action` is `idle`. `init` / `refresh` / `advance` / `work` return on the first pass (including `work` with empty `items` and nonempty `leased` — crash recovery, not idle).
 - Wake: `fs.watch` on `.snowshoe/` (ledger + WAL sidecars). Reopen the ledger on wake and **claim** as today. Fallback timer **2s** if the watch is quiet or unsupported (not a 200ms busy loop). Not a util daemon.
 - Timeout: still `action: idle`, exit 0, extra field `waitTimedOut: true`. SIGINT ends the process; no special JSON.
 - Default drain (no `--wait`) is unchanged: idle → stop.

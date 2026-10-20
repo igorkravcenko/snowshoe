@@ -103,7 +103,9 @@ describe("snowshoe skill contract (dry-run of instructions)", () => {
     expect(drain).toContain("codeAnchors");
     expect(drain).toContain("replaces ALL anchors");
     expect(drain).toContain("omit the field to keep existing");
-    expect(drain).toContain("omit `leaf` stores `false`");
+    expect(drain).toContain("omit `leaf` on an existing node keeps the stored flag");
+    expect(drain).toContain("leased");
+    expect(drain).toContain("do not complete across refresh");
   });
 
   test("learn.md is a map-conversation stub (no quiz; combined may wait)", () => {
