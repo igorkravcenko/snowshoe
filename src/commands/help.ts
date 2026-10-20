@@ -29,7 +29,7 @@ export const AGENT_HELP = {
     },
     {
       run: "snowshoe work complete --json",
-      when: "After a claimed step. Envelope on stdin or --input: completions[].id = item.stepId, leaseToken, kind. Payloads + reject codes: work complete --help (--json). Match item.kind (detail|expand|enrich|fix|structure_sync|blast_radius|metric_decay). Skip already_closed / epoch_not_open / refresh_required / lease_expired; STOP on other rejects. Exit 1 = some step rejected (ok:false); 2 = bad JSON/envelope.",
+      when: "After a claimed step. Envelope on stdin or --input: completions[].id = item.stepId, leaseToken, kind. Payloads + reject codes: work complete --help (--json). Match item.kind (detail|expand|enrich|fix|structure_sync|blast_radius|metric_decay). Skip already_closed / lease_reclaimed / epoch_not_open / refresh_required / lease_expired; STOP on other rejects. Exit 1 = some step rejected (ok:false); 2 = bad JSON/envelope.",
     },
     {
       run: "snowshoe init --json",

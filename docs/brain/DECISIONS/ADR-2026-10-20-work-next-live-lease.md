@@ -40,6 +40,10 @@ One helper for ranking, `hasOpenWork`, and `leased`:
 
 Superseded-epoch routine rows may remain in sqlite. They are not claimed, not echoed, and must not block `advance`. Do not fail/cancel them in this decision. `work complete` rejects a routine step whose epoch is not the open epoch with `epoch_not_open` (checked after `bad_lease`, before `lease_expired` and the payload), so a token held from before refresh cannot apply a stale range. While the refresh gate is showing (HEAD left the open epoch's target), routine completes reject `refresh_required`. Both are skip-and-repoll for the skill, not a STOP.
 
+### Lost lease vs bad token
+
+The ledger keeps only the current token, no history. A token mismatch on a step that is still `leased` under another token, with a well-formed (UUID) token, rejects `lease_reclaimed`: the caller's lease expired and another `work next` re-minted it. Skip-and-repoll. A malformed token, or a mismatch on a step that is not leased, stays `bad_lease` (STOP). A step someone else already completed rejects `already_closed` (checked first). Limit: a well-formed but wrong token (e.g. another step's token) also reads as `lease_reclaimed`; that only costs a skip, and the step returns to the queue after TTL.
+
 ### Refresh vs leftover (`todo` wins)
 
 `refreshRequired` runs before claim. That is the only `todo` that can overlap a live batch (`advance` is gated only when queue-visible work is empty; `init` is pre-ledger).

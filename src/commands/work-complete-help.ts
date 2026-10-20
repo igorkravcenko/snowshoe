@@ -93,6 +93,7 @@ export const COMMON_REJECT_REASONS = [
   "kind_mismatch",
   "already_closed",
   "bad_lease",
+  "lease_reclaimed",
   "epoch_not_open",
   "refresh_required",
   "lease_expired",
@@ -100,13 +101,13 @@ export const COMMON_REJECT_REASONS = [
 ] as const;
 
 export const COMMON_REJECT_NOTE =
-  "Any kind: checked before the payload. epoch_not_open = routine step (structure_sync / blast_radius / metric_decay) from a superseded epoch; run work next again after routine refresh. refresh_required = routine step while HEAD left the epoch target (work next shows the refresh todo). Skip-and-repoll (not a STOP): already_closed, epoch_not_open, refresh_required, lease_expired. Other rejects are hard (STOP and report).";
+  "Any kind: checked before the payload. epoch_not_open = routine step (structure_sync / blast_radius / metric_decay) from a superseded epoch; run work next again after routine refresh. refresh_required = routine step while HEAD left the epoch target (work next shows the refresh todo). lease_reclaimed = your lease expired and another work next re-claimed the step under a new token. Skip-and-repoll (not a STOP): already_closed, lease_reclaimed, epoch_not_open, refresh_required, lease_expired. Other rejects (including bad_lease: token not valid for this step) are hard (STOP and report).";
 
 export const METRIC_DECAY_INTENT =
   "Decay only lowers. Cap = min(stored value, severityCap); you cannot raise. Nodes created by map hops start at 0, so their only legal value is 0 until the human studies the node and raises the metric (map metric). Decay is meaningful after that rise. A missing stored value counts as 1.0.";
 
 export const METRIC_DECAY_EXAMPLE_NOTE =
-  "Example assumes stored internals for pay is >= 0.5 (the nit cap 0.85 is not the binding limit then). With stored 0 (fresh map-hop node) only value 0 is accepted.";
+  "0.5 in the example is only an illustrative value. Rule: the new value must be <= the node's currently stored value (and <= severityCap). On a fresh map-hop node (stored 0) only 0 is accepted.";
 
 export const BLAST_RADIUS_REJECT_REASONS = [
   "no_epoch",

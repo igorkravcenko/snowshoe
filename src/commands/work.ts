@@ -498,7 +498,11 @@ function completeOne(
     return { id: item.id, status: "rejected", reasons: ["already_closed"] };
   }
   if (step.status !== "leased" || step.lease_token !== item.leaseToken) {
-    return { id: item.id, status: "rejected", reasons: ["bad_lease"] };
+    return {
+      id: item.id,
+      status: "rejected",
+      reasons: [leaseMismatchReason(step, item.leaseToken)],
+    };
   }
   if (isRoutineKind(step.kind)) {
     const open = session.ledger.getOpenEpoch();
@@ -539,6 +543,20 @@ function completeOne(
     const msg = err instanceof Error ? err.message : String(err);
     return { id: step.id, status: "rejected", reasons: [msg] };
   }
+}
+
+const LEASE_TOKEN_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * No token history in the ledger. A well-formed token on a step that is still leased under a
+ * different token is read as "your lease expired and another `work next` re-claimed it"
+ * (skip-and-repoll). Anything else (malformed token, step not leased) stays `bad_lease` (STOP).
+ */
+function leaseMismatchReason(step: StepRow, token: string): "lease_reclaimed" | "bad_lease" {
+  if (step.status === "leased" && step.lease_token && LEASE_TOKEN_SHAPE.test(token)) {
+    return "lease_reclaimed";
+  }
+  return "bad_lease";
 }
 
 function hasDeprecatedEdges(raw: unknown): boolean {

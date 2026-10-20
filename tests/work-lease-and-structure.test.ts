@@ -97,6 +97,62 @@ describe("work next lease TTL", () => {
     expect(reclaimed.json.leased).toEqual([]);
   });
 
+  test("lost lease rejects lease_reclaimed; after the new holder completes it is already_closed", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const first = await snowshoe(repo, ["work", "next", "--json"]);
+    const a = (first.json.items as Array<Record<string, unknown>>)[0]!;
+    const stepId = String(a.stepId);
+    const tokenA = String(a.leaseToken);
+    const unchanged = (token: string) =>
+      completeEnvelope([
+        {
+          id: stepId,
+          leaseToken: token,
+          kind: "expand",
+          payload: detailPayload({ parentSlug: "root", unchanged: true }),
+        },
+      ]);
+
+    // Agent A's lease expires; agent B's work next re-claims under a new token.
+    expireLease(repo, stepId);
+    const second = await snowshoe(repo, ["work", "next", "--json"]);
+    const b = (second.json.items as Array<Record<string, unknown>>)[0]!;
+    expect(b.stepId).toBe(stepId);
+    const tokenB = String(b.leaseToken);
+    expect(tokenB).not.toBe(tokenA);
+
+    const aLate = await snowshoe(repo, ["work", "complete", "--json"], {
+      stdin: unchanged(tokenA),
+    });
+    expect(aLate.exitCode).toBe(1);
+    expect((aLate.json.results as Array<Record<string, unknown>>)[0]?.reasons).toEqual([
+      "lease_reclaimed",
+    ]);
+    expect(stepStatus(repo, stepId)).toBe("leased");
+
+    // A token that was never valid (malformed) stays bad_lease.
+    const garbage = await snowshoe(repo, ["work", "complete", "--json"], {
+      stdin: unchanged("not-a-token"),
+    });
+    expect((garbage.json.results as Array<Record<string, unknown>>)[0]?.reasons).toEqual([
+      "bad_lease",
+    ]);
+
+    const bDone = await snowshoe(repo, ["work", "complete", "--json"], {
+      stdin: unchanged(tokenB),
+    });
+    expect(bDone.exitCode).toBe(0);
+
+    const aAfter = await snowshoe(repo, ["work", "complete", "--json"], {
+      stdin: unchanged(tokenA),
+    });
+    expect(aAfter.exitCode).toBe(1);
+    expect((aAfter.json.results as Array<Record<string, unknown>>)[0]?.reasons).toEqual([
+      "already_closed",
+    ]);
+  });
+
   test("second work next may mint more items; leftovers stay in leased with same tokens", async () => {
     const repo = makeGitRepo();
     await snowshoe(repo, ["init", "--json"]);

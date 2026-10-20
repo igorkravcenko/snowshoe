@@ -88,6 +88,8 @@ describe("CLI --help / -h never executes", () => {
       "epoch_not_open",
       "refresh_required",
       "unknown_kind",
+      "lease_reclaimed",
+      "only an illustrative value",
       "node_not_in_blast",
       "evidence_sha_missing",
     ]) {
@@ -157,6 +159,7 @@ describe("CLI --help / -h never executes", () => {
       "kind_mismatch",
       "already_closed",
       "bad_lease",
+      "lease_reclaimed",
       "epoch_not_open",
       "refresh_required",
       "lease_expired",

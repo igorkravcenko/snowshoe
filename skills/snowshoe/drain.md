@@ -67,8 +67,8 @@ The ledger has no lease owner. **Your** leased are the `leaseToken`s you receive
 
 `work complete` returns per-step `results[]` with `status` and `reasons`.
 
-- **Skip-and-repoll** (not an error; drop that step and continue): `already_closed` (someone finished it), `epoch_not_open` (token from before `routine refresh`), `refresh_required` (HEAD moved; the next `work next` shows the refresh `todo`), `lease_expired` (lease timed out and went back to the queue — the next `work next` re-mints it).
-- **Hard reject → STOP and report:** every other reason — `unknown_step`, `kind_mismatch`, `bad_lease`, `unknown_kind`, `invalid_payload: …`, and the kind-specific payload rejects (`missing_body:…`, `anchor_missing:…`, `matrix_forbid:…`, `coverage_unmapped:…`, `epoch_base_target_mismatch`, `value_exceeds_cap:…`, …; full lists in `snowshoe work complete --help --json`).
+- **Skip-and-repoll** (not an error; drop that step and continue): `already_closed` (someone finished it), `lease_reclaimed` (your lease expired and another `work next` re-claimed the step under a new token — that worker owns it now), `epoch_not_open` (token from before `routine refresh`), `refresh_required` (HEAD moved; the next `work next` shows the refresh `todo`), `lease_expired` (lease timed out and went back to the queue — the next `work next` re-mints it).
+- **Hard reject → STOP and report:** every other reason — `unknown_step`, `kind_mismatch`, `bad_lease` (token was never valid for this step: wrong or malformed), `unknown_kind`, `invalid_payload: …`, and the kind-specific payload rejects (`missing_body:…`, `anchor_missing:…`, `matrix_forbid:…`, `coverage_unmapped:…`, `epoch_base_target_mismatch`, `value_exceeds_cap:…`, …; full lists in `snowshoe work complete --help --json`).
 
 ### Exit codes
 
