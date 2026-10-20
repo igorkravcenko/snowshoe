@@ -84,12 +84,56 @@ export const METRIC_DECAY_PAYLOAD_EXAMPLE = {
   ],
 } as const;
 
+/** Envelope-level rejects (`completeOne`), checked before the kind-specific payload. */
+export const COMMON_REJECT_REASONS = [
+  "unknown_step",
+  "kind_mismatch",
+  "already_closed",
+  "bad_lease",
+  "epoch_not_open",
+  "lease_expired",
+] as const;
+
+export const COMMON_REJECT_NOTE =
+  "Any kind: checked before the payload. epoch_not_open = routine step (structure_sync / blast_radius / metric_decay) from a superseded epoch; run work next again after routine refresh.";
+
+export const BLAST_RADIUS_REJECT_REASONS = [
+  "no_epoch",
+  "epoch_base_target_mismatch",
+  "empty_blast_illegal_intersecting_anchors",
+  "unknown_node:<nodeId>",
+  "unknown_parent:<parentId>",
+  "missing_evidence:<nodeId>",
+  "evidence_path_missing:<nodeId>",
+  "evidence_sha_missing:<nodeId>",
+  "commit_outside_range:<sha>",
+  "invalid_payload: …",
+] as const;
+
+export const METRIC_DECAY_REJECT_REASONS = [
+  "no_epoch",
+  "update_does_not_match_step",
+  "metric_step_expects_one_update",
+  "node_not_in_blast",
+  "level_not_required",
+  "value_exceeds_cap:<value>><maxAllowed>",
+  "invalid_payload: …",
+] as const;
+
+export const METRIC_DECAY_REASON_RULE =
+  "updates[].reason is required (non-empty string), e.g. severity:nit.";
+
+export const SEVERITY_CAPS_NOTE =
+  "severityCaps null = that level is not required for that severity (no metric_decay step is created for it).";
+
 export function workCompleteHelpBody(): Record<string, unknown> {
   return {
     audience: "agent",
     usage: "snowshoe work complete --json",
     input: "JSON envelope on stdin or --input. kind must match the claimed step.",
     wrap: COMPLETIONS_WRAP,
+    commonRejectReasons: [...COMMON_REJECT_REASONS],
+    commonRejectNote: COMMON_REJECT_NOTE,
     mapHops: "detail / expand / enrich / fix payloads: drain.md.",
     structure_sync: {
       summary:
@@ -111,36 +155,20 @@ export function workCompleteHelpBody(): Record<string, unknown> {
         "Echo base/target from the claimed item. nodes[]: nodeId, severity (nit|behavior|contract|boundary), optional parentIds, evidence min 1 (type path|commit).",
       emptyNodes:
         "Empty nodes is legal only when git diff base..target does not intersect anchors (else empty_blast_illegal_intersecting_anchors).",
-      rejectReasons: [
-        "no_epoch",
-        "epoch_base_target_mismatch",
-        "empty_blast_illegal_intersecting_anchors",
-        "unknown_node:<nodeId>",
-        "unknown_parent:<parentId>",
-        "missing_evidence:<nodeId>",
-        "evidence_path_missing:<nodeId>",
-        "evidence_sha_missing:<nodeId>",
-        "commit_outside_range:<sha>",
-        "invalid_payload: …",
-      ],
+      rejectReasons: [...BLAST_RADIUS_REJECT_REASONS],
       requiredLevels: SEVERITY_LEVELS,
       severityCaps: SEVERITY_CAPS,
+      severityCapsNote: SEVERITY_CAPS_NOTE,
       example: BLAST_RADIUS_PAYLOAD_EXAMPLE,
     },
     metric_decay: {
       summary:
         "Exactly one updates[] row matching the claimed (nodeId, level). value in [0,1]; must not exceed min(storedPrevious, severityCap); missing stored previous is 1.0. previousValue is audit-only.",
-      rejectReasons: [
-        "no_epoch",
-        "update_does_not_match_step",
-        "metric_step_expects_one_update",
-        "node_not_in_blast",
-        "level_not_required",
-        "value_exceeds_cap:<value>><maxAllowed>",
-        "invalid_payload: …",
-      ],
+      reason: METRIC_DECAY_REASON_RULE,
+      rejectReasons: [...METRIC_DECAY_REJECT_REASONS],
       requiredLevels: SEVERITY_LEVELS,
       severityCaps: SEVERITY_CAPS,
+      severityCapsNote: SEVERITY_CAPS_NOTE,
       example: METRIC_DECAY_PAYLOAD_EXAMPLE,
     },
   };
@@ -158,7 +186,7 @@ function formatSeverityTables(): string {
       return `  ${sev}: ${parts}`;
     })
     .join("\n");
-  return `requiredLevels:\n${levels}\nseverityCaps:\n${caps}`;
+  return `requiredLevels:\n${levels}\nseverityCaps:\n${caps}\n${SEVERITY_CAPS_NOTE}`;
 }
 
 export function formatWorkCompleteHelpText(): string {
@@ -168,10 +196,13 @@ export function formatWorkCompleteHelpText(): string {
   const blastExample = JSON.stringify(BLAST_RADIUS_PAYLOAD_EXAMPLE, null, 2);
   const metricExample = JSON.stringify(METRIC_DECAY_PAYLOAD_EXAMPLE, null, 2);
   const tables = formatSeverityTables();
+  const rejects = (list: readonly string[]) => list.join(", ");
   return `Payload contracts
 
 Envelope on stdin or --input. kind must match the claimed step.
 ${COMPLETIONS_WRAP}
+Reject (any kind): ${rejects(COMMON_REJECT_REASONS)}.
+${COMMON_REJECT_NOTE}
 Map hops (detail / expand / enrich / fix): drain.md.
 
 structure_sync — cover git diff --name-only <base>..<target>. Echo base/target from the item.
@@ -188,7 +219,7 @@ ${structureExample}
 
 blast_radius — echo base/target. Empty nodes is legal only when the diff does not intersect
 anchors (else empty_blast_illegal_intersecting_anchors). Non-empty rows need evidence min 1.
-Reject: epoch_base_target_mismatch, unknown_node:…, commit_outside_range:…, missing_evidence:….
+Reject: ${rejects(BLAST_RADIUS_REJECT_REASONS)}.
 
 ${tables}
 
@@ -196,8 +227,8 @@ ${blastExample}
 
 metric_decay — exactly one updates[] row matching the claimed (nodeId, level).
 value in [0,1]; ≤ min(storedPrevious, severityCap); missing stored previous is 1.0.
-previousValue is audit-only.
-Reject: update_does_not_match_step, metric_step_expects_one_update, value_exceeds_cap:….
+previousValue is audit-only. ${METRIC_DECAY_REASON_RULE}
+Reject: ${rejects(METRIC_DECAY_REJECT_REASONS)}.
 
 ${metricExample}
 `;

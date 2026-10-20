@@ -198,14 +198,39 @@ describe("work next lease TTL", () => {
     expect(gated.json.action).toBe("refresh");
     expect(gated.json.todo).toBe("snowshoe routine refresh --json");
     expect(gated.json.items).toEqual([]);
-    const gatedLeased = gated.json.leased as Array<Record<string, unknown>>;
-    expect(gatedLeased.map((i) => i.stepId)).toContain(oldStepId);
-    expect(String(gatedLeased.find((i) => i.stepId === oldStepId)?.leaseToken)).toBe(oldToken);
+    // Refresh todo wins: no tokens are handed on the gate.
+    expect(gated.json.leased).toEqual([]);
 
     const refreshed = await snowshoe(repo, ["routine", "refresh", "--json"]);
     expect(refreshed.json.action).toBe("superseded");
     const base = String(refreshed.json.base);
     const target = String(refreshed.json.target);
+
+    // A chat that still holds the old token cannot complete across refresh.
+    const stale = await snowshoe(repo, ["work", "complete", "--json"], {
+      stdin: completeEnvelope([
+        {
+          id: oldStepId,
+          leaseToken: oldToken,
+          kind: "structure_sync",
+          payload: {
+            schemaVersion: 1,
+            base: String(a.base),
+            target: String(a.target),
+            ops: [],
+            coverage: {
+              touchedPathsConsidered: true,
+              unmappedPaths: ["docs/note.md", "docs/other.md", ".gitignore"],
+            },
+          },
+        },
+      ]),
+    });
+    expect(stale.exitCode).not.toBe(0);
+    const staleResult = (stale.json.results as Array<Record<string, unknown>>)[0]!;
+    expect(staleResult.status).toBe("rejected");
+    expect(staleResult.reasons).toEqual(["epoch_not_open"]);
+    expect(stepStatus(repo, oldStepId)).toBe("leased");
 
     const nextE2 = await snowshoe(repo, ["work", "next", "--json"]);
     const e2Items = nextE2.json.items as Array<Record<string, unknown>>;
@@ -567,6 +592,78 @@ describe("upsert omit leaf keeps stored flag", () => {
       ]),
     });
     expect(done.exitCode).toBe(0);
+    expect(await nodeLeaf(repo, "auth")).toBe(true);
+  });
+
+  test("expand that adds children to a leaf clears leaf when the parent upsert omits it", async () => {
+    const repo = makeGitRepo();
+    await snowshoe(repo, ["init", "--json"]);
+    const rootNext = await snowshoe(repo, ["work", "next", "--json"]);
+    const root = (rootNext.json.items as Array<Record<string, unknown>>)[0]!;
+    const seeded = await snowshoe(repo, ["work", "complete", "--json"], {
+      stdin: completeEnvelope([
+        {
+          id: String(root.stepId),
+          leaseToken: String(root.leaseToken),
+          kind: "detail",
+          payload: detailPayload({
+            parentSlug: "root",
+            nodes: [
+              { slug: "pay", title: "Pay", type: "module", op: "upsert", leaf: true },
+              { slug: "auth", title: "Auth", type: "module", op: "upsert", leaf: true },
+            ],
+          }),
+        },
+      ]),
+    });
+    expect(seeded.exitCode).toBe(0);
+
+    async function expandWith(
+      parent: string,
+      child: string,
+      parentNode: Record<string, unknown>,
+    ): Promise<void> {
+      const mark = await snowshoe(repo, [
+        "map",
+        "mark",
+        "--json",
+        "--slug",
+        parent,
+        "--kind",
+        "expand",
+      ]);
+      expect(mark.exitCode).toBe(0);
+      const next = await snowshoe(repo, ["work", "next", "--json"]);
+      const item = (next.json.items as Array<Record<string, unknown>>)[0]!;
+      expect(item.kind).toBe("expand");
+      expect(item.parentSlug).toBe(parent);
+      const done = await snowshoe(repo, ["work", "complete", "--json"], {
+        stdin: completeEnvelope([
+          {
+            id: String(item.stepId),
+            leaseToken: String(item.leaseToken),
+            kind: "expand",
+            payload: detailPayload({
+              parentSlug: parent,
+              nodes: [
+                { slug: parent, title: parent, type: "module", op: "upsert", ...parentNode },
+                { slug: child, title: child, type: "flow", op: "upsert" },
+              ],
+              children: [child],
+            }),
+          },
+        ]),
+      });
+      expect(done.exitCode).toBe(0);
+    }
+
+    // Split further, parent upsert omits leaf → stop-flag clears.
+    await expandWith("pay", "pay-flow", {});
+    expect(await nodeLeaf(repo, "pay")).toBe(false);
+    expect(await nodeLeaf(repo, "pay-flow")).toBe(false);
+
+    // Explicit leaf on the parent still wins.
+    await expandWith("auth", "auth-flow", { leaf: true });
     expect(await nodeLeaf(repo, "auth")).toBe(true);
   });
 });

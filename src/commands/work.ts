@@ -149,7 +149,6 @@ function gatedNext(
   head: string | null,
   batchSize: number,
   locale: string | null = null,
-  leased: unknown[] = [],
 ): { exitCode: number; body: Record<string, unknown> } {
   return {
     exitCode: EXIT_OK,
@@ -157,7 +156,7 @@ function gatedNext(
       action,
       todo: WORK_NEXT_TODO[action],
       items: [],
-      leased,
+      leased: [],
       stop: true,
       remaining: 0,
       batchSize,
@@ -180,14 +179,6 @@ function visibleOpenSteps(session: Session): StepRow[] {
       statuses: ["pending", "leased", "failed"],
     })
     .filter((s) => isQueueVisible(session, s));
-}
-
-function formatLiveLeftovers(session: Session, now: number): unknown[] {
-  const open = session.ledger.getOpenEpoch();
-  return visibleOpenSteps(session)
-    .filter((s) => isLiveLease(s, now))
-    .sort(sortQueue)
-    .map((step) => formatWorkItem(session, step, open?.epoch_id ?? step.epoch_id));
 }
 
 function isIdleNext(result: { body: Record<string, unknown> }): boolean {
@@ -284,17 +275,12 @@ export function runWorkNext(
 ): { exitCode: number; body: Record<string, unknown> } {
   const batchSize = Math.max(1, opts.batchSize ?? DEFAULT_WORK_BATCH_SIZE);
   const locale = session.ledger.getMeta("locale");
-  const now = Date.now();
   if (refreshRequired(session)) {
-    return gatedNext(
-      "refresh",
-      session.repoRoot,
-      session.gitHead,
-      batchSize,
-      locale,
-      formatLiveLeftovers(session, now),
-    );
+    // Refresh todo wins: do not hand tokens that cannot be completed across refresh.
+    return gatedNext("refresh", session.repoRoot, session.gitHead, batchSize, locale);
   }
+
+  const now = Date.now();
 
   const open = session.ledger.getOpenEpoch();
   const visible = visibleOpenSteps(session);
@@ -514,6 +500,12 @@ function completeOne(
   if (step.status !== "leased" || step.lease_token !== item.leaseToken) {
     return { id: item.id, status: "rejected", reasons: ["bad_lease"] };
   }
+  if (isRoutineKind(step.kind)) {
+    const open = session.ledger.getOpenEpoch();
+    if (!open || step.epoch_id !== open.epoch_id) {
+      return { id: item.id, status: "rejected", reasons: ["epoch_not_open"] };
+    }
+  }
   if (step.lease_expires_at && step.lease_expires_at <= Date.now()) {
     session.ledger.updateStep(step.id, {
       status: "pending",
@@ -729,13 +721,22 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
     return { id: step.id, status: "rejected", reasons };
   }
 
+  // Expand on a leaf means split further: a parent upsert that omits `leaf` while this hop
+  // adds children clears the stop-flag instead of keeping it (ADR-2026-10-20-upsert-omit-leaf).
+  const priorChildren = new Set(session.ledger.childrenOf(payload.parentSlug));
+  const splitsParent =
+    (hop === "expand" || hop === "detail") && payload.children.some((c) => !priorChildren.has(c));
+
   session.ledger.transaction(() => {
     for (const w of proseWrites) {
       writeProseFile(session.repoRoot, w.ref, w.text);
     }
     for (const node of payload.nodes) {
       const existed = session.ledger.getNode(node.slug);
-      const leaf = resolveUpsertLeaf(node.leaf, existed);
+      const leaf =
+        splitsParent && node.slug === payload.parentSlug && node.leaf === undefined
+          ? false
+          : resolveUpsertLeaf(node.leaf, existed);
       session.ledger.upsertNode({
         slug: node.slug,
         title: node.title ?? existed?.title ?? node.slug,

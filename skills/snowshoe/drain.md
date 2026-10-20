@@ -18,7 +18,7 @@ snowshoe work next --json
 | `leased` | Queue-visible live leftovers not minted this call (same tokens). Always present. |
 | `locale` | BCP-47 UI language from ledger meta (`en`, `en-US`, …), or `null` if unset. |
 
-Until `todo` is null, **run only that unlock command**, then call `work next` again. Do not look for other work, do not complete steps (including `leased`), do not skip the gate. Do **not** complete across refresh.
+Until `todo` is null, **run only that unlock command**, then call `work next` again. Do not look for other work, do not complete steps (including `leased`), do not skip the gate. Do **not** complete across refresh (old routine tokens reject `epoch_not_open`).
 
 ```
 # outer: re-fetch the batch every cycle
@@ -156,7 +156,7 @@ One hop under `parentSlug` from the claimed item. Honor `allowedChildTypes` on t
 **Decide the hop before writing.** Expand means “look at this parent,” not “must mint children.”
 
 1. **No growth** — dead end, already correct, or exploratory: `unchanged: true` with empty `nodes` / `children` / `refs` / `retire` / `clearEdges`. That is a successful complete. Non-empty mutate with `unchanged` rejects (`unchanged_with_mutate`).
-2. **Grow or fill** — as many new children as the **cut** needs (a surface can be a long list); not a tour of the repo. The map is a mental model, not 1:1 with code. If the honest list would be huge, add an **intermediate grouping** layer (responsibility / feature), not dozens of siblings. If some children matter more, put those on this hop and leave the rest for a later expand mark. Same axis as an existing sibling → **ref** that slug; do not invent a clone (`cli-work` vs `work`). `leaf: true` when the next hop would only be code (`anchors[]`). `symbol` may have `symbol` children (class → methods). Mark expand on a `leaf` parent means split further: honor `allowedChildTypes` from `work next` (that hop ignores the stop-flag).
+2. **Grow or fill** — as many new children as the **cut** needs (a surface can be a long list); not a tour of the repo. The map is a mental model, not 1:1 with code. If the honest list would be huge, add an **intermediate grouping** layer (responsibility / feature), not dozens of siblings. If some children matter more, put those on this hop and leave the rest for a later expand mark. Same axis as an existing sibling → **ref** that slug; do not invent a clone (`cli-work` vs `work`). `leaf: true` when the next hop would only be code (`anchors[]`). `symbol` may have `symbol` children (class → methods). Mark expand on a `leaf` parent means split further: honor `allowedChildTypes` from `work next` (that hop ignores the stop-flag). If you add children and upsert the parent without `leaf`, the parent’s stop-flag clears; send `leaf: true` only if it should stay a leaf.
 
 You may **upsert `parentSlug`** in `nodes[]` to enrich the marked node (title, type, `leaf`, body, anchors). Do not put it in `children[]`. You cannot upsert `root`. You cannot reparent (move a node under a different parent).
 

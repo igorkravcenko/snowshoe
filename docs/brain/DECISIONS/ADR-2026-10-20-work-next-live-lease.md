@@ -19,7 +19,7 @@ A second hole: `hasOpenWork` and claim ranking listed every `pending`/`leased`/`
 
 ### Envelope
 
-`snowshoe work next --json` always includes `leased` (gates and `idle`: `[]`, except the refresh gate below). Same item shape as `items` (including `leaseToken`).
+`snowshoe work next --json` always includes `leased` (gates — including refresh — and `idle`: `[]`). Same item shape as `items` (including `leaseToken`).
 
 - `items` = this call’s **new** claims only. Never re-token a live step. Never splice leftovers into `items`.
 - `leased` = queue-visible live leftovers **not** minted this call (same tokens). Echo **all** of them; do not slice to `--batch-size`.
@@ -38,13 +38,13 @@ One helper for ranking, `hasOpenWork`, and `leased`:
 - Map hops (`detail` / `expand` / `enrich` / `fix`) always.
 - Routine kinds only when `epoch_id` is the current **open** epoch.
 
-Superseded-epoch routine rows may remain in sqlite. They are not claimed, not echoed, and must not block `advance`. Do not fail/cancel them in this decision. `getEpoch` does not reject `status: superseded`; do not hand those tokens.
+Superseded-epoch routine rows may remain in sqlite. They are not claimed, not echoed, and must not block `advance`. Do not fail/cancel them in this decision. `work complete` rejects a routine step whose epoch is not the open epoch with `epoch_not_open` (checked after `bad_lease`, before `lease_expired` and the payload), so a token held from before refresh cannot apply a stale range.
 
 ### Refresh vs leftover (`todo` wins)
 
 `refreshRequired` runs before claim. That is the only `todo` that can overlap a live batch (`advance` is gated only when queue-visible work is empty; `init` is pre-ledger).
 
-On the refresh gate: `items: []`, `leased` is echo-only (diagnostic, same tokens), do not mint. Skill: run only `todo`; **do not complete across refresh** (including `leased`). After `routine refresh`, superseded routine leftovers drop out of `leased` because of the open-epoch filter.
+On the refresh gate: `items: []`, `leased: []`, do not mint. Skill: run only `todo`; **do not complete across refresh**. After `routine refresh`, superseded routine leftovers stay out of `leased` because of the open-epoch filter, and completing one with an old token rejects `epoch_not_open`. Map-hop leftovers are not epoch-scoped and reappear in `leased` on the next poll.
 
 ### Skill loop
 
@@ -66,11 +66,12 @@ A second drain should take `items` and leave `leased` unless `items` is empty.
 - Do not mint while any live lease exists — rejected; forces finish-the-plate in CLI and blocks claiming other pending.
 - Tokens on `routine status` — rejected; `work next` is the resume surface.
 - Shorter TTL or `work fail` as recovery — rejected; map hops have no `work fail`.
-- Fail/cancel superseded-epoch routine steps on refresh — deferred; queue-visible filter is the lock.
+- Fail/cancel superseded-epoch routine steps on refresh — deferred; queue-visible filter plus `epoch_not_open` on complete is the lock.
+- Echo leftovers on the refresh gate (diagnostic) — rejected; nothing may act on them before refresh, and an empty array is simpler.
 
 ## Consequences
 
-- CURRENT: `work next` always exposes `leased`; STOP when `todo` is null and both `items` and `leased` are empty; queue-visible work is map hops plus open-epoch routine steps.
+- CURRENT: `work next` always exposes `leased` (`[]` on the refresh gate); routine completes from a non-open epoch reject `epoch_not_open`; STOP when `todo` is null and both `items` and `leased` are empty; queue-visible work is map hops plus open-epoch routine steps.
 - Skill `drain.md` and `snowshoe help --json` match the loop above.
 
 ## Evidence

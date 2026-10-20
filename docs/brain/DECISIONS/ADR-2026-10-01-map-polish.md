@@ -21,7 +21,7 @@ Default column weights are `{ tree: 32, detail: 40, sidebar: 28 }`. Tab storage 
 
 ### Leaf vs type
 
-`leaf` is a stop-flag (“do not cut further yet”), not a synonym of type. `symbol` may have `symbol` children (class → methods). `allowedChildTypes` is empty only when `leaf` is true. Inspector leaf toggle remains. Mark **expand** on a leaf means split further: the claimed hop ignores `leaf` when computing `allowedChildTypes`. Agents set `leaf: true` when the next hop would only be code. Omit `leaf` on an **existing** upsert keeps the stored flag; a new node omit stores `false`; explicit boolean sets it — [ADR-2026-10-20-upsert-omit-leaf](./ADR-2026-10-20-upsert-omit-leaf.md).
+`leaf` is a stop-flag (“do not cut further yet”), not a synonym of type. `symbol` may have `symbol` children (class → methods). `allowedChildTypes` is empty only when `leaf` is true. Inspector leaf toggle remains. Mark **expand** on a leaf means split further: the claimed hop ignores `leaf` when computing `allowedChildTypes`. Agents set `leaf: true` when the next hop would only be code. Omit `leaf` on an **existing** upsert keeps the stored flag; a new node omit stores `false`; explicit boolean sets it; an expand hop that adds children and upserts the parent without `leaf` clears the parent’s stop-flag (split further) — [ADR-2026-10-20-upsert-omit-leaf](./ADR-2026-10-20-upsert-omit-leaf.md).
 
 ### Anchors
 

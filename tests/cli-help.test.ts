@@ -79,6 +79,20 @@ describe("CLI --help / -h never executes", () => {
     expect(text).toContain("empty_blast_illegal_intersecting_anchors");
     expect(text).toContain("value_exceeds_cap");
     expect(text).toContain("Wrap the payload in completions[]");
+    for (const code of [
+      "unknown_step",
+      "kind_mismatch",
+      "already_closed",
+      "bad_lease",
+      "lease_expired",
+      "epoch_not_open",
+      "node_not_in_blast",
+      "evidence_sha_missing",
+    ]) {
+      expect(text).toContain(code);
+    }
+    expect(text).toContain("updates[].reason is required");
+    expect(text).toContain("null = that level is not required");
     expect(text).toContain('"op": "upsert_node"');
     expect(text).toContain("src/pay.ts");
     expect(text).toContain('"id": "cli"');
@@ -136,6 +150,18 @@ describe("CLI --help / -h never executes", () => {
     expect(metric.rejectReasons).toContain("metric_step_expects_one_update");
     expect(metric.requiredLevels.behavior).toEqual(["internals", "contracts"]);
     expect(metric.severityCaps.boundary.overview).toBe(0.3);
+    expect(r.json.commonRejectReasons).toEqual([
+      "unknown_step",
+      "kind_mismatch",
+      "already_closed",
+      "bad_lease",
+      "epoch_not_open",
+      "lease_expired",
+    ]);
+    expect(String((r.json.metric_decay as { reason: string }).reason)).toContain("required");
+    expect(
+      String((r.json.blast_radius as { severityCapsNote: string }).severityCapsNote),
+    ).toContain("null");
   });
 
   test("work complete --json --help is the same JSON contract", async () => {

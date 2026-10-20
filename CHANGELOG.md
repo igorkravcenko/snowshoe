@@ -3,9 +3,9 @@
 ## Unreleased
 
 - Learn / scratch: append host conversation/session ids to `sessions.md` (not STATE). Do not read that file in the teaching loop.
-- `work next` echoes live leftovers in `leased[]` (same tokens; mint while leftovers exist is allowed). Queue-visible work is map hops plus the open epoch’s routine steps. Refresh `todo` wins — do not complete across refresh ([#16](https://github.com/igorkravcenko/snowshoe/issues/16)).
-- `work complete --help` documents `blast_radius` and `metric_decay` payloads, reject codes, and severity caps ([#36](https://github.com/igorkravcenko/snowshoe/issues/36)).
-- Omit `leaf` on an existing upsert keeps the stored flag; a new node omit still stores `false` ([#37](https://github.com/igorkravcenko/snowshoe/issues/37)).
+- `work next` echoes live leftovers in `leased[]` (same tokens; mint while leftovers exist is allowed). Queue-visible work is map hops plus the open epoch’s routine steps. Refresh `todo` wins (`leased: []` on that gate); `work complete` rejects routine steps from a superseded epoch with `epoch_not_open` ([#16](https://github.com/igorkravcenko/snowshoe/issues/16)).
+- `work complete --help` documents `blast_radius` and `metric_decay` payloads, per-kind and common reject codes (`unknown_step`, `kind_mismatch`, `already_closed`, `bad_lease`, `epoch_not_open`, `lease_expired`), required `metric_decay` `reason`, and severity caps (`null` = level not required) ([#36](https://github.com/igorkravcenko/snowshoe/issues/36)).
+- Omit `leaf` on an existing upsert keeps the stored flag; a new node omit still stores `false`; an expand that adds children clears the parent’s flag when its upsert omits `leaf` ([#37](https://github.com/igorkravcenko/snowshoe/issues/37)).
 
 ## 0.0.6 — 2026-10-16
 
