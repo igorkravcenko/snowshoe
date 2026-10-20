@@ -36,7 +36,7 @@ Product-owner-locked: the skill must be repo-agnostic and self-contained; entry 
 |---|---|
 | `action` | `init` · `refresh` · `advance` · `work` · `idle` |
 | `todo` | Exact command when gated: `snowshoe init --json`, `snowshoe routine refresh --json`, or `snowshoe routine advance --json`. `null` otherwise. |
-| `items` | Claimed steps. Empty unless claiming work. Map hops (`expand` / `enrich` / `fix`; legacy `detail` = expand) include `parentSlug`, `allowedChildTypes`, `children`, `intent`, `marks`. |
+| `items` | Claimed steps. Empty unless claiming work. Map hops (`detail` = expand ∪ enrich, `expand`, `enrich`, `fix`; see [ADR-2026-10-02-detail-body-wiki](./ADR-2026-10-02-detail-body-wiki.md)) include `parentSlug`, `allowedChildTypes`, `children`, `intent`, `marks`. |
 | `leased` | Queue-visible live leftovers not minted this call (same tokens). Always present (`[]` on idle and all gates). See [ADR-2026-10-20-work-next-live-lease](./ADR-2026-10-20-work-next-live-lease.md). |
 
 Order: uninitialized → `init`; HEAD/target moved needs refresh → `refresh`; claimable work → `work`; queue idle and FSM allows advance → `advance`; else `idle`. Keep `--json`. Exit 0 on followable gates (not an opaque usage fail).

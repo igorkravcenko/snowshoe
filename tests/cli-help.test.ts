@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT_USAGE } from "../src/cli-help.ts";
+import { workCompleteHelpBody } from "../src/commands/work-complete-help.ts";
 import { makeGitRepo, snowshoe } from "./helpers.ts";
 
 describe("CLI --help / -h never executes", () => {
@@ -177,5 +178,30 @@ describe("CLI --help / -h never executes", () => {
     expect(r.exitCode).toBe(0);
     expect(r.json.command).toBe("work.complete.help");
     expect(r.json.ok).toBe(true);
+  });
+
+  test("work complete --help lists every reject code the complete/fail code paths emit", () => {
+    const src = ["src/commands/work.ts", "src/map/anchor-capture.ts"]
+      .map((f) => readFileSync(join(import.meta.dir, "..", f), "utf8"))
+      .join("\n");
+    const emitted = new Set<string>();
+    for (const m of src.matchAll(/reasons(?:\.push\(|: \[)[`"]([a-z_]+)/g)) emitted.add(m[1]!);
+    for (const m of src.matchAll(/return "(lease_reclaimed|bad_lease)"/g)) emitted.add(m[1]!);
+    // evidence min(1) is enforced by zod first, so this branch only surfaces as invalid_payload.
+    emitted.delete("missing_evidence");
+
+    const body = workCompleteHelpBody() as Record<string, Record<string, unknown> & unknown>;
+    const lists = [
+      body.commonRejectReasons,
+      (body.mapHops as { rejectReasons: string[] }).rejectReasons,
+      (body.workFail as { rejectReasons: string[] }).rejectReasons,
+      (body.structure_sync as { rejectReasons: string[] }).rejectReasons,
+      (body.blast_radius as { rejectReasons: string[] }).rejectReasons,
+      (body.metric_decay as { rejectReasons: string[] }).rejectReasons,
+    ].flat() as string[];
+    const documented = new Set(lists.map((r) => r.split(/[: ]/)[0]));
+    const missing = [...emitted].filter((code) => !documented.has(code));
+    expect(missing).toEqual([]);
+    expect(documented.has("missing_evidence")).toBe(false);
   });
 });

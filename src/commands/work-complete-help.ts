@@ -101,7 +101,65 @@ export const COMMON_REJECT_REASONS = [
 ] as const;
 
 export const COMMON_REJECT_NOTE =
-  "Any kind: checked before the payload. epoch_not_open = routine step (structure_sync / blast_radius / metric_decay) from a superseded epoch; run work next again after routine refresh. refresh_required = routine step while HEAD left the epoch target (work next shows the refresh todo). lease_reclaimed = your lease expired and another work next re-claimed the step under a new token. Skip-and-repoll (not a STOP): already_closed, lease_reclaimed, epoch_not_open, refresh_required, lease_expired. Other rejects (including bad_lease: token not valid for this step) are hard (STOP and report).";
+  "Any kind: checked before the payload. epoch_not_open = routine step (structure_sync / blast_radius / metric_decay) from a superseded epoch; run work next again after routine refresh. refresh_required = routine step while HEAD left the epoch target (work next shows the refresh todo). lease_reclaimed = token mismatch on a step still leased under another token: probably re-claimed by another worker after your lease expired (a wrong UUID-shaped token also lands here; harmless). bad_lease = token does not match (malformed, or the step is no longer leased, e.g. reset or re-marked since). Skip-and-repoll (not a STOP): already_closed, lease_reclaimed, epoch_not_open, refresh_required, lease_expired. Other rejects, including bad_lease, are hard (STOP and report; conservative).";
+
+/** Map hops (`acceptDetail`, plus `anchorLocatorReasons`). */
+export const MAP_HOP_REJECT_REASONS = [
+  "invalid_payload: …",
+  "edges_removed: use children (parent→child) and refs (relevance)",
+  "parent_slug_mismatch",
+  "unknown_parent",
+  "unchanged_with_mutate",
+  "enrich_forbids_children",
+  "enrich_forbids_refs",
+  "enrich_forbids_retire",
+  "enrich_forbids_clear_edges",
+  "enrich_only_parent:<slug>",
+  "enrich_requires_parent_upsert",
+  "cannot_retire:<slug>",
+  "unknown_retire:<slug>",
+  "retire_outside_subtree:<slug>",
+  "cannot_upsert_root:<slug>",
+  "retire_and_upsert:<slug>",
+  "missing_child:<slug>",
+  "matrix_forbid:<parentType>-><childType>:<slug>",
+  "missing_body:<slug>",
+  "anchor_missing:<slug>:<path>",
+  "anchor_locator_past_end:<slug>:<path>",
+  "anchor_locator_past_eof:<slug>:<path>",
+  "invalid_child:<slug>",
+  "unknown_child:<slug>",
+  "ref_kind_parent_forbidden:<from>-><to>",
+  "unknown_ref_endpoint:<from>-><to>",
+  "clear_parent_edge_forbidden:<from>-><to>",
+  "clear_edge_outside_subtree:<from>-><to>",
+  "proseRef outside allowed root: <ref>",
+] as const;
+
+/** `acceptStructure`. */
+export const STRUCTURE_SYNC_REJECT_REASONS = [
+  "invalid_payload: …",
+  "no_epoch",
+  "epoch_base_target_mismatch",
+  "empty_ops_cold_start",
+  "upsert_missing_id",
+  "bad_slug:<slug>",
+  "duplicate_upsert:<slug>",
+  "type_system_forbidden:<slug>",
+  "upsert_missing_type:<slug>",
+  "unresolved_parent:<parentId>",
+  "coverage_unmapped:<path,…>",
+] as const;
+
+/** `runWorkFail` (routine steps only). */
+export const WORK_FAIL_REJECT_REASONS = [
+  "unknown_step",
+  "map_hop_has_no_work_fail",
+  "bad_lease",
+] as const;
+
+export const WORK_FAIL_NOTE =
+  "work fail (routine steps only): bad_lease = token is not the step's current lease (no lease_reclaimed split there).";
 
 export const METRIC_DECAY_INTENT =
   "Decay only lowers. Cap = min(stored value, severityCap); you cannot raise. Nodes created by map hops start at 0, so their only legal value is 0 until the human studies the node and raises the metric (map metric). Decay is meaningful after that rise. A missing stored value counts as 1.0.";
@@ -115,7 +173,6 @@ export const BLAST_RADIUS_REJECT_REASONS = [
   "empty_blast_illegal_intersecting_anchors",
   "unknown_node:<nodeId>",
   "unknown_parent:<parentId>",
-  "missing_evidence:<nodeId>",
   "evidence_path_missing:<nodeId>",
   "evidence_sha_missing:<nodeId>",
   "commit_outside_range:<sha>",
@@ -142,13 +199,19 @@ export function workCompleteHelpBody(): Record<string, unknown> {
   return {
     audience: "agent",
     usage: "snowshoe work complete --json",
-    input: "JSON envelope on stdin or --input. kind must match the claimed step.",
+    input:
+      "JSON envelope on stdin or --input. completions[].kind is optional; if given it must match the claimed step (else kind_mismatch).",
     wrap: COMPLETIONS_WRAP,
     exitCodes: EXIT_CODES_NOTE,
     commonRejectReasons: [...COMMON_REJECT_REASONS],
     commonRejectNote: COMMON_REJECT_NOTE,
-    mapHops: "detail / expand / enrich / fix payloads: drain.md.",
+    mapHops: {
+      payloads: "detail / expand / enrich / fix payloads: drain.md.",
+      rejectReasons: [...MAP_HOP_REJECT_REASONS],
+    },
+    workFail: { rejectReasons: [...WORK_FAIL_REJECT_REASONS], note: WORK_FAIL_NOTE },
     structure_sync: {
+      rejectReasons: [...STRUCTURE_SYNC_REJECT_REASONS],
       summary:
         "Cover git diff --name-only <base>..<target>. Echo base/target from the claimed item.",
       emptyOps:
@@ -214,16 +277,19 @@ export function formatWorkCompleteHelpText(): string {
   const rejects = (list: readonly string[]) => list.join(", ");
   return `Payload contracts
 
-Envelope on stdin or --input. kind must match the claimed step.
+Envelope on stdin or --input. completions[].kind is optional; if given it must match the claimed step.
 ${COMPLETIONS_WRAP}
 ${EXIT_CODES_NOTE}
 Reject (any kind): ${rejects(COMMON_REJECT_REASONS)}.
 ${COMMON_REJECT_NOTE}
-Map hops (detail / expand / enrich / fix): drain.md.
+Map hops (detail / expand / enrich / fix): payloads in drain.md.
+Reject (map hops): ${rejects(MAP_HOP_REJECT_REASONS)}.
+${WORK_FAIL_NOTE}
 
 structure_sync — cover git diff --name-only <base>..<target>. Echo base/target from the item.
 Empty ops is OK when every path is already anchored or listed in coverage.unmappedPaths
 (not on a cold-start map: empty_ops_cold_start).
+Reject: ${rejects(STRUCTURE_SYNC_REJECT_REASONS)}.
 
 upsert_node:
 ${rules}

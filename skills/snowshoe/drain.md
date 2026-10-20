@@ -20,7 +20,14 @@ snowshoe work next --json
 | `remaining` | Claimable steps not taken into `items` this call (more work after this batch). `leased` rows are not counted. |
 | `locale` | BCP-47 UI language from ledger meta (`en`, `en-US`, …), or `null` if unset. |
 
-Until `todo` is null, **run only that unlock command**, then call `work next` again. Do not look for other work, do not complete steps (including `leased`), do not skip the gate. Do **not** complete across refresh (routine completes reject `refresh_required` while the gate shows, `epoch_not_open` after it).
+Terms:
+
+- **Open epoch** — the routine catch-up range currently being synced (`base..target`). `routine refresh` replaces it; the old one becomes **superseded**.
+- **Queue-visible** — map hops (`detail` / `expand` / `enrich` / `fix`) always, plus routine steps (`structure_sync` / `blast_radius` / `metric_decay`) of the open epoch only.
+- **Live leftover** — a queue-visible step that is leased with an unexpired lease and was not minted by this call. These are what `leased` lists.
+- **Interactive map drain** — the human asked you to keep draining as they mark nodes in the map UI (same session). Only then do you poll with `--wait` (see below).
+
+Until `todo` is null, **run only that unlock command**, then call `work next` again. Do not look for other work, do not complete steps (including `leased`), do not skip the gate. Do **not** complete across refresh (routine completes reject `refresh_required` while the gate shows, `epoch_not_open` after it). Map hops are not epoch-scoped, so the CLI does not reject them during the refresh gate — holding them until `todo` is clear is your discipline.
 
 ```
 # outer: re-fetch the batch every cycle
@@ -60,21 +67,21 @@ The ledger has no lease owner. **Your** leased are the `leaseToken`s you receive
 
 1. Do your own work first: this call's `items` plus your own `leased`. The order between them is your choice.
 2. Do not rush foreign `leased` — another live worker may be on them. Re-poll after your own work.
-3. When a poll has no `items` and none of your own `leased`, and foreign `leased` are still there, take them now (the other worker crashed or lost context). Do not wait or re-poll in a loop for them.
+3. When a poll has no `items` and none of your own `leased`, take the foreign `leased` from **that poll** now (the other worker probably crashed or lost context). Do not wait or re-poll in a loop for them. If the original worker was alive after all, whichever of you completes second gets `already_closed` and skips.
 4. Lost context (compaction) and you do not remember your tokens: treat every `leased` as foreign. Rule 3 still makes you finish them once your own `items` are done.
 
 ### Rejects: skip vs STOP
 
 `work complete` returns per-step `results[]` with `status` and `reasons`.
 
-- **Skip-and-repoll** (not an error; drop that step and continue): `already_closed` (someone finished it), `lease_reclaimed` (your lease expired and another `work next` re-claimed the step under a new token — that worker owns it now), `epoch_not_open` (token from before `routine refresh`), `refresh_required` (HEAD moved; the next `work next` shows the refresh `todo`), `lease_expired` (lease timed out and went back to the queue — the next `work next` re-mints it).
-- **Hard reject → STOP and report:** every other reason — `unknown_step`, `kind_mismatch`, `bad_lease` (token was never valid for this step: wrong or malformed), `unknown_kind`, `invalid_payload: …`, and the kind-specific payload rejects (`missing_body:…`, `anchor_missing:…`, `matrix_forbid:…`, `coverage_unmapped:…`, `epoch_base_target_mismatch`, `value_exceeds_cap:…`, …; full lists in `snowshoe work complete --help --json`).
+- **Skip-and-repoll** (not an error; drop that step and continue): `already_closed` (someone finished it), `lease_reclaimed` (the step is still leased under another token — probably your lease expired and another worker re-claimed it; a wrong UUID-shaped token also lands here, which is harmless; it now shows as foreign in `leased`, so follow Lease order), `epoch_not_open` (token from before `routine refresh`), `refresh_required` (HEAD moved; the next `work next` shows the refresh `todo`), `lease_expired` (lease timed out and went back to the queue — the next `work next` re-mints it).
+- **Hard reject → STOP and report:** every other reason — `unknown_step`, `kind_mismatch`, `bad_lease` (token does not match: malformed, or the step is no longer leased — e.g. an old token on a step that was reset or re-marked since; STOP is the conservative choice), `unknown_kind`, `invalid_payload: …`, and the kind-specific payload rejects (`missing_body:…`, `anchor_missing:…`, `matrix_forbid:…`, `coverage_unmapped:…`, `epoch_base_target_mismatch`, `value_exceeds_cap:…`, …; full lists per kind — map hops, `structure_sync`, `blast_radius`, `metric_decay` — in `snowshoe work complete --help --json`).
 
 ### Exit codes
 
 - `0` — success, including gates (`init` / `refresh` / `advance`) and `idle`.
 - `1` — `work complete` with at least one rejected step (`ok: false`; read `results[].reasons`).
-- `2` — usage: non-JSON input, invalid envelope, bad flags.
+- `2` — usage: non-JSON input, invalid envelope, invalid flag values (e.g. `--batch-size x`). Unknown flags are ignored, not rejected.
 
 `--batch-size` is optional; the CLI default is already a small batch.
 
