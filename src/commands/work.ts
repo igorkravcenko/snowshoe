@@ -65,6 +65,43 @@ function claimable(step: StepRow, now: number): boolean {
   return false;
 }
 
+function isRoutineKind(kind: string): boolean {
+  return (ROUTINE_KINDS as readonly string[]).includes(kind);
+}
+
+/** Map hops always; routine steps only for the current open epoch. */
+function isQueueVisible(session: Session, step: StepRow): boolean {
+  if (isMapHopKind(step.kind)) return true;
+  if (isRoutineKind(step.kind)) {
+    const open = session.ledger.getOpenEpoch();
+    return Boolean(open && step.epoch_id === open.epoch_id);
+  }
+  return false;
+}
+
+function isLiveLease(step: StepRow, now: number): boolean {
+  return (
+    step.status === "leased" &&
+    Boolean(step.lease_token) &&
+    step.lease_expires_at != null &&
+    step.lease_expires_at > now
+  );
+}
+
+function sortQueue(a: StepRow, b: StepRow): number {
+  const pk = KIND_PRIORITY[a.kind] - KIND_PRIORITY[b.kind];
+  if (pk !== 0) return pk;
+  return a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id);
+}
+
+/** Omit leaf on an existing node keeps the stored flag; new node omit → false. */
+function resolveUpsertLeaf(
+  explicit: boolean | undefined,
+  existing: { leaf: number } | null | undefined,
+): boolean {
+  return explicit ?? (existing ? existing.leaf === 1 : false);
+}
+
 function requiredRoutinePending(session: Session): boolean {
   const open = session.ledger.getOpenEpoch();
   if (!open) return false;
@@ -119,6 +156,7 @@ function gatedNext(
       action,
       todo: WORK_NEXT_TODO[action],
       items: [],
+      leased: [],
       stop: true,
       remaining: 0,
       batchSize,
@@ -128,11 +166,19 @@ function gatedNext(
 }
 
 function hasOpenWork(session: Session): boolean {
-  return (
-    session.ledger.listSteps({
+  return session.ledger
+    .listSteps({
       statuses: ["pending", "leased", "failed"],
-    }).length > 0
-  );
+    })
+    .some((s) => isQueueVisible(session, s));
+}
+
+function visibleOpenSteps(session: Session): StepRow[] {
+  return session.ledger
+    .listSteps({
+      statuses: ["pending", "leased", "failed"],
+    })
+    .filter((s) => isQueueVisible(session, s));
 }
 
 function isIdleNext(result: { body: Record<string, unknown> }): boolean {
@@ -230,21 +276,18 @@ export function runWorkNext(
   const batchSize = Math.max(1, opts.batchSize ?? DEFAULT_WORK_BATCH_SIZE);
   const locale = session.ledger.getMeta("locale");
   if (refreshRequired(session)) {
+    // Refresh todo wins: do not hand tokens that cannot be completed across refresh.
     return gatedNext("refresh", session.repoRoot, session.gitHead, batchSize, locale);
   }
 
   const now = Date.now();
+
   const open = session.ledger.getOpenEpoch();
-  const all = session.ledger.listSteps({
-    statuses: ["pending", "leased", "failed"],
-  });
-  const ranked = all
+  const visible = visibleOpenSteps(session);
+  const leftovers = visible.filter((s) => isLiveLease(s, now)).sort(sortQueue);
+  const ranked = visible
     .filter((s) => claimable(s, now) && dependenciesMet(session, s))
-    .sort((a, b) => {
-      const pk = KIND_PRIORITY[a.kind] - KIND_PRIORITY[b.kind];
-      if (pk !== 0) return pk;
-      return a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id);
-    });
+    .sort(sortQueue);
 
   const take = ranked.slice(0, batchSize);
   const items = session.ledger.transaction(() => {
@@ -267,15 +310,20 @@ export function runWorkNext(
     return out;
   });
 
+  const leased = leftovers.map((step) =>
+    formatWorkItem(session, step, open?.epoch_id ?? step.epoch_id),
+  );
   const remaining = Math.max(0, ranked.length - take.length);
-  if (items.length > 0) {
+  const stop = leased.length === 0 && remaining === 0;
+  if (items.length > 0 || leased.length > 0) {
     return {
       exitCode: EXIT_OK,
       body: envelope("work.next", session.repoRoot, session.gitHead, {
         action: "work",
         todo: null,
         items,
-        stop: remaining === 0,
+        leased,
+        stop,
         remaining,
         batchSize,
         locale,
@@ -289,7 +337,8 @@ export function runWorkNext(
         action: "work",
         todo: null,
         items: [],
-        stop: remaining === 0,
+        leased: [],
+        stop,
         remaining,
         batchSize,
         locale,
@@ -305,6 +354,7 @@ export function runWorkNext(
       action: "idle",
       todo: null,
       items: [],
+      leased: [],
       stop: true,
       remaining: 0,
       batchSize,
@@ -373,8 +423,8 @@ function formatWorkItem(session: Session, step: StepRow, epochId: string | null)
   if (isMapHopKind(step.kind)) {
     const hop = canonicalMapHop(step.kind) ?? "expand";
     const parent = step.parent_slug ? session.ledger.getNode(step.parent_slug) : null;
-    const types =
-      (hop === "expand" || hop === "detail") && parent ? allowedChildTypes(parent.type, false) : [];
+    // Hops that may grow children (expand / detail / fix) ignore the stop-flag: the mark asks to cut.
+    const types = hop !== "enrich" && parent ? allowedChildTypes(parent.type, false) : [];
     return {
       ...base,
       kind: hop,
@@ -448,7 +498,21 @@ function completeOne(
     return { id: item.id, status: "rejected", reasons: ["already_closed"] };
   }
   if (step.status !== "leased" || step.lease_token !== item.leaseToken) {
-    return { id: item.id, status: "rejected", reasons: ["bad_lease"] };
+    return {
+      id: item.id,
+      status: "rejected",
+      reasons: [leaseMismatchReason(step, item.leaseToken)],
+    };
+  }
+  if (isRoutineKind(step.kind)) {
+    const open = session.ledger.getOpenEpoch();
+    if (!open || step.epoch_id !== open.epoch_id) {
+      return { id: item.id, status: "rejected", reasons: ["epoch_not_open"] };
+    }
+    // HEAD left the epoch target: `work next` shows the refresh todo; do not complete across it.
+    if (refreshRequired(session)) {
+      return { id: item.id, status: "rejected", reasons: ["refresh_required"] };
+    }
   }
   if (step.lease_expires_at && step.lease_expires_at <= Date.now()) {
     session.ledger.updateStep(step.id, {
@@ -479,6 +543,20 @@ function completeOne(
     const msg = err instanceof Error ? err.message : String(err);
     return { id: step.id, status: "rejected", reasons: [msg] };
   }
+}
+
+const LEASE_TOKEN_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * No token history in the ledger. A well-formed token on a step that is still leased under a
+ * different token is read as "your lease expired and another `work next` re-claimed it"
+ * (skip-and-repoll). Anything else (malformed token, step not leased) stays `bad_lease` (STOP).
+ */
+function leaseMismatchReason(step: StepRow, token: string): "lease_reclaimed" | "bad_lease" {
+  if (step.status === "leased" && step.lease_token && LEASE_TOKEN_SHAPE.test(token)) {
+    return "lease_reclaimed";
+  }
+  return "bad_lease";
 }
 
 function hasDeprecatedEdges(raw: unknown): boolean {
@@ -665,13 +743,21 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
     return { id: step.id, status: "rejected", reasons };
   }
 
+  // Expand / detail / fix on a leaf means split further: a parent upsert that omits `leaf` while
+  // this hop adds children clears the stop-flag instead of keeping it (ADR-2026-10-20-upsert-omit-leaf).
+  const priorChildren = new Set(session.ledger.childrenOf(payload.parentSlug));
+  const splitsParent = hop !== "enrich" && payload.children.some((c) => !priorChildren.has(c));
+
   session.ledger.transaction(() => {
     for (const w of proseWrites) {
       writeProseFile(session.repoRoot, w.ref, w.text);
     }
     for (const node of payload.nodes) {
       const existed = session.ledger.getNode(node.slug);
-      const leaf = Boolean(node.leaf);
+      const leaf =
+        splitsParent && node.slug === payload.parentSlug && node.leaf === undefined
+          ? false
+          : resolveUpsertLeaf(node.leaf, existed);
       session.ledger.upsertNode({
         slug: node.slug,
         title: node.title ?? existed?.title ?? node.slug,
@@ -838,7 +924,7 @@ function applyStructureOps(
       const slug = resolveStructureSlug(op)!;
       const existing = session.ledger.getNode(slug);
       const type = resolveStructureType(op) ?? existing?.type ?? "module";
-      const leaf = Boolean(op.node.leaf);
+      const leaf = resolveUpsertLeaf(op.node.leaf, existing);
       session.ledger.upsertNode({
         slug,
         title: op.node.title ?? existing?.title ?? slug,

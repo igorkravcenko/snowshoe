@@ -2,7 +2,12 @@
 
 ## Unreleased
 
+- **Compatibility:** skills installed before this change stop while `leased` is non-empty (they only look at `items`). After upgrading the CLI, reinstall / update the snowshoe skill (`snowshoe skill install --json --skills-path <dir>`, or your plugin / skills.sh update).
+- `work complete --help --json`: `mapHops` changed from a string to an object (`{ payloads, rejectReasons }`).
 - Learn / scratch: append host conversation/session ids to `sessions.md` (not STATE). Do not read that file in the teaching loop.
+- `work next` echoes live leftovers in `leased[]` (same tokens; mint while leftovers exist is allowed). Skill lease order: own work (`items` + own `leased`) first; foreign `leased` only once no own work is left (after compaction every `leased` counts as foreign). Queue-visible work is map hops plus the open epoch’s routine steps. Refresh `todo` wins (`leased: []` on that gate); `work complete` tells a lost lease (`lease_reclaimed`: expired and re-claimed by another `work next`; skip) apart from a bad token (`bad_lease`; STOP), and rejects routine steps with `refresh_required` while the refresh gate shows and `epoch_not_open` from a superseded epoch ([#16](https://github.com/igorkravcenko/snowshoe/issues/16)).
+- `work complete --help` documents `blast_radius` and `metric_decay` payloads, per-kind reject codes (map hops, `structure_sync`, `blast_radius`, `metric_decay`, `work fail`; a test keeps them in sync with the code) and common reject codes (`unknown_step`, `kind_mismatch`, `already_closed`, `bad_lease`, `lease_reclaimed`, `epoch_not_open`, `refresh_required`, `lease_expired`, `unknown_kind`), exit codes, required `metric_decay` `reason`, the decay-only intent (new value ≤ currently stored value; fresh map-hop nodes start at 0, so only 0 is accepted), and severity caps (`null` = level not required) ([#36](https://github.com/igorkravcenko/snowshoe/issues/36)).
+- Omit `leaf` on an existing upsert keeps the stored flag; a new node omit still stores `false`; an expand / detail / fix hop that adds children clears the parent’s flag when its upsert omits `leaf`; `fix` items get the same `allowedChildTypes` as expand ([#37](https://github.com/igorkravcenko/snowshoe/issues/37)).
 
 ## 0.0.6 — 2026-10-16
 
