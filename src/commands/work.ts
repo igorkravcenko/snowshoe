@@ -423,8 +423,8 @@ function formatWorkItem(session: Session, step: StepRow, epochId: string | null)
   if (isMapHopKind(step.kind)) {
     const hop = canonicalMapHop(step.kind) ?? "expand";
     const parent = step.parent_slug ? session.ledger.getNode(step.parent_slug) : null;
-    const types =
-      (hop === "expand" || hop === "detail") && parent ? allowedChildTypes(parent.type, false) : [];
+    // Hops that may grow children (expand / detail / fix) ignore the stop-flag: the mark asks to cut.
+    const types = hop !== "enrich" && parent ? allowedChildTypes(parent.type, false) : [];
     return {
       ...base,
       kind: hop,
@@ -504,6 +504,10 @@ function completeOne(
     const open = session.ledger.getOpenEpoch();
     if (!open || step.epoch_id !== open.epoch_id) {
       return { id: item.id, status: "rejected", reasons: ["epoch_not_open"] };
+    }
+    // HEAD left the epoch target: `work next` shows the refresh todo; do not complete across it.
+    if (refreshRequired(session)) {
+      return { id: item.id, status: "rejected", reasons: ["refresh_required"] };
     }
   }
   if (step.lease_expires_at && step.lease_expires_at <= Date.now()) {
@@ -721,11 +725,10 @@ function acceptDetail(session: Session, step: StepRow, rawPayload: unknown): Com
     return { id: step.id, status: "rejected", reasons };
   }
 
-  // Expand on a leaf means split further: a parent upsert that omits `leaf` while this hop
-  // adds children clears the stop-flag instead of keeping it (ADR-2026-10-20-upsert-omit-leaf).
+  // Expand / detail / fix on a leaf means split further: a parent upsert that omits `leaf` while
+  // this hop adds children clears the stop-flag instead of keeping it (ADR-2026-10-20-upsert-omit-leaf).
   const priorChildren = new Set(session.ledger.childrenOf(payload.parentSlug));
-  const splitsParent =
-    (hop === "expand" || hop === "detail") && payload.children.some((c) => !priorChildren.has(c));
+  const splitsParent = hop !== "enrich" && payload.children.some((c) => !priorChildren.has(c));
 
   session.ledger.transaction(() => {
     for (const w of proseWrites) {

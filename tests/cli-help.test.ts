@@ -86,6 +86,8 @@ describe("CLI --help / -h never executes", () => {
       "bad_lease",
       "lease_expired",
       "epoch_not_open",
+      "refresh_required",
+      "unknown_kind",
       "node_not_in_blast",
       "evidence_sha_missing",
     ]) {
@@ -156,7 +158,9 @@ describe("CLI --help / -h never executes", () => {
       "already_closed",
       "bad_lease",
       "epoch_not_open",
+      "refresh_required",
       "lease_expired",
+      "unknown_kind",
     ]);
     expect(String((r.json.metric_decay as { reason: string }).reason)).toContain("required");
     expect(

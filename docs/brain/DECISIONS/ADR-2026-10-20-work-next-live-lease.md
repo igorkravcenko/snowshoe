@@ -38,7 +38,7 @@ One helper for ranking, `hasOpenWork`, and `leased`:
 - Map hops (`detail` / `expand` / `enrich` / `fix`) always.
 - Routine kinds only when `epoch_id` is the current **open** epoch.
 
-Superseded-epoch routine rows may remain in sqlite. They are not claimed, not echoed, and must not block `advance`. Do not fail/cancel them in this decision. `work complete` rejects a routine step whose epoch is not the open epoch with `epoch_not_open` (checked after `bad_lease`, before `lease_expired` and the payload), so a token held from before refresh cannot apply a stale range.
+Superseded-epoch routine rows may remain in sqlite. They are not claimed, not echoed, and must not block `advance`. Do not fail/cancel them in this decision. `work complete` rejects a routine step whose epoch is not the open epoch with `epoch_not_open` (checked after `bad_lease`, before `lease_expired` and the payload), so a token held from before refresh cannot apply a stale range. While the refresh gate is showing (HEAD left the open epoch's target), routine completes reject `refresh_required`. Both are skip-and-repoll for the skill, not a STOP.
 
 ### Refresh vs leftover (`todo` wins)
 
@@ -48,15 +48,16 @@ On the refresh gate: `items: []`, `leased: []`, do not mint. Skill: run only `to
 
 ### Skill loop
 
-There is no lease owner in the ledger. “Our leased” means tokens from a previous `work next` **in this chat**.
+There is no lease owner in the ledger. Ownership lives only in the draining agent's context: **own** leased are `leaseToken`s it received from an earlier `work next` in its own context; every other `leased` row is **foreign**.
 
 1. If `todo` is set: run only that. Do not complete. Continue.
 2. If `waitTimedOut`: STOP.
-3. If `items` nonempty: complete those. If this chat still holds leftover tokens that appear in `leased`, finish those too. CLI does not enforce order.
-4. If `items` empty and `leased` nonempty: complete `leased` (crash recovery / hanging batch).
-5. STOP only if both are empty (unless interactive `--wait`).
+3. Own work first: `items` plus own `leased`, in the agent's chosen order. Leave foreign `leased` and re-poll.
+4. If a poll has no `items` and no own `leased` but foreign `leased` remain: take them now (crashed / compacted worker). No waiting and no re-poll loop for them, so the loop cannot busy-spin.
+5. An agent that lost its context (compaction) and does not remember its tokens treats every `leased` row as foreign; step 4 then makes it finish them after its own `items`.
+6. STOP only if `items` and `leased` are both empty (unless interactive `--wait`).
 
-A second drain should take `items` and leave `leased` unless `items` is empty.
+Two live workers may both reach step 4 for the same foreign row; the loser gets `already_closed` (skip-and-repoll, not a STOP). Duplicate effort is accepted; corruption is not possible because completion checks the token and status.
 
 `--wait` still blocks only `action: idle`. `action: work` (including nonempty `leased`) returns immediately.
 

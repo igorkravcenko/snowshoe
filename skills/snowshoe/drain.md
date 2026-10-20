@@ -15,10 +15,12 @@ snowshoe work next --json
 | `action` | `init` · `refresh` · `advance` · `work` · `idle` |
 | `todo` | Exact command to run when gated (`init` / `refresh` / `advance`). `null` otherwise. |
 | `items` | This call’s new claims. May be nonempty while `leased` is also nonempty. |
-| `leased` | Queue-visible live leftovers not minted this call (same tokens). Always present. |
+| `leased` | Queue-visible live leftovers not minted this call (same tokens). Always present. The ledger has no lease owner: you tell **your own** from **foreign** ones (see Lease order). |
+| `stop` | `true` when nothing is left for you after this batch: `leased` is empty and `remaining` is `0`. Gates and `idle` are always `true`. A hint; the loop below decides. |
+| `remaining` | Claimable steps not taken into `items` this call (more work after this batch). `leased` rows are not counted. |
 | `locale` | BCP-47 UI language from ledger meta (`en`, `en-US`, …), or `null` if unset. |
 
-Until `todo` is null, **run only that unlock command**, then call `work next` again. Do not look for other work, do not complete steps (including `leased`), do not skip the gate. Do **not** complete across refresh (old routine tokens reject `epoch_not_open`).
+Until `todo` is null, **run only that unlock command**, then call `work next` again. Do not look for other work, do not complete steps (including `leased`), do not skip the gate. Do **not** complete across refresh (routine completes reject `refresh_required` while the gate shows, `epoch_not_open` after it).
 
 ```
 # outer: re-fetch the batch every cycle
@@ -29,30 +31,50 @@ loop:
     run batch.todo exactly
     continue                         # do not complete across refresh
   if batch.waitTimedOut: STOP and report
-  if batch.items is nonempty:
-    for step in batch.items:
-      do the work for step.kind
-      snowshoe work complete --json    # envelope on stdin or --input
-      if result is hard reject: STOP and report reasons
-      if operator interrupt: STOP and report
-    # if this chat still holds leftover tokens that appear in batch.leased, complete those too
+  mine    ← batch.items + (batch.leased whose leaseToken YOU got from an earlier work next in this context)
+  foreign ← batch.leased − mine      # tokens you do not remember are foreign (incl. after compaction)
+  if mine is nonempty:               # 1. own work first, any order you like
+    for step in mine: complete(step)
     nextCmd ← snowshoe work next --json
-    continue
-  if batch.leased is nonempty:
-    for step in batch.leased:        # crash recovery / hanging batch
-      do the work for step.kind
-      snowshoe work complete --json
-      if result is hard reject: STOP and report reasons
-      if operator interrupt: STOP and report
+    continue                         # foreign leased: leave them; re-poll
+  if foreign is nonempty:            # 2. own work done and they are still there → take them now
+    for step in foreign: complete(step)   # crashed / compacted worker; no waiting, no re-poll spin
     nextCmd ← snowshoe work next --json
     continue
   if interactive map drain:
     nextCmd ← snowshoe work next --json --wait
     continue
   STOP
+
+complete(step):
+  do the work for step.kind
+  snowshoe work complete --json      # envelope on stdin or --input; id = step.stepId
+  if result is skip-and-repoll: drop this step, go on with the rest
+  if result is hard reject: STOP and report reasons
+  if operator interrupt: STOP and report
 ```
 
-A second drain should take `items` and leave `leased` unless `items` is empty. Do not steal another worker’s leftovers while new claimable work exists.
+### Lease order
+
+The ledger has no lease owner. **Your** leased are the `leaseToken`s you received from an earlier `work next` in your own context. Anything else in `leased` is **foreign**.
+
+1. Do your own work first: this call's `items` plus your own `leased`. The order between them is your choice.
+2. Do not rush foreign `leased` — another live worker may be on them. Re-poll after your own work.
+3. When a poll has no `items` and none of your own `leased`, and foreign `leased` are still there, take them now (the other worker crashed or lost context). Do not wait or re-poll in a loop for them.
+4. Lost context (compaction) and you do not remember your tokens: treat every `leased` as foreign. Rule 3 still makes you finish them once your own `items` are done.
+
+### Rejects: skip vs STOP
+
+`work complete` returns per-step `results[]` with `status` and `reasons`.
+
+- **Skip-and-repoll** (not an error; drop that step and continue): `already_closed` (someone finished it), `epoch_not_open` (token from before `routine refresh`), `refresh_required` (HEAD moved; the next `work next` shows the refresh `todo`), `lease_expired` (lease timed out and went back to the queue — the next `work next` re-mints it).
+- **Hard reject → STOP and report:** every other reason — `unknown_step`, `kind_mismatch`, `bad_lease`, `unknown_kind`, `invalid_payload: …`, and the kind-specific payload rejects (`missing_body:…`, `anchor_missing:…`, `matrix_forbid:…`, `coverage_unmapped:…`, `epoch_base_target_mismatch`, `value_exceeds_cap:…`, …; full lists in `snowshoe work complete --help --json`).
+
+### Exit codes
+
+- `0` — success, including gates (`init` / `refresh` / `advance`) and `idle`.
+- `1` — `work complete` with at least one rejected step (`ok: false`; read `results[].reasons`).
+- `2` — usage: non-JSON input, invalid envelope, bad flags.
 
 `--batch-size` is optional; the CLI default is already a small batch.
 
@@ -104,7 +126,7 @@ Work mark kinds (each queues **its own** step):
 | `detail` | Grow children **and/or** rewrite this node’s fields/body (agent discretion). Prefer when the human intent is ambiguous. |
 | `expand` | Grow / fill children under the node only. |
 | `enrich` | Improve **this** node’s fields — especially the markdown `body`. No new children. |
-| `fix` | Something looks wrong here; inspect and repair structure and/or fields. |
+| `fix` | Something looks wrong here; inspect and repair structure and/or fields. May add children (same `allowedChildTypes` and split rule as expand). |
 
 `learn` and `quiz` are personal Later flags (not `work next`). System inbox marks `new` / `decayed` are stamped by the ledger (create / metric drop); do not set them yourself.
 
@@ -147,7 +169,7 @@ Envelope:
 
 ### `kind=detail`
 
-Same payload shape as expand. Agent may grow children **and/or** upsert `parentSlug` body/fields. Prefer this when the human asked to “detail” or intent is unclear. Honor `allowedChildTypes` when adding children.
+Same payload shape as expand. Agent may grow children **and/or** upsert `parentSlug` body/fields. Prefer this when the human asked to “detail” or intent is unclear. Honor `allowedChildTypes` when adding children. Adding children counts as a split: a parent upsert without `leaf` clears its stop-flag (send `leaf: true` to keep it).
 
 ### `kind=expand`
 
@@ -219,7 +241,7 @@ If you substantially change what the node *means* (not a typo / wording polish),
 
 ### `kind=fix`
 
-Same payload shape as expand. Intent: the marked area is wrong or stale — re-read code/anchors, then repair children, refs, body, or retire bad nodes. Prefer a real fix over `unchanged: true` unless you confirmed nothing is broken.
+Same payload shape as expand. Intent: the marked area is wrong or stale — re-read code/anchors, then repair children, refs, body, or retire bad nodes. Honor `allowedChildTypes` when adding children. Adding children counts as a split: a parent upsert without `leaf` clears its stop-flag (send `leaf: true` to keep it). Prefer a real fix over `unchanged: true` unless you confirmed nothing is broken.
 
 ### Routine kinds
 
@@ -259,5 +281,5 @@ snowshoe map status --json
 
 - `work next` returns no `todo`, empty `items`, and empty `leased` (`action: idle`) and you are **not** in interactive `--wait` mode
 - `waitTimedOut: true`
-- hard reject on complete (bad lease, invalid payload, missing anchors, …)
+- hard reject on complete (see *Rejects: skip vs STOP*; skip-and-repoll codes are not a STOP)
 - operator interrupt or budget exhausted

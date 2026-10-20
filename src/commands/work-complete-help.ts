@@ -5,7 +5,10 @@ import { envelope } from "../json.ts";
 import { findRepoRoot } from "../paths.ts";
 
 const COMPLETIONS_WRAP =
-  "Wrap the payload in completions[] with id / leaseToken / kind matching the claimed step.";
+  "Wrap the payload in completions[] with id / leaseToken / kind matching the claimed step (completions[].id = the work next item's stepId).";
+
+const EXIT_CODES_NOTE =
+  "Exit 0 = all accepted. Exit 1 = at least one step rejected (ok: false; read results[].reasons). Exit 2 = non-JSON input or invalid envelope.";
 
 /** Matches `applyStructureOps`: present `codeAnchors` calls `replaceAnchors`; omit skips. */
 export const STRUCTURE_SYNC_UPSERT_RULES = [
@@ -91,11 +94,19 @@ export const COMMON_REJECT_REASONS = [
   "already_closed",
   "bad_lease",
   "epoch_not_open",
+  "refresh_required",
   "lease_expired",
+  "unknown_kind",
 ] as const;
 
 export const COMMON_REJECT_NOTE =
-  "Any kind: checked before the payload. epoch_not_open = routine step (structure_sync / blast_radius / metric_decay) from a superseded epoch; run work next again after routine refresh.";
+  "Any kind: checked before the payload. epoch_not_open = routine step (structure_sync / blast_radius / metric_decay) from a superseded epoch; run work next again after routine refresh. refresh_required = routine step while HEAD left the epoch target (work next shows the refresh todo). Skip-and-repoll (not a STOP): already_closed, epoch_not_open, refresh_required, lease_expired. Other rejects are hard (STOP and report).";
+
+export const METRIC_DECAY_INTENT =
+  "Decay only lowers. Cap = min(stored value, severityCap); you cannot raise. Nodes created by map hops start at 0, so their only legal value is 0 until the human studies the node and raises the metric (map metric). Decay is meaningful after that rise. A missing stored value counts as 1.0.";
+
+export const METRIC_DECAY_EXAMPLE_NOTE =
+  "Example assumes stored internals for pay is >= 0.5 (the nit cap 0.85 is not the binding limit then). With stored 0 (fresh map-hop node) only value 0 is accepted.";
 
 export const BLAST_RADIUS_REJECT_REASONS = [
   "no_epoch",
@@ -132,6 +143,7 @@ export function workCompleteHelpBody(): Record<string, unknown> {
     usage: "snowshoe work complete --json",
     input: "JSON envelope on stdin or --input. kind must match the claimed step.",
     wrap: COMPLETIONS_WRAP,
+    exitCodes: EXIT_CODES_NOTE,
     commonRejectReasons: [...COMMON_REJECT_REASONS],
     commonRejectNote: COMMON_REJECT_NOTE,
     mapHops: "detail / expand / enrich / fix payloads: drain.md.",
@@ -165,6 +177,8 @@ export function workCompleteHelpBody(): Record<string, unknown> {
       summary:
         "Exactly one updates[] row matching the claimed (nodeId, level). value in [0,1]; must not exceed min(storedPrevious, severityCap); missing stored previous is 1.0. previousValue is audit-only.",
       reason: METRIC_DECAY_REASON_RULE,
+      intent: METRIC_DECAY_INTENT,
+      exampleNote: METRIC_DECAY_EXAMPLE_NOTE,
       rejectReasons: [...METRIC_DECAY_REJECT_REASONS],
       requiredLevels: SEVERITY_LEVELS,
       severityCaps: SEVERITY_CAPS,
@@ -201,6 +215,7 @@ export function formatWorkCompleteHelpText(): string {
 
 Envelope on stdin or --input. kind must match the claimed step.
 ${COMPLETIONS_WRAP}
+${EXIT_CODES_NOTE}
 Reject (any kind): ${rejects(COMMON_REJECT_REASONS)}.
 ${COMMON_REJECT_NOTE}
 Map hops (detail / expand / enrich / fix): drain.md.
@@ -228,8 +243,10 @@ ${blastExample}
 metric_decay — exactly one updates[] row matching the claimed (nodeId, level).
 value in [0,1]; ≤ min(storedPrevious, severityCap); missing stored previous is 1.0.
 previousValue is audit-only. ${METRIC_DECAY_REASON_RULE}
+${METRIC_DECAY_INTENT}
 Reject: ${rejects(METRIC_DECAY_REJECT_REASONS)}.
 
+${METRIC_DECAY_EXAMPLE_NOTE}
 ${metricExample}
 `;
 }

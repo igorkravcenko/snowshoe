@@ -3,9 +3,9 @@
 ## Unreleased
 
 - Learn / scratch: append host conversation/session ids to `sessions.md` (not STATE). Do not read that file in the teaching loop.
-- `work next` echoes live leftovers in `leased[]` (same tokens; mint while leftovers exist is allowed). Queue-visible work is map hops plus the open epoch’s routine steps. Refresh `todo` wins (`leased: []` on that gate); `work complete` rejects routine steps from a superseded epoch with `epoch_not_open` ([#16](https://github.com/igorkravcenko/snowshoe/issues/16)).
-- `work complete --help` documents `blast_radius` and `metric_decay` payloads, per-kind and common reject codes (`unknown_step`, `kind_mismatch`, `already_closed`, `bad_lease`, `epoch_not_open`, `lease_expired`), required `metric_decay` `reason`, and severity caps (`null` = level not required) ([#36](https://github.com/igorkravcenko/snowshoe/issues/36)).
-- Omit `leaf` on an existing upsert keeps the stored flag; a new node omit still stores `false`; an expand that adds children clears the parent’s flag when its upsert omits `leaf` ([#37](https://github.com/igorkravcenko/snowshoe/issues/37)).
+- `work next` echoes live leftovers in `leased[]` (same tokens; mint while leftovers exist is allowed). Skill lease order: own work (`items` + own `leased`) first; foreign `leased` only once no own work is left (after compaction every `leased` counts as foreign). Queue-visible work is map hops plus the open epoch’s routine steps. Refresh `todo` wins (`leased: []` on that gate); `work complete` rejects routine steps with `refresh_required` while the refresh gate shows and `epoch_not_open` from a superseded epoch ([#16](https://github.com/igorkravcenko/snowshoe/issues/16)).
+- `work complete --help` documents `blast_radius` and `metric_decay` payloads, per-kind and common reject codes (`unknown_step`, `kind_mismatch`, `already_closed`, `bad_lease`, `epoch_not_open`, `refresh_required`, `lease_expired`, `unknown_kind`), exit codes, required `metric_decay` `reason`, the decay-only intent (cap = stored value; fresh map-hop nodes start at 0), and severity caps (`null` = level not required) ([#36](https://github.com/igorkravcenko/snowshoe/issues/36)).
+- Omit `leaf` on an existing upsert keeps the stored flag; a new node omit still stores `false`; an expand / detail / fix hop that adds children clears the parent’s flag when its upsert omits `leaf`; `fix` items get the same `allowedChildTypes` as expand ([#37](https://github.com/igorkravcenko/snowshoe/issues/37)).
 
 ## 0.0.6 — 2026-10-16
 
