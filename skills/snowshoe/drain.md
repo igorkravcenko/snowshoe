@@ -66,15 +66,15 @@ complete(step):
 The ledger has no lease owner. **Your** leased are the `leaseToken`s you received from an earlier `work next` in your own context. Anything else in `leased` is **foreign**.
 
 1. Do your own work first: this call's `items` plus your own `leased`. The order between them is your choice.
-2. Do not rush foreign `leased` — another live worker may be on them. Re-poll after your own work.
-3. When a poll has no `items` and none of your own `leased`, take the foreign `leased` from **that poll** now (the other worker probably crashed or lost context). Do not wait or re-poll in a loop for them. If the original worker was alive after all, whichever of you completes second gets `already_closed` and skips.
+2. While you still have own work, leave foreign `leased` alone — another live worker may be on them. Re-poll after your own work.
+3. Once a poll gives you no own work (no `items`, none of your own `leased`), do not wait any longer: take the foreign `leased` from **that poll** now (the other worker probably crashed or lost context). Do not wait or re-poll in a loop for them. If the original worker was alive after all, whichever of you completes second gets `already_closed` and skips.
 4. Lost context (compaction) and you do not remember your tokens: treat every `leased` as foreign. Rule 3 still makes you finish them once your own `items` are done.
 
 ### Rejects: skip vs STOP
 
 `work complete` returns per-step `results[]` with `status` and `reasons`.
 
-- **Skip-and-repoll** (not an error; drop that step and continue): `already_closed` (someone finished it), `lease_reclaimed` (the step is still leased under another token — probably your lease expired and another worker re-claimed it; a wrong UUID-shaped token also lands here, which is harmless; it now shows as foreign in `leased`, so follow Lease order), `epoch_not_open` (token from before `routine refresh`), `refresh_required` (HEAD moved; the next `work next` shows the refresh `todo`), `lease_expired` (lease timed out and went back to the queue — the next `work next` re-mints it).
+- **Skip-and-repoll** (not an error; drop that step and continue): `already_closed` (someone finished it), `lease_reclaimed` (the step is still leased under another token — probably your lease expired and another worker re-claimed it; a wrong UUID-shaped token also lands here, which is harmless; the next poll lists the step in `leased` with its current token — if that is a token you hold (you sent a typo), it is still yours; otherwise it is foreign; follow Lease order), `epoch_not_open` (token from before `routine refresh`), `refresh_required` (HEAD moved; the next `work next` shows the refresh `todo`), `lease_expired` (lease timed out and went back to the queue — the next `work next` re-mints it).
 - **Hard reject → STOP and report:** every other reason — `unknown_step`, `kind_mismatch`, `bad_lease` (token does not match: malformed, or the step is no longer leased — e.g. an old token on a step that was reset or re-marked since; STOP is the conservative choice), `unknown_kind`, `invalid_payload: …`, and the kind-specific payload rejects (`missing_body:…`, `anchor_missing:…`, `matrix_forbid:…`, `coverage_unmapped:…`, `epoch_base_target_mismatch`, `value_exceeds_cap:…`, …; full lists per kind — map hops, `structure_sync`, `blast_radius`, `metric_decay` — in `snowshoe work complete --help --json`).
 
 ### Exit codes
