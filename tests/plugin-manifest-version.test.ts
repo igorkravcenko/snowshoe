@@ -18,10 +18,11 @@ describe(".claude-plugin manifests stay in lockstep with package.json", () => {
     for (const p of m.plugins) expect(p.version).toBe(version);
   });
 
-  test("manifests expose only skills/snowshoe", () => {
-    expect(read(".claude-plugin/plugin.json").skills).toEqual(["./skills/snowshoe"]);
+  test("manifests expose snowshoe and snowshoe-scratch", () => {
+    const want = ["./skills/snowshoe", "./skills/snowshoe-scratch"];
+    expect(read(".claude-plugin/plugin.json").skills).toEqual(want);
     for (const p of read(".claude-plugin/marketplace.json").plugins) {
-      expect(p.skills).toEqual(["./skills/snowshoe"]);
+      expect(p.skills).toEqual(want);
     }
   });
 

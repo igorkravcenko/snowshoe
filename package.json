@@ -33,6 +33,7 @@
     "src",
     "ui/dist",
     "skills/snowshoe",
+    "skills/snowshoe-scratch",
     "LICENSE",
     "NOTICE"
   ],

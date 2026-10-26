@@ -24,9 +24,9 @@ On an offered main-map root, the atlas **allowlist** is only:
 Do **not** run any other `snowshoe` command against that root. Do **not** write
 `ledger.sqlite`. Viewport files on disk win over map prose.
 
-Until install ships, using this skill **outside the Snowshoe clone** means
-copying `skills/snowshoe-scratch/` into the harness skills dir (not
-`snowshoe skill install`).
+Working repo without this skill: `snowshoe skill install --json --skills-path
+<harness-skills-dir>` (copies product + scratch). `--update` refreshes packaged
+files that differ.
 
 ## Hash recipe (reconstruct the dir from a path)
 
