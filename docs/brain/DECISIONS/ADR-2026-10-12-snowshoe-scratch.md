@@ -8,8 +8,8 @@ date: 2026-10-12
 ## Status
 
 Accepted. Does **not** change the product skill at `skills/snowshoe/` (no third
-gate branch). Does **not** ship learning/quiz/verify. Does **not** add scratch
-to `snowshoe skill install`, `.claude-plugin/`, or npm `files`.
+gate branch). Does **not** ship learning/quiz/verify. Amended 2026-10-26: scratch
+ships on the distribution triad (`skill install`, `.claude-plugin/`, npm `files`).
 
 ## Context
 
@@ -62,9 +62,9 @@ ledger vs file viewport.
    Viewport files win over map prose.
    Drain-shaped prompt on the mapped checkout: one line to `skills/snowshoe`;
    do not hard-block scratch and do not run drain from this skill.
-6. Until install ships, using scratch **outside this clone** means copying
-   `skills/snowshoe-scratch/` into that harness skills dir (documented in
-   `skills/README.md`, not a CLI).
+6. Distribution (amendment 2026-10-26): scratch ships on npm `files`,
+   `snowshoe skill install`, and `.claude-plugin/` alongside product
+   `skills/snowshoe`. Still not a third gate in product `SKILL.md`.
 
 ### Global `--cwd`
 
@@ -79,8 +79,8 @@ ledger vs file viewport.
 
 - Third intent branch in `skills/snowshoe/SKILL.md` — rejected; product skill
   stays drain/learn/combined.
-- `snowshoe skill install` / plugin / npm `files` for scratch this slice —
-  rejected; product install stays `skills/snowshoe` only.
+- Deferring scratch from `skill install` / plugin / npm `files` — rejected
+  2026-10-26; satellite stays separate but ships on the triad.
 - `--repo` as a ledger path distinct from file cwd — rejected; git `-C` is one
   viewport.
 - Overlay write-back into the main ledger — rejected (out of scope).
@@ -115,18 +115,29 @@ Same `re-entry` protocol as product `learn.md` (trigger `re-entry`, optional
 leading `/`; Landed / Current / Next / Do not reopen; short steering is not
 the trigger). Scratch `STATE.md` layout is Now / Re-entry / voice / journal.
 Skill labels stay English; local STATE / CURRENT may use any language. Still
-not `skill install` / plugin / npm `files`.
+ships on the distribution triad (amendment below).
+
+## Amendment 2026-10-26: Distribution triad
+
+Scratch is first-class for install/distribution:
+
+1. npm `files` includes `skills/snowshoe-scratch`.
+2. `snowshoe skill install` copies it into `<skills-path>/snowshoe-scratch/`
+   with the product skill ([ADR-2026-10-03-skill-cli-install](./ADR-2026-10-03-skill-cli-install.md)).
+3. `.claude-plugin/` manifests list `./skills/snowshoe-scratch` next to
+   `./skills/snowshoe`.
+
+Still not the git-map wedge; still not a third product-skill gate.
 
 ## Consequences
 
 - CURRENT: satellite `snowshoe-scratch` is not the wedge; home learn dir +
-   `CURRENT.md` as a mental map of the target (concepts, not ls/TOC; titles
+  `CURRENT.md` as a mental map of the target (concepts, not ls/TOC; titles
   readable without jumping); optional atlas allowlist (`map status --json --cwd`
   only; optional `help --json`); global `--cwd` is git `-C`. Learn/scratch
   `re-entry` reprints the landed floor (`STATE.md` Re-entry block). Host chat
-  ids live in `sessions.md` (append-only; not teaching context).
-- Plugin manifests, `skill.ts` packaged files, and npm `files` stay
-  `skills/snowshoe` only. Tests that lock that exclusivity stay as they are.
+  ids live in `sessions.md` (append-only; not teaching context). Ships on
+  `skill install` / plugin / npm `files`.
 - No learning/quiz/verify product. Scratch `STATE.md` is a journal plus a
   Re-entry block, not a quiz.
 

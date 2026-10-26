@@ -572,7 +572,7 @@ const feedbackCmd = defineCommand({
 });
 
 const skillListCmd = defineCommand({
-  meta: { name: "list", description: "List packaged product skill files" },
+  meta: { name: "list", description: "List packaged skill packages and files" },
   args: {
     json: { type: "boolean", description: "JSON output", default: false },
   },
@@ -584,10 +584,15 @@ const skillListCmd = defineCommand({
 const skillCatCmd = defineCommand({
   meta: {
     name: "cat",
-    description: "Print one packaged skill file (SKILL.md|drain.md|learn.md|install.md)",
+    description:
+      "Print one packaged skill file (default package snowshoe: SKILL.md|drain.md|learn.md|install.md)",
   },
   args: {
     json: { type: "boolean", description: "JSON output", default: false },
+    package: {
+      type: "string",
+      description: "Packaged skill name (snowshoe | snowshoe-scratch); default snowshoe",
+    },
     file: {
       type: "positional",
       description: "Skill file name",
@@ -595,14 +600,18 @@ const skillCatCmd = defineCommand({
     },
   },
   run({ args }) {
-    return emit(runSkillCat(String(args.file), resolveCliCwd()), args.json);
+    return emit(
+      runSkillCat(String(args.file), { packageName: args.package }, resolveCliCwd()),
+      args.json,
+    );
   },
 });
 
 const skillInstallCmd = defineCommand({
   meta: {
     name: "install",
-    description: "Copy packaged skill into <skills-path>/snowshoe/ (opt-in; not part of init)",
+    description:
+      "Copy packaged snowshoe + snowshoe-scratch into <skills-path>/ (opt-in; not part of init)",
   },
   args: {
     json: { type: "boolean", description: "JSON output", default: false },
@@ -614,9 +623,14 @@ const skillInstallCmd = defineCommand({
       type: "string",
       description: "Camel alias of --skills-path",
     },
-    force: {
+    update: {
       type: "boolean",
       description: "Overwrite files that differ from the packaged skill",
+      default: false,
+    },
+    force: {
+      type: "boolean",
+      description: "Alias of --update (overwrite divergent packaged files)",
       default: false,
     },
   },
@@ -625,6 +639,7 @@ const skillInstallCmd = defineCommand({
       runSkillInstall(
         {
           skillsPath: args["skills-path"] ?? args.skillsPath,
+          update: Boolean(args.update),
           force: Boolean(args.force),
         },
         resolveCliCwd(),
@@ -637,7 +652,7 @@ const skillInstallCmd = defineCommand({
 const skillCmd = defineCommand({
   meta: {
     name: "skill",
-    description: "Packaged product skill (list / cat / install into a harness skills dir)",
+    description: "Packaged skills (list / cat / install into a harness skills dir)",
   },
   subCommands: {
     list: skillListCmd,

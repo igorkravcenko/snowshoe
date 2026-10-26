@@ -81,15 +81,15 @@ export const AGENT_HELP = {
     },
     {
       run: "snowshoe skill list --json",
-      when: "List packaged product skill files (SKILL.md / drain / learn / install).",
+      when: "List packaged skills (snowshoe + snowshoe-scratch) and their files.",
     },
     {
       run: "snowshoe skill cat --json SKILL.md",
-      when: "Print one packaged skill file (bootstrap without writing to the repo).",
+      when: "Print one packaged skill file (default package snowshoe). Use --package snowshoe-scratch for the satellite.",
     },
     {
       run: "snowshoe skill install --json --skills-path .cursor/skills",
-      when: "Copy packaged skill into <skills-path>/snowshoe/. Opt-in; harness picks the path. --force to overwrite diffs.",
+      when: "Copy snowshoe + snowshoe-scratch into <skills-path>/. Opt-in; harness picks the path. --update (or --force) to overwrite diffs.",
     },
   ],
 } as const;

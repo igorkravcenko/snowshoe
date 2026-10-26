@@ -6,7 +6,7 @@ PATH); these files teach an agent how to call it.
 | Package | Role |
 |---|---|
 | [snowshoe/](./snowshoe/) | Product skill: `SKILL.md` gate → `drain.md` / `learn.md`; `install.md` only if the binary is missing |
-| [snowshoe-scratch/](./snowshoe-scratch/) | Satellite: path without the map (`~/.snowshoe/learn/<sha256(utf8(realpath))>`). Not drain/init/ledger. Not `skill install` / plugin / npm `files` |
+| [snowshoe-scratch/](./snowshoe-scratch/) | Satellite: path without the map (`~/.snowshoe/learn/<sha256(utf8(realpath))>`). Not drain/init/ledger. Shipped on `skill install` / plugin / npm `files` |
 
 ## Cursor
 
@@ -33,8 +33,6 @@ snowshoe skill list --json
 snowshoe skill cat --json SKILL.md
 ```
 
-`--skills-path` is the harness skills directory; the CLI writes `<path>/snowshoe/`.
-
-Until scratch install ships, using `snowshoe-scratch` **outside this clone**
-means copying `skills/snowshoe-scratch/` into that harness skills dir (not a
-CLI). Do not add it to `snowshoe skill install`.
+`--skills-path` is the harness skills directory; the CLI writes `<path>/snowshoe/`
+and `<path>/snowshoe-scratch/`. `--update` (or `--force`) overwrites packaged
+files that differ.

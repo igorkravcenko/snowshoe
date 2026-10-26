@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- **Compatibility:** skills installed before this change stop while `leased` is non-empty (they only look at `items`). After upgrading the CLI, reinstall / update the snowshoe skill (`snowshoe skill install --json --skills-path <dir>`, or your plugin / skills.sh update).
+- `snowshoe-scratch` ships on the distribution triad: npm `files`, `skill install`, and `.claude-plugin/` manifests (still a satellite, not a third product-skill gate). `snowshoe skill install` copies both packages; `--update` (alias `--force`) overwrites divergent packaged files.
+- **Compatibility:** skills installed before this change stop while `leased` is non-empty (they only look at `items`). After upgrading the CLI, reinstall / update the snowshoe skill (`snowshoe skill install --json --skills-path <dir> [--update]`, or your plugin / skills.sh update).
 - `work complete --help --json`: `mapHops` changed from a string to an object (`{ payloads, rejectReasons }`).
 - Learn / scratch: append host conversation/session ids to `sessions.md` (not STATE). Do not read that file in the teaching loop.
 - `work next` echoes live leftovers in `leased[]` (same tokens; mint while leftovers exist is allowed). Skill lease order: own work (`items` + own `leased`) first; foreign `leased` only once no own work is left (after compaction every `leased` counts as foreign). Queue-visible work is map hops plus the open epoch’s routine steps. Refresh `todo` wins (`leased: []` on that gate); `work complete` tells a lost lease (`lease_reclaimed`: expired and re-claimed by another `work next`; skip) apart from a bad token (`bad_lease`; STOP), and rejects routine steps with `refresh_required` while the refresh gate shows and `epoch_not_open` from a superseded epoch ([#16](https://github.com/igorkravcenko/snowshoe/issues/16)).

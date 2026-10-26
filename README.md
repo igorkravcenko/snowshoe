@@ -54,12 +54,12 @@ day-to-day checkout so learning stays apart from other work.
 
 ```bash
 git clone <your-repo> && cd <your-repo>
-snowshoe skill install --json --skills-path .cursor/skills   # Cursor example
+snowshoe skill install --json --skills-path .cursor/skills   # Cursor example; copies snowshoe + snowshoe-scratch
 ```
 
-Other harnesses: pass their skills directory as `--skills-path`.
+Other harnesses: pass their skills directory as `--skills-path`. Use `--update` to refresh packaged skill files that differ.
 
-Alternatively, install the same skill from a skill store (the CLI is still required):
+Alternatively, install the same skills from a skill store (the CLI is still required):
 
 ```bash
 # Any harness (Claude Code, Cursor, Codex, OpenCode, …) via skills.sh

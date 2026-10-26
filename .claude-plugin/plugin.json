@@ -10,5 +10,5 @@
   "repository": "https://github.com/igorkravcenko/snowshoe",
   "license": "Apache-2.0",
   "keywords": ["agent-skills", "claude-skills", "git", "comprehension-map"],
-  "skills": ["./skills/snowshoe"]
+  "skills": ["./skills/snowshoe", "./skills/snowshoe-scratch"]
 }
