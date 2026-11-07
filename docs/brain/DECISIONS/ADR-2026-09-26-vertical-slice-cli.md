@@ -37,7 +37,7 @@ This ADR does not add learning, quiz, verify, map HTTP UI, Nest/Next/Electron, o
 - CURRENT implementation status is no longer “pre-code / scaffold only.”
 - A/B stay proposed; do not treat this CLI as proof they are accepted.
 - Test runner in this slice is **`bun test`** (`bun:test`) so the documented acceptance command works. Stack ADR still prefers Vitest; switching the runner does not need to block this slice.
-- Routine completeness is a **minimal honest subset** of ADR-B (structure / blast / metric_decay accept gates enough for HP3–4). Parent min-decay is a simple deterministic min; ignore-globs stay empty.
+- Routine completeness is a **minimal honest subset** of ADR-B (structure / blast / metric_decay accept gates enough for HP3–4). Metric writes affect only their target node (amended by ADR-2026-11-07-independent-node-metrics); ignore-globs stay empty.
 
 ## Evidence
 

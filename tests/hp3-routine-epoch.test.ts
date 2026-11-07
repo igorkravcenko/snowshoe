@@ -166,6 +166,9 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
     });
     expect(sDone.exitCode).toBe(0);
 
+    await snowshoe(repo, ["map", "metric", "--json", "--slug", "root", "--internals", "0.9"]);
+    await snowshoe(repo, ["map", "metric", "--json", "--slug", "pay", "--internals", "0.9"]);
+
     const bNext = await snowshoe(repo, ["work", "next", "--json"]);
     const bItem = (bNext.json.items as Array<Record<string, unknown>>)[0]!;
     const bDone = await snowshoe(repo, ["work", "complete", "--json"], {
@@ -179,6 +182,12 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
             base,
             target,
             nodes: [
+              {
+                nodeId: "root",
+                severity: "nit",
+                parentIds: [],
+                evidence: [{ type: "path", path: "src/pay.ts" }],
+              },
               {
                 nodeId: "pay",
                 severity: "nit",
@@ -194,14 +203,16 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
 
     const mNext = await snowshoe(repo, ["work", "next", "--json", "--batch-size", "8"]);
     const mItems = mNext.json.items as Array<Record<string, unknown>>;
-    expect(mItems.map((i) => i.kind)).toEqual(["metric_decay"]);
-    expect(mItems[0]?.level).toBe("internals");
+    expect(mItems).toHaveLength(2);
+    const child = mItems.find((i) => i.nodeId === "pay")!;
+    const parent = mItems.find((i) => i.nodeId === "root")!;
+    expect(child.level).toBe("internals");
 
     const tooHigh = await snowshoe(repo, ["work", "complete", "--json"], {
       stdin: completeEnvelope([
         {
-          id: String(mItems[0]?.stepId),
-          leaseToken: String(mItems[0]?.leaseToken),
+          id: String(child.stepId),
+          leaseToken: String(child.leaseToken),
           kind: "metric_decay",
           payload: {
             schemaVersion: 1,
@@ -223,8 +234,8 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
     const ok = await snowshoe(repo, ["work", "complete", "--json"], {
       stdin: completeEnvelope([
         {
-          id: String(mItems[0]?.stepId),
-          leaseToken: String(mItems[0]?.leaseToken),
+          id: String(child.stepId),
+          leaseToken: String(child.leaseToken),
           kind: "metric_decay",
           payload: {
             schemaVersion: 1,
@@ -236,6 +247,15 @@ describe("HP3 post-pull epoch catch-up → then detail", () => {
                 reason: "severity:nit",
               },
             ],
+          },
+        },
+        {
+          id: String(parent.stepId),
+          leaseToken: String(parent.leaseToken),
+          kind: "metric_decay",
+          payload: {
+            schemaVersion: 1,
+            updates: [{ nodeId: "root", level: "internals", value: 0.8, reason: "severity:nit" }],
           },
         },
       ]),

@@ -268,7 +268,7 @@ The diff for these steps is `git diff --name-only <base>..<target>` (commits in 
 }
 ```
 
-**blast_radius** — empty `nodes` is legal when nothing in `base..target` hits anchors. Non-empty rows need `evidence`. Caps and reject codes: `work complete --help --json`.
+**blast_radius** — empty `nodes` is legal when nothing in `base..target` hits anchors. Non-empty rows need `evidence`. Include a parent explicitly when the changes also affect understanding of that parent; child decay does not change parent metrics. Caps and reject codes: `work complete --help --json`.
 
 **metric_decay** — exactly one `updates[]` row matching the claimed `(nodeId, level)`. Do not raise the stored value. Caps and reject codes: `work complete --help --json`.
 
