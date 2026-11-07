@@ -12,7 +12,6 @@ import {
   isMapHopKind,
   isSlug,
   LEASE_TTL_MS,
-  type MetricLevel,
   ROOT_SLUG,
   ROUTINE_KINDS,
   type StepKind,
@@ -1091,7 +1090,6 @@ function acceptMetric(session: Session, step: StepRow, raw: unknown): CompleteRe
   session.ledger.transaction(() => {
     session.ledger.setMetric(update.nodeId, update.level, update.value);
     session.ledger.noteMetricDrop(update.nodeId, stored, update.value, { treatNullAsFull: true });
-    decayParents(session, update.nodeId, update.level, update.value);
     session.ledger.updateStep(step.id, {
       status: "accepted",
       leaseToken: null,
@@ -1100,22 +1098,6 @@ function acceptMetric(session: Session, step: StepRow, raw: unknown): CompleteRe
     });
   });
   return { id: step.id, status: "accepted" };
-}
-
-function decayParents(
-  session: Session,
-  childSlug: string,
-  level: MetricLevel,
-  childValue: number,
-): void {
-  for (const parent of session.ledger.parentsOf(childSlug)) {
-    const current = session.ledger.getMetric(parent, level);
-    if (current === null) continue;
-    if (childValue < current) {
-      session.ledger.setMetric(parent, level, childValue);
-      session.ledger.noteMetricDrop(parent, current, childValue);
-    }
-  }
 }
 
 export function runWorkFail(

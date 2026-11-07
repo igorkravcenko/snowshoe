@@ -17,7 +17,7 @@ Metric floats live in SQLite (`overview` / `contracts` / `internals`, `0.0–1.0
 
 1. **`snowshoe map metric --json --slug <slug>`** with one or more of `--overview` / `--contracts` / `--internals` (each a float in `[0, 1]`). Unknown slug or no levels → usage reject.
 2. **Allows raise and lower.** This is an operator write, not a `work next` hop and not gated by blast severity caps.
-3. **Parent honesty on drop:** if a set value is below the stored previous (or previous was null, still apply min-decay when parents have a higher stored value and child is lower), ancestors may be min-decayed on that level — never auto-raised.
+3. **Independent nodes:** a metric write affects only the selected node (amended by ADR-2026-11-07-independent-node-metrics).
 4. **HTTP twin:** `POST /api/map/metric` with JSON `{ slug, overview?, contracts?, internals? }` shares `runMapMetric`.
 5. **Not** a substitute for learning/quiz/verify; skill may run it only when the human asked this turn to set understanding.
 

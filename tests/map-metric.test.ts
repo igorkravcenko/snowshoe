@@ -36,7 +36,7 @@ async function seedRootChild(repo: string): Promise<void> {
 }
 
 describe("map metric", () => {
-  test("sets floats; rejects OOB and missing levels; drops can decay parent", async () => {
+  test("sets floats; rejects OOB and missing levels; drops leave parent unchanged", async () => {
     const repo = makeGitRepo();
     await seedRootChild(repo);
 
@@ -147,7 +147,7 @@ describe("map metric", () => {
     const root = (
       status.json.nodes as Array<{ slug: string; metrics?: Record<string, number> }>
     ).find((n) => n.slug === "root");
-    expect(root?.metrics?.contracts).toBe(0.2);
+    expect(root?.metrics?.contracts).toBe(0.95);
     expect(root?.metrics?.overview).toBe(0.95);
   });
 });

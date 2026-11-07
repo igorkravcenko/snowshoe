@@ -27,6 +27,9 @@ describe("inbox marks", () => {
       session.ledger.setMetric("root", "overview", 0.8);
       runMapMetric(session, "cli", { overview: 0.4 });
       expect(session.ledger.hasMark("cli", "decayed")).toBe(true);
+      expect(session.ledger.hasMark("root", "decayed")).toBe(false);
+      expect(session.ledger.getMetric("root", "overview")).toBe(0.8);
+      runMapMetric(session, "root", { overview: 0.7 });
       expect(session.ledger.hasMark("root", "decayed")).toBe(true);
 
       const read = runMapInboxRead(session, "cli");

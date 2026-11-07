@@ -59,3 +59,5 @@ The in-force word is **`accepted`**. Lint still allows `active` as an alias; do 
 | [ADR-2026-10-16-root-help-human](./ADR-2026-10-16-root-help-human.md) | accepted | Root `--help` / no-args human postcard; `help --json` stays agent index |
 | [ADR-2026-10-20-work-next-live-lease](./ADR-2026-10-20-work-next-live-lease.md) | accepted | `work next` echoes live leftovers in `leased[]`; mint while live OK; queue-visible = map hops + open-epoch routine |
 | [ADR-2026-10-20-upsert-omit-leaf](./ADR-2026-10-20-upsert-omit-leaf.md) | accepted | Omit `leaf` on existing upsert keeps the stored flag; new node omit → false |
+
+| [ADR-2026-11-07-independent-node-metrics](./ADR-2026-11-07-independent-node-metrics.md) | accepted | Metric writes affect only the selected node |

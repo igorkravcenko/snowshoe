@@ -480,26 +480,9 @@ function parseMetricFloat(raw: unknown, flag: string): number {
   return n;
 }
 
-/** When a child metric drops, pull parents down to min(parent, child) — never auto-raise. */
-function decayParentsOnDrop(
-  session: Session,
-  childSlug: string,
-  level: MetricLevel,
-  childValue: number,
-): void {
-  for (const parent of session.ledger.parentsOf(childSlug)) {
-    const current = session.ledger.getMetric(parent, level);
-    if (current === null) continue;
-    if (childValue < current) {
-      session.ledger.setMetric(parent, level, childValue);
-      session.ledger.noteMetricDrop(parent, current, childValue);
-    }
-  }
-}
-
 /**
  * Operator-facing metric write (personal comprehension). Not `metric_decay` / not `work next`.
- * Allows raise or lower in [0,1]. Lowering may min-decay ancestors for honesty.
+ * Allows raise or lower in [0,1] on the selected node.
  */
 export function runMapMetric(
   session: Session,
@@ -528,9 +511,6 @@ export function runMapMetric(
       const previous = session.ledger.getMetric(slug, level);
       session.ledger.setMetric(slug, level, value);
       session.ledger.noteMetricDrop(slug, previous, value);
-      if (previous === null || value < previous) {
-        decayParentsOnDrop(session, slug, level, value);
-      }
       applied.push({ level, previous, value });
     }
   });
