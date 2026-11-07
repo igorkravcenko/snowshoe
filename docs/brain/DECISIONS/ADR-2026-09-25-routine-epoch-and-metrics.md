@@ -76,7 +76,7 @@ Without (3), metrics are not trustworthy → (3) blocks `base` advance.
 
 Routine must not raise trust: accepted `value` must be `≤ min(storedPrevious, severityCap(severity, level))` where severity comes from the accepted blast row for that node (see companion ADR caps + severity→levels table). Learning-time increases are out of scope here.
 
-**Parent updates (v1):** after child metric accepts, the util may **decay** parent metrics via deterministic min-rules (never auto-increase). Parent `contracts` using `min(all children.contracts)` is **known crude**; future work = contract-participant edges. Children accepted ≠ parent understood; parent `internals` are not auto-derived from children.
+**Parent updates:** the earlier min-decay proposal is superseded by [ADR-2026-11-07-independent-node-metrics](./ADR-2026-11-07-independent-node-metrics.md): metric updates affect only the selected node.
 
 ### Out of scope
 

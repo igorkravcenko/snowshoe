@@ -17,7 +17,7 @@ Implicit parent decay changes values outside the requested operation. A batch of
 
 `metric_decay` and `map metric` update only the specified node and level. Parents require their own explicit updates. A drop stamps `decayed` only on the affected node. Existing values are not restored.
 
-This amends the parent propagation decisions in ADR-2026-09-26-vertical-slice-cli and ADR-2026-10-02-map-metric-cli.
+This amends the parent propagation decisions in ADR-2026-09-26-vertical-slice-cli and ADR-2026-10-02-map-metric-cli, and supersedes the parent propagation proposal in ADR-2026-09-25-routine-epoch-and-metrics.
 
 ## Alternatives considered
 
